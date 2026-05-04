@@ -31,7 +31,7 @@ def _get_client() -> OpenAI:
 def call_claude(system: str, messages: list[dict], model: str | None = None,
                 max_tokens: int | None = None, temperature: float | None = None) -> str:
     client = _get_client()
-    model = model or os.environ.get("POLZA_MODEL", DEFAULT_MODEL)
+    model = model or os.environ.get("AI_MODEL", DEFAULT_MODEL)
     max_tokens = max_tokens or int(os.environ.get("AI_MAX_TOKENS", DEFAULT_MAX_TOKENS))
     temperature = temperature if temperature is not None else float(os.environ.get("AI_TEMPERATURE", DEFAULT_TEMPERATURE))
 
@@ -58,7 +58,7 @@ def parse_blocks_json(raw: str) -> dict:
 
 def generate_blocks(system: str, messages: list[dict],
                     validate_fn: Callable[[dict], list[str]],
-                    model: str = DEFAULT_MODEL,
+                    model: str | None = None,
                     max_retries: int = 2) -> dict:
     last_error = None
     current_messages = messages
