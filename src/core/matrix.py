@@ -1,48 +1,76 @@
 """
-Матрица судьбы по методу Натальи Ладини (22 аркана Таро).
-Чистая математика над датой.
+Матрица судьбы (расширенная Ладини).
+13 позиций: 6 базовых + 7 зон жизни (деньги, любовь, здоровье, миссия,
+духовный путь, творчество, комфорт).
 """
-from .numerology import parse_birthdate
+from .numerology import reduce_number
 
 
-def reduce_to_arcana(n: int) -> int:
-    """Сводит число к диапазону 1-22 (старшие арканы)."""
-    while n > 22:
-        n = sum(int(d) for d in str(n))
-        if n == 0:
-            return 22
-    return n if n > 0 else 22
+def _matrix_number(a: int, b: int) -> int:
+    """Сводит сумму a+b к диапазону 1–22 (арканы Таро)."""
+    s = a + b
+    while s > 22:
+        s = reduce_number(s)          # итеративно, пока ≤ 22
+    return s if s != 0 else 22        # 0 → Шут (22)
 
 
 def calculate_matrix(birthdate: str) -> dict:
     """
-    Базовый расчёт центральных позиций матрицы.
+    Расширенная матрица Ладини: 13 позиций по дате рождения.
 
-    Метод Ладини (упрощённый, основные позиции):
-    - Личность (центр): день рождения, сведённый к арканам
-    - Реализация: месяц рождения
-    - Предназначение: личность + реализация
-    - Карма рода: год рождения
-    - Родовая программа: сумма цифр года
-    - Главное испытание: сведённая сумма дня и года
+    Базовая линия (6):
+      personality     — Личность (центр)
+      realization     — Реализация
+      destiny         — Предназначение
+      karma_rod       — Карма рода
+      family_program  — Родовая программа
+      challenge       — Главное испытание
+
+    Зоны жизни (7):
+      money           — Зона денег
+      love            — Зона любви
+      health          — Зона здоровья
+      mission         — Зона миссии
+      spiritual_path  — Духовный путь
+      creativity      — Зона творчества
+      comfort         — Зона комфорта
     """
-    day, month, year = parse_birthdate(birthdate)
+    day, month, year = (int(x) for x in birthdate.split("."))
+    d, m, y = reduce_number(day), reduce_number(month), reduce_number(year)
 
-    personality = reduce_to_arcana(day)
-    realization = reduce_to_arcana(month)
-    destiny = reduce_to_arcana(personality + realization)
+    # ── базовая линия (6 позиций) ──────────────────────────
+    personality    = _matrix_number(d, m)
+    realization    = _matrix_number(m, y)
+    destiny        = _matrix_number(personality, realization)
+    karma_rod      = _matrix_number(d, y)
+    family_program = _matrix_number(personality, karma_rod)
+    challenge      = _matrix_number(destiny, family_program)
 
-    year_sum = sum(int(d) for d in str(year))
-    karma_rod = reduce_to_arcana(year_sum)
-
-    family_program = reduce_to_arcana(reduce_to_arcana(year_sum) + reduce_to_arcana(month))
-    challenge = reduce_to_arcana(personality + karma_rod)
+    # ── зоны жизни (7 позиций) ─────────────────────────────
+    # Вычисляются как перекрёстные комбинации базовых точек,
+    # каждая зона — пересечение двух энергий.
+    money          = _matrix_number(personality, destiny)
+    love           = _matrix_number(personality, realization)
+    health         = _matrix_number(personality, challenge)
+    mission        = _matrix_number(destiny, karma_rod)
+    spiritual_path = _matrix_number(family_program, challenge)
+    creativity     = _matrix_number(realization, karma_rod)
+    comfort        = _matrix_number(personality, family_program)
 
     return {
-        "personality": personality,
-        "realization": realization,
-        "destiny": destiny,
-        "karma_rod": karma_rod,
-        "family_program": family_program,
-        "challenge": challenge,
+        # базовая линия
+        "personality":     personality,
+        "realization":     realization,
+        "destiny":         destiny,
+        "karma_rod":       karma_rod,
+        "family_program":  family_program,
+        "challenge":       challenge,
+        # зоны жизни
+        "money":           money,
+        "love":            love,
+        "health":          health,
+        "mission":         mission,
+        "spiritual_path":  spiritual_path,
+        "creativity":      creativity,
+        "comfort":         comfort,
     }
