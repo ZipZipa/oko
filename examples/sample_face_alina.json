@@ -1,0 +1,65 @@
+{
+  "deepface": {
+    "age": 28,
+    "gender": "Woman",
+    "gender_probabilities": {"Woman": 99.8, "Man": 0.2},
+    "race": "white",
+    "race_probabilities": {
+      "asian": 5.2, "indian": 2.1, "black": 1.5,
+      "white": 72.3, "middle eastern": 8.9, "latino hispanic": 10.0
+    },
+    "dominant_emotion": "neutral",
+    "emotions": {
+      "angry": 2.1, "disgust": 0.05, "fear": 1.2,
+      "happy": 18.4, "sad": 4.2, "surprise": 1.8, "neutral": 72.25
+    }
+  },
+  "proportions": {
+    "face_width_to_height": 0.72,
+    "eye_distance_to_face_width": 0.61,
+    "nose_to_chin_ratio": 0.36,
+    "forehead_to_face_ratio": 0.34,
+    "mouth_width_to_face_width": 0.36,
+    "brow_width_to_eye_distance": 0.38,
+    "face_shape": "овальная",
+    "head_pose": {"yaw": 2.5, "pitch": 0.8, "roll": -1.2},
+    "details": {
+      "eyes": {
+        "left_eye_width_to_face": 0.21,
+        "right_eye_width_to_face": 0.211,
+        "left_eye_height_to_width": 0.43,
+        "right_eye_height_to_width": 0.435,
+        "left_eye_tilt": 130.5,
+        "right_eye_tilt": 130.8,
+        "eye_spacing_to_face_width": 0.61,
+        "eye_asymmetry": 0.0021
+      },
+      "nose": {
+        "nose_width_to_face_width": 0.21,
+        "nose_length_to_face_height": 0.245,
+        "nose_width_to_length": 0.857
+      },
+      "lips": {
+        "mouth_width_to_face_width": 0.36,
+        "mouth_height_to_width": 0.082,
+        "lip_fullness": 0.34,
+        "upper_lip_to_lower_ratio": 0.62
+      },
+      "brows": {
+        "left_brow_length_to_face_width": 0.32,
+        "right_brow_length_to_face_width": 0.318,
+        "left_brow_arch_height": 0.135,
+        "right_brow_arch_height": 0.137,
+        "brow_asymmetry": 0.0042
+      },
+      "jaw": {
+        "jaw_angle_left": 122.5,
+        "jaw_angle_right": 123.1,
+        "jaw_width_to_face_width": 0.72
+      },
+      "forehead": {"forehead_height_to_face": 0.34},
+      "cheekbones": {"cheekbone_width_to_face_width": 0.94},
+      "asymmetry": {"face_asymmetry": 0.0098, "eye_asymmetry": 0.0021, "brow_asymmetry": 0.0042}
+    }
+  }
+}

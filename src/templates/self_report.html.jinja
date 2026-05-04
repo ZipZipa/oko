@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Полный портрет · {{ data.user.birthdate }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --black: #111110;
+  --g900: #2C2C2A;
+  --g700: #5F5E5A;
+  --g500: #888780;
+  --g300: #D3D1C7;
+  --g100: #F1EFE8;
+  --white: #FAFAF8;
+  --border: rgba(0,0,0,0.09);
+  --border-md: rgba(0,0,0,0.15);
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+}
+html { font-size: 16px; scroll-behavior: smooth; }
+body { font-family: 'Jost', sans-serif; font-weight: 300; background: var(--white); color: var(--g900); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+/* COVER */
+.cover { min-height: 100vh; padding: 4rem; display: flex; flex-direction: column; justify-content: space-between; border-bottom: 0.5px solid var(--border); }
+.cover-meta { display: flex; justify-content: space-between; font-size: 11px; letter-spacing: 0.12em; color: var(--g500); }
+.cover-center { text-align: center; padding: 5rem 0 3rem; }
+.cover-eyebrow { font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--g500); margin-bottom: 1.5rem; }
+.cover-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(52px, 9vw, 96px); font-weight: 300; line-height: 1.02; letter-spacing: -0.01em; color: var(--black); margin-bottom: 1.5rem; }
+.cover-sub { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--g500); }
+.cover-toc { display: flex; justify-content: space-between; align-items: flex-end; font-size: 10px; color: var(--g500); letter-spacing: 0.12em; text-transform: uppercase; }
+.toc-items { display: flex; flex-wrap: wrap; gap: 1.25rem 2rem; }
+
+/* CHAPTER DIVIDER */
+.chapter-divider { padding: 3rem 4rem 1.5rem; border-top: 0.5px solid var(--border); }
+.chap-eyebrow { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--g500); margin-bottom: 0.4rem; }
+.chap-title-big { font-family: 'Cormorant Garamond', serif; font-size: clamp(36px, 5vw, 56px); font-weight: 300; color: var(--black); letter-spacing: 0.01em; }
+.chap-num { font-family: 'Cormorant Garamond', serif; font-size: 120px; font-weight: 300; color: var(--g100); line-height: 1; position: absolute; right: 4rem; top: 50%; transform: translateY(-50%); pointer-events: none; }
+.chap-wrap { position: relative; overflow: hidden; }
+
+/* PAGE */
+.page { max-width: 920px; margin: 0 auto; padding: 3rem 4rem 4rem; }
+
+/* SECTION HDR */
+.sec-hdr { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1.25rem; border-bottom: 0.5px solid var(--border); }
+.sec-n { font-family: 'Cormorant Garamond', serif; font-size: 40px; font-weight: 300; color: var(--g300); line-height: 1; min-width: 48px; }
+.sec-info .sec-eyebrow { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--g500); margin-bottom: 0.15rem; }
+.sec-info .sec-title { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300; color: var(--black); }
+
+/* CARDS */
+.card { background: #fff; border: 0.5px solid var(--border); border-radius: var(--r-lg); padding: 1.4rem 1.75rem; margin-bottom: 1rem; }
+.card-lbl { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--g500); margin-bottom: 1rem; padding-bottom: 0.7rem; border-bottom: 0.5px solid var(--border); }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-bottom: 0.9rem; }
+.g3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.75rem; margin-bottom: 0.9rem; }
+.g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.65rem; margin-bottom: 0.9rem; }
+.mc { background: var(--g100); border-radius: var(--r-sm); padding: 0.9rem 1rem; }
+.ml { font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--g500); margin-bottom: 0.3rem; }
+.mv { font-family: 'Cormorant Garamond', serif; font-size: 21px; font-weight: 400; color: var(--black); margin-bottom: 0.25rem; }
+.md { font-size: 12px; color: var(--g700); line-height: 1.55; }
+
+/* SCORE */
+.score-big { font-family: 'Cormorant Garamond', serif; font-size: 68px; font-weight: 300; line-height: 1; color: var(--black); }
+.score-d { font-size: 22px; color: var(--g500); }
+.sbar { height: 1.5px; background: var(--border-md); border-radius: 2px; margin: 0.9rem 0; }
+.sfill { height: 100%; background: var(--black); border-radius: 2px; }
+
+/* METRIC */
+.met { background: var(--g100); border-radius: var(--r-sm); padding: 0.9rem 1rem; }
+.met-name { font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--g500); margin-bottom: 0.4rem; }
+.met-row { display: flex; align-items: baseline; gap: 4px; margin-bottom: 0.4rem; }
+.met-s { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 400; color: var(--black); }
+.met-max { font-size: 12px; color: var(--g500); }
+.mbar { height: 1.5px; background: var(--border-md); border-radius: 2px; }
+.mfill { height: 100%; background: var(--black); border-radius: 2px; }
+
+/* TEXT */
+.q { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 17px; color: var(--g700); line-height: 1.65; margin-bottom: 1.1rem; padding-left: 1.1rem; border-left: 1px solid var(--g300); }
+.bt { font-size: 13px; color: var(--g700); line-height: 1.7; }
+.ri { display: flex; gap: 0.65rem; margin-bottom: 0.6rem; align-items: flex-start; }
+.d { width: 4px; height: 4px; border-radius: 50%; background: var(--g500); margin-top: 7px; flex-shrink: 0; }
+.dh { width: 4px; height: 4px; border-radius: 50%; border: 1px solid var(--g500); margin-top: 7px; flex-shrink: 0; }
+.hl { color: var(--black); font-weight: 400; }
+.formula { font-size: 12px; color: var(--g500); padding: 0.5rem 0.75rem; background: var(--g100); border-radius: var(--r-sm); margin: 0.5rem 0; }
+
+/* TAGS */
+.tags { margin-top: 0.9rem; }
+.tag { display: inline-block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; border: 0.5px solid var(--border-md); border-radius: 20px; padding: 2px 11px; color: var(--g700); margin-right: 5px; margin-bottom: 4px; }
+
+/* NUM CELLS */
+.nc { background: var(--g100); border-radius: var(--r-sm); padding: 1.1rem 1rem; text-align: center; }
+.nc-big { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 300; line-height: 1; color: var(--black); }
+.nc-lbl { font-size: 10px; letter-spacing: 0.11em; text-transform: uppercase; color: var(--g500); margin-top: 4px; }
+.nc-name { font-size: 12px; color: var(--g700); margin-top: 3px; }
+
+/* MATRIX */
+.mxc { background: var(--g100); border-radius: var(--r-sm); padding: 1rem 1.1rem; }
+.mx-num { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300; color: var(--black); line-height: 1; }
+.mx-lbl { font-size: 10px; letter-spacing: 0.11em; text-transform: uppercase; color: var(--g500); margin-top: 3px; }
+.mx-arc { font-size: 11px; color: var(--g700); margin-top: 2px; font-style: italic; }
+.mx-desc { font-size: 12px; color: var(--g700); line-height: 1.5; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 0.5px solid var(--border); }
+
+/* YEAR ROW */
+.yr { display: flex; gap: 1rem; align-items: flex-start; padding: 1rem 0; border-bottom: 0.5px solid var(--border); }
+.yr:last-child { border-bottom: none; }
+.yr-n { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300; color: var(--black); min-width: 70px; line-height: 1.1; }
+.yr-age { font-size: 10px; color: var(--g500); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
+.yr-title { font-size: 13px; font-weight: 400; color: var(--black); margin-bottom: 0.25rem; }
+.yr-desc { font-size: 12px; color: var(--g700); line-height: 1.55; }
+
+/* PERIOD */
+.pc { background: var(--g100); border-radius: var(--r-sm); padding: 0.9rem 1rem; text-align: center; }
+.p-n { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300; color: var(--black); }
+.p-age { font-size: 10px; color: var(--g500); margin-top: 2px; letter-spacing: 0.07em; }
+.p-d { font-size: 11px; color: var(--g700); margin-top: 3px; line-height: 1.4; }
+
+/* DARK */
+.dark-card { background: var(--black); color: var(--white); border-radius: var(--r-lg); padding: 2rem 2.25rem; margin-bottom: 0.9rem; }
+.dark-card .q { color: rgba(255,255,255,0.65); border-left-color: rgba(255,255,255,0.18); }
+.dark-card .bt { color: rgba(255,255,255,0.6); }
+.dark-card .hl { color: #fff; }
+.dark-card .d { background: rgba(255,255,255,0.35); }
+.dark-card .card-lbl { color: rgba(255,255,255,0.4); border-color: rgba(255,255,255,0.12); }
+
+/* FINAL LINE */
+.final-line { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 300; font-style: italic; color: var(--black); line-height: 1.6; margin-top: 1rem; padding: 1rem 1.25rem; border: 0.5px solid var(--border-md); border-radius: var(--r-md); }
+.dark-card .final-line { border-color: rgba(255,255,255,0.14); color: rgba(255,255,255,0.85); }
+
+/* SUMMARY */
+.sum-card { background: var(--black); color: var(--white); border-radius: var(--r-lg); padding: 2.5rem 3rem; }
+.sum-card .card-lbl { color: rgba(255,255,255,0.35); border-color: rgba(255,255,255,0.1); }
+.sum-card .q { color: rgba(255,255,255,0.65); border-left-color: rgba(255,255,255,0.18); }
+.sum-card .bt { color: rgba(255,255,255,0.6); }
+.sum-card .hl { color: #fff; }
+.sum-card .d { background: rgba(255,255,255,0.35); }
+.sum-card .tag { border-color: rgba(255,255,255,0.18); color: rgba(255,255,255,0.55); }
+
+/* HR */
+hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
+
+/* FOOTER */
+.footer { text-align: center; padding: 3rem 4rem; border-top: 0.5px solid var(--border); font-size: 11px; color: var(--g500); letter-spacing: 0.07em; line-height: 2.2; }
+
+@media print {
+  .cover { page-break-after: always; min-height: auto; }
+  .page { page-break-inside: avoid; }
+}
+
+@media (max-width: 680px) {
+  .cover { padding: 2.5rem 1.5rem; }
+  .page { padding: 2rem 1.5rem 3rem; }
+  .chapter-divider { padding: 2rem 1.5rem 1rem; }
+  .g2, .g3, .g4 { grid-template-columns: 1fr 1fr; }
+  .cover-toc { flex-direction: column; gap: 1rem; }
+  .chap-num { display: none; }
+  .sum-card { padding: 1.5rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-meta">
+    <span>Персональный отчёт</span>
+    <span>{{ data.user.birthdate }}</span>
+  </div>
+  <div class="cover-center">
+    <div class="cover-eyebrow">Комплексный анализ личности</div>
+    <div class="cover-title">Полный<br>портрет</div>
+    <div class="cover-sub">Внешность · Физиогномика · Нумерология · Матрица судьбы · Глубинный анализ</div>
+  </div>
+  <div class="cover-toc">
+    <div class="toc-items">
+      <span>I · Внешность</span>
+      <span>II · Физиогномика</span>
+      <span>III · Нумерология</span>
+      <span>IV · Матрица судьбы</span>
+      <span>V · Портрет личности</span>
+      <span>VI · Периоды жизни</span>
+      <span>VII · Сценарии</span>
+      <span>VIII · Скрытая правда</span>
+    </div>
+    <span>Конфиденциально</span>
+  </div>
+</div>
+
+
+<!-- ═══ ЧАСТЬ I: ВИЗУАЛЬНЫЙ АНАЛИЗ ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Часть первая</div>
+  <div class="chap-title-big">Анализ внешности</div>
+  <div class="chap-num">I</div>
+</div>
+
+<div class="page">
+  <div class="card">
+    <div class="card-lbl">Общая оценка</div>
+    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:0.5rem;">
+      <span class="score-big">{{ data.scores.overall }}</span>
+      <span class="score-d">/ 10</span>
+    </div>
+    <div class="sbar"><div class="sfill" style="width:{{ (data.scores.overall * 10) | round | int }}%;"></div></div>
+    <p class="q">{{ blocks.beauty.verdict_quote }}</p>
+    <div class="bt">Тип привлекательности: {{ blocks.beauty.attractiveness_type }}</div>
+  </div>
+
+  <div class="g3">
+    <div class="met"><div class="met-name">Симметрия</div><div class="met-row"><span class="met-s">{{ data.scores.symmetry }}</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:{{ (data.scores.symmetry * 10) | round | int }}%;"></div></div></div>
+    <div class="met"><div class="met-name">Костная структура</div><div class="met-row"><span class="met-s">{{ data.scores.bone_structure }}</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:{{ (data.scores.bone_structure * 10) | round | int }}%;"></div></div></div>
+    <div class="met"><div class="met-name">Пропорции</div><div class="met-row"><span class="met-s">{{ data.scores.proportions }}</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:{{ (data.scores.proportions * 10) | round | int }}%;"></div></div></div>
+    <div class="met"><div class="met-name">Глаза</div><div class="met-row"><span class="met-s">{{ data.scores.eyes }}</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:{{ (data.scores.eyes * 10) | round | int }}%;"></div></div></div>
+    <div class="met"><div class="met-name">Кожа</div><div class="met-row"><span class="met-s">{{ data.scores.skin }}</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:{{ (data.scores.skin * 10) | round | int }}%;"></div></div></div>
+    <div class="met"><div class="met-name">Ухоженность</div><div class="met-row"><span class="met-s">{{ data.scores.grooming }}</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:{{ (data.scores.grooming * 10) | round | int }}%;"></div></div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Сильные стороны</div>
+      <div class="bt">
+        {% for item in blocks.beauty.strengths %}
+        <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Области для работы</div>
+      <div class="bt">
+        {% for item in blocks.beauty.weaknesses %}
+        <div class="ri"><div class="dh"></div><span>{{ item }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ ЧАСТЬ II: ФИЗИОГНОМИКА ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Часть вторая</div>
+  <div class="chap-title-big">Физиогномика</div>
+  <div class="chap-num">II</div>
+</div>
+
+<div class="page">
+  <div class="card">
+    <div class="card-lbl">Форма лица и ключевые черты</div>
+    <p class="q">{{ blocks.physiognomy.form_quote }}</p>
+    <div class="g2" style="margin-bottom:1rem;">
+      <div class="mc"><div class="ml">Лоб</div><div class="mv">{{ blocks.physiognomy.features.forehead.label }}</div><div class="md">{{ blocks.physiognomy.features.forehead.desc }}</div></div>
+      <div class="mc"><div class="ml">Глаза</div><div class="mv">{{ blocks.physiognomy.features.eyes.label }}</div><div class="md">{{ blocks.physiognomy.features.eyes.desc }}</div></div>
+      <div class="mc"><div class="ml">Нос</div><div class="mv">{{ blocks.physiognomy.features.nose.label }}</div><div class="md">{{ blocks.physiognomy.features.nose.desc }}</div></div>
+      <div class="mc"><div class="ml">Рот / губы</div><div class="mv">{{ blocks.physiognomy.features.lips.label }}</div><div class="md">{{ blocks.physiognomy.features.lips.desc }}</div></div>
+    </div>
+    <div class="bt">
+      {% for obs in blocks.physiognomy.form_observations %}
+      <div class="ri"><div class="d"></div><span>{{ obs }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Три зоны лица · Китайская физиогномика</div>
+    <div class="g3">
+      <div class="mc"><div class="ml">Верхняя треть · Лоб</div><div class="mv" style="font-size:15px;">До 30 лет</div><div class="md">{{ blocks.physiognomy.three_zones.upper }}</div></div>
+      <div class="mc"><div class="ml">Средняя треть · Нос</div><div class="mv" style="font-size:15px;">30–50 лет</div><div class="md">{{ blocks.physiognomy.three_zones.middle }}</div></div>
+      <div class="mc"><div class="ml">Нижняя треть · Подбородок</div><div class="mv" style="font-size:15px;">После 50</div><div class="md">{{ blocks.physiognomy.three_zones.lower }}</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ ЧАСТЬ III: НУМЕРОЛОГИЯ ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Часть третья</div>
+  <div class="chap-title-big">Нумерология</div>
+  <div class="chap-num">III</div>
+</div>
+
+<div class="page">
+  <div class="card">
+    <div class="card-lbl">Ключевые числа · Точный расчёт {{ data.user.birthdate }}</div>
+    <div class="g3">
+      <div class="nc"><div class="nc-big">{{ data.numerology.life_path }}</div><div class="nc-lbl">Число жизненного пути</div><div class="nc-name">{{ data.numerology.life_path_archetype.name }}</div></div>
+      <div class="nc"><div class="nc-big">{{ data.numerology.day.day }}</div><div class="nc-lbl">День рождения</div><div class="nc-name">→ {{ data.numerology.day.reduced }}</div></div>
+      <div class="nc"><div class="nc-big">{{ data.numerology.personal_year.number }}</div><div class="nc-lbl">Личный год {{ data.numerology.personal_year.year }}</div><div class="nc-name">Текущий цикл</div></div>
+    </div>
+    <div class="formula">{{ data.numerology.formula.life_path }} &nbsp;·&nbsp; День: {{ data.numerology.formula.day }}</div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Число жизненного пути — {{ data.numerology.life_path }} «{{ data.numerology.life_path_archetype.name }}»</div>
+    <p class="q">{{ blocks.numerology.life_path_quote }}</p>
+    <div class="bt">
+      {% for item in blocks.numerology.life_path_points %}
+      <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+      {% endfor %}
+    </div>
+    <div class="tags">
+      {% for tag in blocks.numerology.life_path_tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">День рождения — {{ data.numerology.day.day }}</div>
+    <div class="bt">
+      {% for item in blocks.numerology.day_points %}
+      <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Периоды жизни · Пинакли</div>
+    <div class="g4" style="margin-bottom:1rem;">
+      {% for p in data.numerology.pinnacles %}
+      <div class="pc">
+        <div class="p-n">{{ p.number }}</div>
+        <div class="p-age">{% if p.age_end %}{{ p.age_start }}–{{ p.age_end }} лет{% else %}после {{ p.age_start }}{% endif %}</div>
+        <div class="p-d">{{ blocks.numerology.pinnacles_descriptions[loop.index0] }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="bt">{{ blocks.numerology.pinnacles_summary }}</p>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Личный год {{ data.numerology.personal_year.year }}</div>
+    <div class="formula" style="margin-bottom:1rem;">{{ data.numerology.personal_year.meaning }}</div>
+    <div class="bt">
+      {% for item in blocks.numerology.personal_year_points %}
+      <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+      {% endfor %}
+    </div>
+    <div class="tags">
+      {% for tag in blocks.numerology.personal_year_tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ ЧАСТЬ IV: МАТРИЦА СУДЬБЫ ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Часть четвёртая</div>
+  <div class="chap-title-big">Матрица судьбы</div>
+  <div class="chap-num">IV</div>
+</div>
+
+<div class="page">
+  <p class="q" style="margin-bottom:1.5rem;">{{ blocks.matrix.intro_quote }}</p>
+
+  <div class="card">
+    <div class="card-lbl">Архетипы по 22 арканам Таро · {{ data.user.birthdate }}</div>
+    <div class="g2" style="margin-bottom:0.75rem;">
+      <div class="mxc"><div class="mx-num">{{ data.matrix.personality.number }}</div><div class="mx-lbl">Личность · центр</div><div class="mx-arc">{{ data.matrix.personality.name }}</div><div class="mx-desc">{{ blocks.matrix.positions.personality }}</div></div>
+      <div class="mxc"><div class="mx-num">{{ data.matrix.realization.number }}</div><div class="mx-lbl">Реализация</div><div class="mx-arc">{{ data.matrix.realization.name }}</div><div class="mx-desc">{{ blocks.matrix.positions.realization }}</div></div>
+      <div class="mxc"><div class="mx-num">{{ data.matrix.destiny.number }}</div><div class="mx-lbl">Предназначение</div><div class="mx-arc">{{ data.matrix.destiny.name }}</div><div class="mx-desc">{{ blocks.matrix.positions.destiny }}</div></div>
+      <div class="mxc"><div class="mx-num">{{ data.matrix.karma_rod.number }}</div><div class="mx-lbl">Карма рода</div><div class="mx-arc">{{ data.matrix.karma_rod.name }}</div><div class="mx-desc">{{ blocks.matrix.positions.karma_rod }}</div></div>
+      <div class="mxc"><div class="mx-num">{{ data.matrix.family_program.number }}</div><div class="mx-lbl">Родовая программа</div><div class="mx-arc">{{ data.matrix.family_program.name }}</div><div class="mx-desc">{{ blocks.matrix.positions.family_program }}</div></div>
+      <div class="mxc"><div class="mx-num">{{ data.matrix.challenge.number }}</div><div class="mx-lbl">Главное испытание</div><div class="mx-arc">{{ data.matrix.challenge.name }}</div><div class="mx-desc">{{ blocks.matrix.positions.challenge }}</div></div>
+    </div>
+    <div class="bt">
+      {% for ins in blocks.matrix.key_insights %}
+      <div class="ri"><div class="d"></div><span>{{ ins }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ ЧАСТЬ V: ГЛУБИННЫЙ АНАЛИЗ ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Часть пятая</div>
+  <div class="chap-title-big">Глубинный анализ</div>
+  <div class="chap-num">V</div>
+</div>
+
+<div class="page">
+
+  <!-- БЛОК 1: Портрет -->
+  <div class="sec-hdr">
+    <div class="sec-n">5.1</div>
+    <div class="sec-info">
+      <div class="sec-eyebrow">Блок первый</div>
+      <div class="sec-title">Полный портрет личности</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="q">{{ blocks.deep_portrait.block_1_personality.quote }}</p>
+    <div class="bt">
+      {% for item in blocks.deep_portrait.block_1_personality.points %}
+      <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- БЛОК 3: Периоды -->
+  <div class="sec-hdr">
+    <div class="sec-n">5.2</div>
+    <div class="sec-info">
+      <div class="sec-eyebrow">Блок второй</div>
+      <div class="sec-title">Ключевые периоды жизни</div>
+    </div>
+  </div>
+
+  <div class="card">
+    {% for y in blocks.deep_portrait.block_3_periods.years %}
+    <div class="yr">
+      <div><div class="yr-n">{{ y.year }}</div><div class="yr-age">{{ y.age }}</div></div>
+      <div style="flex:1;"><div class="yr-title">{{ y.title }}</div><div class="yr-desc">{{ y.desc }}</div></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="g3">
+    {% for c in blocks.deep_portrait.block_3_periods.summary_cells %}
+    <div class="mc"><div class="ml">{{ c.label }}</div><div class="mv">{{ c.value }}</div><div class="md">{{ c.desc }}</div></div>
+    {% endfor %}
+  </div>
+
+  <hr>
+
+  <!-- БЛОК 4: Ошибка -->
+  <div class="sec-hdr">
+    <div class="sec-n">5.3</div>
+    <div class="sec-info">
+      <div class="sec-eyebrow">Блок третий</div>
+      <div class="sec-title">Ошибка, которая тормозит жизнь</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="q">{{ blocks.deep_portrait.block_4_mistake.quote }}</p>
+    <div class="bt">
+      {% for item in blocks.deep_portrait.block_4_mistake.points %}
+      <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+      {% endfor %}
+    </div>
+    <div class="final-line">{{ blocks.deep_portrait.block_4_mistake.final_line }}</div>
+  </div>
+
+  <hr>
+
+  <!-- БЛОК 5: Отношения -->
+  <div class="sec-hdr">
+    <div class="sec-n">5.4</div>
+    <div class="sec-info">
+      <div class="sec-eyebrow">Блок четвёртый</div>
+      <div class="sec-title">Сценарий в отношениях</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="q">{{ blocks.deep_portrait.block_5_relationships.quote }}</p>
+    <div class="bt">
+      {% for item in blocks.deep_portrait.block_5_relationships.points %}
+      <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- БЛОК 6: Сценарии -->
+  <div class="sec-hdr">
+    <div class="sec-n">5.5</div>
+    <div class="sec-info">
+      <div class="sec-eyebrow">Блок пятый</div>
+      <div class="sec-title">Жизненные сценарии</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Четыре механизма</div>
+    <div class="g2" style="margin-bottom:1rem;">
+      <div class="mc"><div class="ml">Деньги</div><div class="mv">{{ blocks.deep_portrait.block_6_scenarios.money.title }}</div><div class="md">{{ blocks.deep_portrait.block_6_scenarios.money.desc }}</div></div>
+      <div class="mc"><div class="ml">Карьера</div><div class="mv">{{ blocks.deep_portrait.block_6_scenarios.career.title }}</div><div class="md">{{ blocks.deep_portrait.block_6_scenarios.career.desc }}</div></div>
+      <div class="mc"><div class="ml">Любовь</div><div class="mv">{{ blocks.deep_portrait.block_6_scenarios.love.title }}</div><div class="md">{{ blocks.deep_portrait.block_6_scenarios.love.desc }}</div></div>
+      <div class="mc"><div class="ml">Паттерн</div><div class="mv">{{ blocks.deep_portrait.block_6_scenarios.pattern.title }}</div><div class="md">{{ blocks.deep_portrait.block_6_scenarios.pattern.desc }}</div></div>
+    </div>
+    <p class="bt">{{ blocks.deep_portrait.block_6_scenarios.summary }}</p>
+  </div>
+
+  <hr>
+
+  <!-- БЛОК 7: Карма -->
+  <div class="sec-hdr">
+    <div class="sec-n">5.6</div>
+    <div class="sec-info">
+      <div class="sec-eyebrow">Блок шестой</div>
+      <div class="sec-title">Кармический урок</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="text-align:center;padding:1.25rem 0 1rem;margin-bottom:1rem;border-bottom:0.5px solid var(--border);">
+      <div class="ml" style="margin-bottom:0.4rem;">Урок</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:300;color:var(--black);">{{ blocks.deep_portrait.block_7_karma_lesson.name }}</div>
+    </div>
+    <div class="bt">
+      {% for item in blocks.deep_portrait.block_7_karma_lesson.points %}
+      <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- БЛОК 8: Талант -->
+  <div class="sec-hdr">
+    <div class="sec-n">5.7</div>
+    <div class="sec-info">
+      <div class="sec-eyebrow">Блок седьмой</div>
+      <div class="sec-title">Скрытый талант</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="q">{{ blocks.deep_portrait.block_8_hidden_talent.quote }}</p>
+    <div class="bt">
+      {% for item in blocks.deep_portrait.block_8_hidden_talent.points %}
+      <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+      {% endfor %}
+    </div>
+    <div class="final-line">{{ blocks.deep_portrait.block_8_hidden_talent.final_line }}</div>
+  </div>
+
+  <hr>
+
+  <!-- БЛОК 9: Правда -->
+  <div class="sec-hdr">
+    <div class="sec-n">5.8</div>
+    <div class="sec-info">
+      <div class="sec-eyebrow">Блок восьмой</div>
+      <div class="sec-title">Скрытая правда</div>
+    </div>
+  </div>
+
+  <div class="dark-card">
+    <div class="card-lbl">Самый личный блок</div>
+    <p class="q">{{ blocks.deep_portrait.block_9_hidden_truth.quote }}</p>
+    <div class="bt">
+      {% for item in blocks.deep_portrait.block_9_hidden_truth.points %}
+      <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+      {% endfor %}
+    </div>
+    <div class="final-line">{{ blocks.deep_portrait.block_9_hidden_truth.final_line }}</div>
+  </div>
+</div>
+
+
+<!-- ═══ ИТОГ ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Итог</div>
+  <div class="chap-title-big">Сводный портрет</div>
+  <div class="chap-num">∑</div>
+</div>
+
+<div class="page">
+  <div class="sum-card">
+    <div class="card-lbl">Все системы · Единый нарратив</div>
+    <p class="q">{{ blocks.summary.quote }}</p>
+    <div class="bt">
+      {% for item in blocks.summary.points %}
+      <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+      {% endfor %}
+    </div>
+    <div class="tags">
+      {% for tag in blocks.summary.tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  Персональный отчёт · {{ data.user.birthdate }}<br>
+  Внешность · Физиогномика · Нумерология · Матрица судьбы · Глубинный анализ личности<br>
+  Анализ носит интерпретационный характер. Эзотерика — язык символов, не детерминизм.
+</div>
+
+</body>
+</html>

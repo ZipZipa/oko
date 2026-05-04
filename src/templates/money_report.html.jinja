@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Денежный портрет · {{ data.user.name }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --black: #111110;
+  --g900: #2C2C2A;
+  --g700: #5F5E5A;
+  --g500: #888780;
+  --g300: #D3D1C7;
+  --g100: #F1EFE8;
+  --white: #FAFAF8;
+  --gold: #B89968;
+  --border: rgba(0,0,0,0.09);
+  --border-md: rgba(0,0,0,0.15);
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+}
+html { font-size: 16px; scroll-behavior: smooth; }
+body { font-family: 'Jost', sans-serif; font-weight: 300; background: var(--white); color: var(--g900); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+/* COVER */
+.cover { min-height: 100vh; padding: 4rem; display: flex; flex-direction: column; justify-content: space-between; border-bottom: 0.5px solid var(--border); }
+.cover-meta { display: flex; justify-content: space-between; font-size: 11px; letter-spacing: 0.12em; color: var(--g500); }
+.cover-center { text-align: center; padding: 4rem 0 3rem; }
+.cover-eyebrow { font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--g500); margin-bottom: 1.5rem; }
+.cover-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(48px, 8vw, 92px); font-weight: 300; line-height: 1.05; letter-spacing: -0.01em; color: var(--black); }
+.cover-sub { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--g500); margin-top: 1.5rem; }
+.cover-keys { display: flex; justify-content: center; gap: 4rem; margin-top: 3rem; padding-top: 3rem; border-top: 0.5px solid var(--border); }
+.key-item { text-align: center; }
+.key-item .label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--g500); margin-bottom: 0.4rem; }
+.key-item .value { font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 300; color: var(--black); line-height: 1; }
+.key-item .desc { font-size: 11px; color: var(--g700); margin-top: 0.4rem; letter-spacing: 0.05em; }
+.cover-toc { display: flex; justify-content: space-between; align-items: flex-end; font-size: 10px; color: var(--g500); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 3rem; }
+.toc-items { display: flex; flex-wrap: wrap; gap: 1rem 1.75rem; }
+
+/* CHAPTER */
+.chapter-divider { padding: 3rem 4rem 1.5rem; border-top: 0.5px solid var(--border); position: relative; overflow: hidden; }
+.chap-eyebrow { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--g500); margin-bottom: 0.4rem; }
+.chap-title-big { font-family: 'Cormorant Garamond', serif; font-size: clamp(34px, 5vw, 52px); font-weight: 300; color: var(--black); letter-spacing: 0.01em; }
+.chap-num { font-family: 'Cormorant Garamond', serif; font-size: 120px; font-weight: 300; color: var(--g100); line-height: 1; position: absolute; right: 4rem; top: 50%; transform: translateY(-50%); pointer-events: none; }
+
+/* PAGE */
+.page { max-width: 920px; margin: 0 auto; padding: 3rem 4rem 4rem; }
+
+/* CARDS */
+.card { background: #fff; border: 0.5px solid var(--border); border-radius: var(--r-lg); padding: 1.4rem 1.75rem; margin-bottom: 1rem; }
+.card-lbl { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--g500); margin-bottom: 1rem; padding-bottom: 0.7rem; border-bottom: 0.5px solid var(--border); }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-bottom: 0.9rem; }
+.g3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.75rem; margin-bottom: 0.9rem; }
+.mc { background: var(--g100); border-radius: var(--r-sm); padding: 0.95rem 1.05rem; }
+.ml { font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--g500); margin-bottom: 0.4rem; }
+.mv { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 400; color: var(--black); margin-bottom: 0.3rem; }
+.md { font-size: 12px; color: var(--g700); line-height: 1.55; }
+
+/* BIG NUMBER DISPLAY */
+.big-num-card { background: var(--g100); border-radius: var(--r-lg); padding: 2rem; text-align: center; margin-bottom: 1rem; }
+.big-num-label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--g500); margin-bottom: 0.8rem; }
+.big-num { font-family: 'Cormorant Garamond', serif; font-size: 96px; font-weight: 300; color: var(--black); line-height: 1; }
+.big-num-meta { font-size: 12px; color: var(--g700); margin-top: 0.6rem; }
+
+/* TEXT */
+.q { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 17px; color: var(--g700); line-height: 1.65; margin-bottom: 1.1rem; padding-left: 1.1rem; border-left: 1px solid var(--g300); }
+.bt { font-size: 13px; color: var(--g700); line-height: 1.7; }
+.ri { display: flex; gap: 0.65rem; margin-bottom: 0.6rem; align-items: flex-start; }
+.d { width: 4px; height: 4px; border-radius: 50%; background: var(--g500); margin-top: 7px; flex-shrink: 0; }
+.dh { width: 4px; height: 4px; border-radius: 50%; border: 1px solid var(--g500); margin-top: 7px; flex-shrink: 0; }
+.hl { color: var(--black); font-weight: 400; }
+
+/* FORECAST YEAR */
+.year-row { display: flex; gap: 1.25rem; padding: 1rem 0; border-bottom: 0.5px solid var(--border); align-items: flex-start; }
+.year-row:last-child { border-bottom: none; }
+.year-num-block { min-width: 100px; }
+.year-num { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 300; color: var(--black); line-height: 1; }
+.year-py { font-size: 10px; color: var(--g500); letter-spacing: 0.1em; margin-top: 4px; }
+.year-tone { font-family: 'Cormorant Garamond', serif; font-size: 16px; color: var(--gold); font-style: italic; margin-bottom: 0.4rem; }
+.year-desc { font-size: 12px; color: var(--g700); line-height: 1.55; }
+
+/* DARK CARD */
+.dark-card { background: var(--black); color: var(--white); border-radius: var(--r-lg); padding: 2rem 2.25rem; margin-bottom: 0.9rem; }
+.dark-card .q { color: rgba(255,255,255,0.65); border-left-color: rgba(255,255,255,0.18); }
+.dark-card .bt { color: rgba(255,255,255,0.6); }
+.dark-card .hl { color: #fff; }
+.dark-card .d { background: rgba(255,255,255,0.35); }
+.dark-card .card-lbl { color: rgba(255,255,255,0.4); border-color: rgba(255,255,255,0.12); }
+
+/* FINAL LINE */
+.final-line { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 300; font-style: italic; color: var(--black); line-height: 1.6; margin-top: 1rem; padding: 1rem 1.25rem; border: 0.5px solid var(--border-md); border-radius: var(--r-md); }
+.dark-card .final-line { border-color: rgba(255,255,255,0.14); color: rgba(255,255,255,0.85); }
+
+/* HR */
+hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
+
+/* FOOTER */
+.footer { text-align: center; padding: 3rem 4rem; border-top: 0.5px solid var(--border); font-size: 11px; color: var(--g500); letter-spacing: 0.07em; line-height: 2.2; }
+
+@media print {
+  .cover { page-break-after: always; min-height: auto; }
+  .page { page-break-inside: avoid; }
+}
+
+@media (max-width: 680px) {
+  .cover { padding: 2.5rem 1.5rem; }
+  .cover-keys { flex-direction: column; gap: 1.5rem; padding-top: 2rem; margin-top: 2rem; }
+  .page { padding: 2rem 1.5rem 3rem; }
+  .chapter-divider { padding: 2rem 1.5rem 1rem; }
+  .g2, .g3 { grid-template-columns: 1fr; }
+  .cover-toc { flex-direction: column; gap: 1rem; }
+  .chap-num { display: none; }
+  .year-row { flex-direction: column; gap: 0.4rem; }
+  .year-num-block { min-width: 0; }
+  .big-num { font-size: 64px; }
+}
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-meta">
+    <span>Денежный портрет</span>
+    <span>{{ data.user.birthdate }}</span>
+  </div>
+  <div class="cover-center">
+    <div class="cover-eyebrow">Глубинный финансовый анализ</div>
+    <div class="cover-title">Деньги<br>и&nbsp;ты</div>
+    <div class="cover-sub">Архетип · Код · Потолок · Стратегия · Прогноз</div>
+
+    <div class="cover-keys">
+      <div class="key-item">
+        <div class="label">Архетип</div>
+        <div class="value">{{ data.money.archetype.type }}</div>
+        <div class="desc">Число пути {{ data.numerology.life_path }}</div>
+      </div>
+      <div class="key-item">
+        <div class="label">Денежный код</div>
+        <div class="value">{{ data.money.code.number }}</div>
+        <div class="desc">{{ data.money.code.formula }}</div>
+      </div>
+      <div class="key-item">
+        <div class="label">Личный год {{ data.numerology.personal_year.year }}</div>
+        <div class="value">{{ data.numerology.personal_year.number }}</div>
+        <div class="desc">Текущая фаза цикла</div>
+      </div>
+    </div>
+  </div>
+  <div class="cover-toc">
+    <div class="toc-items">
+      <span>I · Полный разбор</span>
+      <span>II · По ладони</span>
+      <span>III · Главная причина проблем</span>
+      <span>IV · Денежный код</span>
+      <span>V · Потолок</span>
+      <span>VI · Стратегия</span>
+      <span>VII · Прогноз</span>
+      <span>VIII · Денежная сфера</span>
+      <span>IX · Якорь</span>
+      <span>X · Смена работы</span>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ I: ОБЗОР ═══ -->
+<div class="chapter-divider">
+  <div class="chap-eyebrow">Часть первая</div>
+  <div class="chap-title-big">Полный денежный разбор</div>
+  <div class="chap-num">I</div>
+</div>
+
+<div class="page">
+  <div class="card">
+    <p class="q">{{ blocks.overview.verdict_quote }}</p>
+    <div class="bt">{{ blocks.overview.summary }}</div>
+  </div>
+
+  <div class="g2">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Потенциал благосостояния</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--black);margin-bottom:0.5rem;">{{ blocks.overview.wealth_potential | capitalize }}</div>
+      <div class="bt">Архетип «{{ data.money.archetype.type }}» — {{ data.money.archetype.earning_style }}.</div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Отношения с деньгами</div>
+      <div class="bt">{{ blocks.overview.money_relationship }}</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Естественные сильные стороны и блоки</div>
+    <div class="g2">
+      <div class="mc">
+        <div class="ml">Сила</div>
+        <div class="bt">{{ data.money.archetype.natural_strength | capitalize }}</div>
+      </div>
+      <div class="mc">
+        <div class="ml">Блок</div>
+        <div class="bt">{{ data.money.archetype.typical_block | capitalize }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ II: ХИРОМАНТИЯ ═══ -->
+<div class="chapter-divider">
+  <div class="chap-eyebrow">Часть вторая</div>
+  <div class="chap-title-big">Деньги по ладони</div>
+  <div class="chap-num">II</div>
+</div>
+
+<div class="page">
+  <div class="card">
+    <p class="q">{{ blocks.palmistry_money.intro_quote }}</p>
+    <div class="card-lbl">Тип руки</div>
+    <div class="bt" style="margin-bottom:1rem;">{{ blocks.palmistry_money.hand_pattern }}</div>
+    <div class="card-lbl">Денежная хватка</div>
+    <div class="bt">{{ blocks.palmistry_money.money_grip }}</div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Ключевые знаки</div>
+    <div class="bt">
+      {% for sign in blocks.palmistry_money.key_signs %}
+      <div class="ri"><div class="d"></div><span>{{ sign }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ III: ГЛАВНАЯ ПРИЧИНА ПРОБЛЕМ ═══ -->
+<div class="chapter-divider">
+  <div class="chap-eyebrow">Часть третья</div>
+  <div class="chap-title-big">Главная причина финансовых проблем</div>
+  <div class="chap-num">III</div>
+</div>
+
+<div class="page">
+  <div class="card">
+    <p class="q">{{ blocks.main_problem.intro_quote }}</p>
+    <div style="text-align:center;padding:1.5rem 0 1rem;margin-bottom:1rem;border-bottom:0.5px solid var(--border);">
+      <div class="ml" style="margin-bottom:0.5rem;">Имя паттерна</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300;color:var(--black);">{{ blocks.main_problem.name }}</div>
+    </div>
+    <div class="bt">
+      {% for item in blocks.main_problem.points %}
+      <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Корень</div>
+      <div class="bt">{{ blocks.main_problem.root_cause }}</div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Где проявляется</div>
+      <div class="bt">{{ blocks.main_problem.manifestations }}</div>
+    </div>
+  </div>
+
+  <div class="final-line">{{ blocks.main_problem.final_line }}</div>
+</div>
+
+
+<!-- ═══ IV: ДЕНЕЖНЫЙ КОД ═══ -->
+<div class="chapter-divider">
+  <div class="chap-eyebrow">Часть четвёртая</div>
+  <div class="chap-title-big">Денежный код</div>
+  <div class="chap-num">IV</div>
+</div>
+
+<div class="page">
+  <div class="big-num-card">
+    <div class="big-num-label">Твой денежный код</div>
+    <div class="big-num">{{ data.money.code.number }}</div>
+    <div class="big-num-meta">{{ data.money.code.formula }}</div>
+  </div>
+
+  <div class="card">
+    <p class="q">{{ blocks.money_code.intro_quote }}</p>
+    <div class="card-lbl">Суть кода</div>
+    <div class="bt" style="margin-bottom:1rem;">{{ blocks.money_code.code_essence }}</div>
+    <div class="card-lbl">Как работает</div>
+    <div class="bt">{{ blocks.money_code.how_it_works }}</div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Что блокирует код</div>
+    <div class="bt">
+      {% for item in blocks.money_code.blockers %}
+      <div class="ri"><div class="dh"></div><span>{{ item }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ V: ПОТОЛОК ═══ -->
+<div class="chapter-divider">
+  <div class="chap-eyebrow">Часть пятая</div>
+  <div class="chap-title-big">Твой денежный потолок</div>
+  <div class="chap-num">V</div>
+</div>
+
+<div class="page">
+  <div class="card">
+    <p class="q">{{ blocks.ceiling.intro_quote }}</p>
+    <div class="card-lbl">Текущий уровень</div>
+    <div class="bt" style="margin-bottom:1rem;">{{ blocks.ceiling.current_level }}</div>
+    <div class="card-lbl">Естественная зона</div>
+    <div class="bt">{{ blocks.ceiling.natural_zone }}</div>
+  </div>
+
+  <div class="g2">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Что поднимет потолок</div>
+      <div class="bt">
+        {% for item in blocks.ceiling.what_lifts_it %}
+        <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Что удерживает внизу</div>
+      <div class="bt">
+        {% for item in blocks.ceiling.what_keeps_low %}
+        <div class="ri"><div class="dh"></div><span>{{ item }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="final-line">{{ blocks.ceiling.final_line }}</div>
+</div>
+
+
+<!-- ═══ VI: СТРАТЕГИЯ ═══ -->
+<div class="chapter-divider">
+  <div class="chap-eyebrow">Часть шестая</div>
+  <div class="chap-title-big">Стратегия заработка</div>
+  <div class="chap-num">VI</div>
+</div>
+
+<div class="page">
+  <div class="card">
+    <p class="q">{{ blocks.earning_strategy.intro_quote }}</p>
+    <div class="card-lbl">Природный путь</div>
+    <div class="bt">{{ blocks.earning_strategy.natural_path }}</div>
+  </div>
+
+  <div class="g2">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Делай больше</div>
+      <div class="bt">
+        {% for item in blocks.earning_strategy.do_more %}
+        <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Перестань</div>
+      <div class="bt">
+        {% for item in blocks.earning_strategy.stop_doing %}
+        <div class="ri"><div class="dh"></div><span>{{ item }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Лучшие сферы для тебя</div>
+    <div class="bt">
+      {% for field in blocks.earning_strategy.best_fields %}
+      <div class="ri"><div class="d"></div><span>{{ field }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ VII: ПРОГНОЗ ═══ -->
+<div class="chapter-divider">
+  <div class="chap-eyebrow">Часть седьмая</div>
+  <div class="chap-title-big">Финансовый прогноз</div>
+  <div class="chap-num">VII</div>
+</div>
+
+<div class="page">
+  <p class="q" style="margin-bottom:1.5rem;">{{ blocks.forecast.intro_quote }}</p>
+
+  <div class="card">
+    {% for y in blocks.forecast.years %}
+    <div class="year-row">
+      <div class="year-num-block">
+        <div class="year-num">{{ y.year }}</div>
+        <div class="year-py">Личный год {{ y.personal_year }}</div>
+      </div>
+      <div style="flex:1;">
+        <div class="year-tone">{{ y.tone | capitalize }}</div>
+        <div class="year-desc">{{ y.desc }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+
+<!-- ═══ VIII: ДЕНЕЖНАЯ СФЕРА ═══ -->
+<div class="chapter-divider">
+  <div class="chap-eyebrow">Часть восьмая</div>
+  <div class="chap-title-big">Твоя денежная сфера</div>
+  <div class="chap-num">VIII</div>
+</div>
+
+<div class="page">
+  <div class="card">
+    <p class="q">{{ blocks.money_sphere.intro_quote }}</p>
+    <div style="text-align:center;padding:1.5rem 0 1rem;margin-bottom:1rem;border-bottom:0.5px solid var(--border);">
+      <div class="ml" style="margin-bottom:0.5rem;">Тип энергии</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:300;color:var(--black);">{{ blocks.money_sphere.energy_type | capitalize }}</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Что притягивает деньги</div>
+      <div class="bt">
+        {% for item in blocks.money_sphere.what_attracts %}
+        <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Что отталкивает</div>
+      <div class="bt">
+        {% for item in blocks.money_sphere.what_repels %}
+        <div class="ri"><div class="dh"></div><span>{{ item }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Ритм денежных приходов</div>
+    <div class="bt">{{ blocks.money_sphere.ritual_pattern }}</div>
+  </div>
+</div>
+
+
+<!-- ═══ IX: ЯКОРЬ ═══ -->
+<div class="chapter-divider">
+  <div class="chap-eyebrow">Часть девятая</div>
+  <div class="chap-title-big">Финансовый якорь</div>
+  <div class="chap-num">IX</div>
+</div>
+
+<div class="page">
+  <div class="dark-card">
+    <div class="card-lbl">Что удерживает от заработка</div>
+    <p class="q">{{ blocks.anchor.intro_quote }}</p>
+    <div style="text-align:center;padding:1rem 0;margin-bottom:1rem;border-bottom:0.5px solid rgba(255,255,255,0.12);">
+      <div class="ml" style="margin-bottom:0.5rem;color:rgba(255,255,255,0.4);">Имя якоря</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300;color:#fff;">{{ blocks.anchor.name }}</div>
+    </div>
+    <div class="card-lbl">Откуда взялся</div>
+    <div class="bt" style="margin-bottom:1rem;">{{ blocks.anchor.origin }}</div>
+    <div class="card-lbl">Как блокирует</div>
+    <div class="bt">{{ blocks.anchor.how_it_blocks }}</div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Что растворяет якорь</div>
+    <div class="bt">
+      {% for item in blocks.anchor.what_dissolves_it %}
+      <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="final-line">{{ blocks.anchor.final_line }}</div>
+</div>
+
+
+<!-- ═══ X: СМЕНА РАБОТЫ ═══ -->
+<div class="chapter-divider">
+  <div class="chap-eyebrow">Часть десятая</div>
+  <div class="chap-title-big">Лучший момент для смены работы</div>
+  <div class="chap-num">X</div>
+</div>
+
+<div class="page">
+  <div class="card">
+    <p class="q">{{ blocks.career_change.intro_quote }}</p>
+    <div class="card-lbl">Текущая фаза</div>
+    <div class="bt" style="margin-bottom:1rem;">{{ blocks.career_change.current_phase }}</div>
+    <div class="card-lbl">Окно возможностей</div>
+    <div class="bt">{{ blocks.career_change.best_window }}</div>
+  </div>
+
+  <div class="g2">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Когда не стоит менять</div>
+      <div class="bt">
+        {% for item in blocks.career_change.warning_periods %}
+        <div class="ri"><div class="dh"></div><span>{{ item }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Сигналы к действию</div>
+      <div class="bt">
+        {% for item in blocks.career_change.signs_to_act %}
+        <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="footer">
+  Денежный портрет · {{ data.user.name }} · {{ data.user.birthdate }}<br>
+  Полный разбор · Хиромантия · Главная причина · Денежный код · Потолок · Стратегия · Прогноз · Сфера · Якорь · Смена работы<br>
+  Анализ носит интерпретационный характер. Не является инвестиционной рекомендацией.
+</div>
+
+</body>
+</html>
