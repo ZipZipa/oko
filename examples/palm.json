@@ -1,0 +1,105 @@
+{
+  "proportions": {
+    "palm_width_to_height": 0.914,
+    "handedness": "Right",
+    "palm_shape": "прямоугольная, сбалансированная",
+    "dominant_finger": "thumb",
+    "finger_ratios": {
+      "index_to_ring_2D4D": 1.003,
+      "index_to_middle": 0.926,
+      "ring_to_middle": 0.924,
+      "pinky_to_ring": 0.941,
+      "thumb_to_index": 1.209
+    },
+    "finger_lengths": {
+      "thumb": 1.089,
+      "index": 0.901,
+      "middle": 0.973,
+      "ring": 0.899,
+      "pinky": 0.846
+    },
+    "finger_angles": {
+      "thumb_angle": 41.8,
+      "index_pip": 177.6,
+      "middle_pip": 178.7,
+      "ring_pip": 174.1,
+      "pinky_pip": 173.2
+    },
+    "finger_curvature": {
+      "thumb": 0.0055,
+      "index": 0.0073,
+      "middle": 0.0043,
+      "ring": 0.0186,
+      "pinky": 0.021
+    },
+    "finger_spread": {
+      "index_middle": 0.651,
+      "middle_ring": 0.436,
+      "ring_pinky": 0.976,
+      "avg_spread_to_palm": 0.687
+    },
+    "details": {
+      "palm": {
+        "width": 0.3087,
+        "height": 0.3376,
+        "width_to_height": 0.914
+      },
+      "fingers_raw": {
+        "thumb_length": 0.3678,
+        "index_length": 0.3043,
+        "middle_length": 0.3286,
+        "ring_length": 0.3035,
+        "pinky_length": 0.2856
+      }
+    }
+  },
+  "lines": {
+    "heart_line": {
+      "depth": 1.0,
+      "length": "long",
+      "curvature": 0.168,
+      "branching": true,
+      "present": true
+    },
+    "head_line": {
+      "depth": 1.0,
+      "length": "long",
+      "curvature": 0.146,
+      "branching": true,
+      "present": true
+    },
+    "life_line": {
+      "depth": 0.644,
+      "length": "long",
+      "curvature": 0.193,
+      "branching": true,
+      "present": true
+    },
+    "fate_line": {
+      "depth": 1.0,
+      "length": "long",
+      "curvature": 0.056,
+      "branching": true,
+      "present": true
+    },
+    "detection_method": "gabor_ridge_combined",
+    "detection_available": true
+  },
+  "skin": {
+    "tone": {
+      "hue": 19.3,
+      "saturation": 0.345,
+      "brightness": 0.65,
+      "undertone": "нейтральный"
+    },
+    "evenness": {
+      "overall": 0.853
+    },
+    "texture": {
+      "smoothness": 0.764,
+      "roughness": 0.236
+    },
+    "segmentation_available": true,
+    "_stub": false
+  }
+}

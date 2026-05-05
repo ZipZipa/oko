@@ -1,8 +1,11 @@
 """
-CLI: анализ лица + генерация отчётов.
+CLI: анализ лица/ладони + генерация отчётов.
 
-Analyze (DeepFace + MediaPipe → JSON):
+Analyze face (DeepFace + MediaPipe → JSON):
   python -m src.cli analyze --image photo.jpg --output face.json
+
+Analyze palm (MediaPipe HandLandmarker + Gabor/Ridge → JSON):
+  python -m src.cli palm --image palm.jpg --output palm.json
 
 Self:
   python -m src.cli report self \
@@ -37,6 +40,23 @@ def cmd_analyze(args):
     print(f"Анализирую лицо: {args.image} ...")
     try:
         result = analyze_face(args.image, deepface_detector=args.detector)
+    except Exception as e:
+        print(f"Ошибка анализа: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    output_path = Path(args.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"Готово: {output_path}")
+
+
+def cmd_palm(args):
+    """Команда анализа ладони из фото."""
+    from .core.palm_analyzer import analyze_palm
+
+    print(f"Анализирую ладонь: {args.image} ...")
+    try:
+        result = analyze_palm(args.image)
     except Exception as e:
         print(f"Ошибка анализа: {e}", file=sys.stderr)
         sys.exit(1)
@@ -94,6 +114,11 @@ def main():
                            choices=["retinaface", "opencv", "ssd", "mtcnn", "skip"],
                            help="Детектор лиц для DeepFace")
 
+    # --- palm ---
+    p_palm = subparsers.add_parser("palm", help="Анализ ладони из фото (MediaPipe HandLandmarker + Gabor/Ridge)")
+    p_palm.add_argument("--image", required=True, help="Путь к фотографии ладони")
+    p_palm.add_argument("--output", default="palm_analysis.json", help="Выходной JSON")
+
     # --- report ---
     p_report = subparsers.add_parser("report", help="Генерация отчёта (self / couple / money)")
     p_report.add_argument("report_type", choices=["self", "couple", "money"],
@@ -112,6 +137,8 @@ def main():
 
     if args.command == "analyze":
         cmd_analyze(args)
+    elif args.command == "palm":
+        cmd_palm(args)
     elif args.command == "report":
         cmd_report(args)
     else:

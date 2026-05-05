@@ -9,4 +9,5 @@ deepface>=0.0.92
 mediapipe>=0.10.18
 opencv-python>=4.8.0
 numpy>=1.24.0
+scipy>=1.10.0
 tf-keras>=2.16.0

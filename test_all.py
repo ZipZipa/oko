@@ -26,18 +26,19 @@ def load(p):
 
 
 face_a = load(EXAMPLES / "sample_face_artem.json")
-face_b = load(EXAMPLES / "sample_face_alina.json")
+# face_b = load(EXAMPLES / "sample_face_alina.json")
 
 
 def test_self():
     target = build_input_only(
         "self", face_data=face_a, name="Артём", birthdate="28.01.1995", ref_year=2026,
     )
+    print(target)
     blocks = load(EXAMPLES / "self" / "reference_blocks.json")
     html = render_template(TEMPLATES, "self_report.html.jinja", target, blocks)
     out = OUTPUT / "test_self.html"
     out.write_text(html, encoding="utf-8")
-    print(f"✓ self  → {out} ({len(html):,} байт)")
+    # print(f"✓ self  → {out} ({len(html):,} байт)")
 
 
 def test_money():
@@ -83,9 +84,9 @@ def test_validators():
 
 
 if __name__ == "__main__":
-    print("=== Validators ===")
-    test_validators()
-    print("\n=== Renders ===")
+    # print("=== Validators ===")
+    # test_validators()
+    # print("\n=== Renders ===")
     test_self()
-    test_money()
-    test_couple()
+    # test_money()
+    # test_couple()
