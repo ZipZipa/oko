@@ -1,22 +1,25 @@
 """
-CLI для всех трёх типов отчётов.
+CLI: анализ лица + генерация отчётов.
+
+Analyze (DeepFace + MediaPipe → JSON):
+  python -m src.cli analyze --image photo.jpg --output face.json
 
 Self:
-  python -m src.cli self \\
-    --face examples/sample_face_artem.json \\
-    --name "Артём" --birthdate 28.01.1995 \\
+  python -m src.cli report self \
+    --face examples/sample_face_artem.json \
+    --name "Артём" --birthdate 28.01.1995 \
     --output output/self.html
 
 Money:
-  python -m src.cli money \\
-    --face examples/sample_face_artem.json \\
-    --name "Артём" --birthdate 28.01.1995 \\
+  python -m src.cli report money \
+    --face examples/sample_face_artem.json \
+    --name "Артём" --birthdate 28.01.1995 \
     --output output/money.html
 
 Couple:
-  python -m src.cli couple \\
-    --face examples/sample_face_artem.json --name "Артём" --birthdate 28.01.1995 \\
-    --face-b examples/sample_face_alina.json --name-b "Алина" --birthdate-b 14.06.1997 \\
+  python -m src.cli report couple \
+    --face examples/sample_face_artem.json --name "Артём" --birthdate 28.01.1995 \
+    --face-b examples/sample_face_alina.json --name-b "Алина" --birthdate-b 14.06.1997 \
     --output output/couple.html
 """
 import argparse
@@ -27,21 +30,25 @@ from pathlib import Path
 from .api import generate_report
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Генератор отчётов (self / couple / money)")
-    parser.add_argument("report_type", choices=["self", "couple", "money"],
-                        help="Тип отчёта")
-    parser.add_argument("--face", required=True, help="JSON лица первого человека")
-    parser.add_argument("--name", required=True)
-    parser.add_argument("--birthdate", required=True, help="ДД.ММ.ГГГГ")
-    parser.add_argument("--face-b", help="JSON лица второго (для couple)")
-    parser.add_argument("--name-b")
-    parser.add_argument("--birthdate-b")
-    parser.add_argument("--output", default="output/report.html")
-    parser.add_argument("--ref-year", type=int, default=None)
-    parser.add_argument("--model", default=None)
-    args = parser.parse_args()
+def cmd_analyze(args):
+    """Команда анализа лица из фото."""
+    from .core.face_analyzer import analyze_face
 
+    print(f"Анализирую лицо: {args.image} ...")
+    try:
+        result = analyze_face(args.image, deepface_detector=args.detector)
+    except Exception as e:
+        print(f"Ошибка анализа: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    output_path = Path(args.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"Готово: {output_path}")
+
+
+def cmd_report(args):
+    """Команда генерации отчёта."""
     with open(args.face, encoding="utf-8") as f:
         face_data = json.load(f)
 
@@ -73,6 +80,42 @@ def main():
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(html, encoding="utf-8")
     print(f"Готово: {output_path}")
+
+
+def main():
+    parser = argparse.ArgumentParser(description="OKO — анализ лица и генерация отчётов")
+    subparsers = parser.add_subparsers(dest="command")
+
+    # --- analyze ---
+    p_analyze = subparsers.add_parser("analyze", help="Анализ лица из фото (DeepFace + MediaPipe)")
+    p_analyze.add_argument("--image", required=True, help="Путь к фотографии")
+    p_analyze.add_argument("--output", default="face_analysis.json", help="Выходной JSON")
+    p_analyze.add_argument("--detector", default="retinaface",
+                           choices=["retinaface", "opencv", "ssd", "mtcnn", "skip"],
+                           help="Детектор лиц для DeepFace")
+
+    # --- report ---
+    p_report = subparsers.add_parser("report", help="Генерация отчёта (self / couple / money)")
+    p_report.add_argument("report_type", choices=["self", "couple", "money"],
+                          help="Тип отчёта")
+    p_report.add_argument("--face", required=True, help="JSON лица первого человека")
+    p_report.add_argument("--name", required=True)
+    p_report.add_argument("--birthdate", required=True, help="ДД.ММ.ГГГГ")
+    p_report.add_argument("--face-b", help="JSON лица второго (для couple)")
+    p_report.add_argument("--name-b")
+    p_report.add_argument("--birthdate-b")
+    p_report.add_argument("--output", default="output/report.html")
+    p_report.add_argument("--ref-year", type=int, default=None)
+    p_report.add_argument("--model", default=None)
+
+    args = parser.parse_args()
+
+    if args.command == "analyze":
+        cmd_analyze(args)
+    elif args.command == "report":
+        cmd_report(args)
+    else:
+        parser.print_help()
 
 
 if __name__ == "__main__":

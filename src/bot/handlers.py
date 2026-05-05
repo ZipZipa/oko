@@ -1,3 +1,6 @@
+import asyncio
+import json
+import tempfile
 from datetime import datetime
 
 from aiogram import Router, F
@@ -20,6 +23,38 @@ async def get_user(telegram_id: int) -> User | None:
         return result.scalar_one_or_none()
 
 
+async def _analyze_and_save_face(bot, file_id: str, telegram_id: int):
+    """Фоновая задача: скачивает фото, анализирует лицо, записывает face_json в БД."""
+    from src.core.face_analyzer import analyze_face
+    import os
+
+    try:
+        file = await bot.get_file(file_id)
+        if not file.file_path:
+            return
+
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
+            await bot.download_file(file.file_path, tmp.name)
+            tmp_path = tmp.name
+
+        try:
+            face_data = analyze_face(tmp_path)
+        finally:
+            os.unlink(tmp_path)
+
+        if face_data:
+            async with async_session() as session:
+                result = await session.execute(
+                    select(User).where(User.telegram_id == telegram_id)
+                )
+                user = result.scalar_one_or_none()
+                if user:
+                    user.face_json = json.dumps(face_data, ensure_ascii=False)
+                    await session.commit()
+    except Exception:
+        pass
+
+
 @router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
     user = await get_user(message.from_user.id)
@@ -28,15 +63,36 @@ async def cmd_start(message: Message, state: FSMContext):
         await state.clear()
         return
 
+    # Создаём пустую запись в БД сразу при /start
+    async with async_session() as session:
+        new_user = User(telegram_id=message.from_user.id)
+        session.add(new_user)
+        await session.commit()
+
     await message.answer("Привет! Давай познакомимся. Пришли своё фото 📷")
     await state.set_state(RegistrationStates.waiting_for_photo)
 
 
 @router.message(RegistrationStates.waiting_for_photo, F.photo)
 async def process_photo(message: Message, state: FSMContext):
-    photo: PhotoSize = message.photo[-1]  # самое большое разрешение
-    await state.update_data(photo_file_id=photo.file_id)
-    await message.answer("Отлично! Теперь напиши своё имя ✏️")
+    photo: PhotoSize = message.photo[-1]
+
+    # Сохраняем photo_file_id в БД
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.telegram_id == message.from_user.id)
+        )
+        user = result.scalar_one_or_none()
+        if user:
+            user.photo_file_id = photo.file_id
+            await session.commit()
+
+    # Запускаем анализ лица в фоне
+    asyncio.create_task(
+        _analyze_and_save_face(message.bot, photo.file_id, message.from_user.id)
+    )
+
+    await message.answer("Фото получено! 📷 Напиши своё имя ✏️")
     await state.set_state(RegistrationStates.waiting_for_name)
 
 
@@ -51,10 +107,18 @@ async def process_name(message: Message, state: FSMContext):
     if not name:
         await message.answer("Имя не может быть пустым. Попробуй ещё раз ✏️")
         return
-    await state.update_data(name=name)
-    await message.answer(
-        "Запомнил! Теперь напиши дату рождения в формате ДД.ММ.ГГГГ 🗓"
-    )
+
+    # Сохраняем имя в БД
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.telegram_id == message.from_user.id)
+        )
+        user = result.scalar_one_or_none()
+        if user:
+            user.name = name
+            await session.commit()
+
+    await message.answer("Запомнил! Теперь напиши дату рождения в формате ДД.ММ.ГГГГ 🗓")
     await state.set_state(RegistrationStates.waiting_for_birth_date)
 
 
@@ -73,22 +137,18 @@ async def process_birth_date(message: Message, state: FSMContext):
         )
         return
 
-    data = await state.get_data()
+    # Сохраняем дату рождения в БД
     async with async_session() as session:
-        user = User(
-            telegram_id=message.from_user.id,
-            name=data["name"],
-            photo_file_id=data["photo_file_id"],
-            birth_date=birth_date,
+        result = await session.execute(
+            select(User).where(User.telegram_id == message.from_user.id)
         )
-        session.add(user)
-        await session.commit()
+        user = result.scalar_one_or_none()
+        if user:
+            user.birth_date = birth_date
+            await session.commit()
 
     await state.clear()
-    await message.answer(
-        f"Рад знакомству, {data['name']}! 🎉\n"
-        "Твои данные сохранены. Добро пожаловать!"
-    )
+    await message.answer(f"Рад знакомству! 🎉 Твои данные сохранены. Добро пожаловать!")
 
 
 @router.message(RegistrationStates.waiting_for_birth_date)
