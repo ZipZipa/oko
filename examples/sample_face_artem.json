@@ -1,77 +1,180 @@
 {
   "deepface": {
-    "age": 31,
+    "age": 28,
     "gender": "Man",
     "gender_probabilities": {
-      "Woman": 0.0007152826292440295,
-      "Man": 99.99928283691406
+      "Woman": 0.0004549644363578409,
+      "Man": 99.99954986572266
     },
     "race": "latino hispanic",
     "race_probabilities": {
-      "asian": 21.303876876831055,
-      "indian": 9.713714599609375,
-      "black": 3.840583086013794,
-      "white": 15.705865859985352,
-      "middle eastern": 10.858874320983887,
-      "latino hispanic": 38.57708740234375
+      "asian": 23.496469497680664,
+      "indian": 8.518691062927246,
+      "black": 3.5516600608825684,
+      "white": 17.013742446899414,
+      "middle eastern": 9.741963386535645,
+      "latino hispanic": 37.67747497558594
     },
     "dominant_emotion": "neutral",
     "emotions": {
-      "angry": 11.634886741638184,
-      "disgust": 0.002332607749849558,
-      "fear": 0.5308530330657959,
-      "happy": 0.09768322855234146,
-      "sad": 9.929683685302734,
-      "surprise": 0.14522287249565125,
-      "neutral": 77.65933990478516
+      "angry": 7.915012359619141,
+      "disgust": 0.2716417610645294,
+      "fear": 1.7158548831939697,
+      "happy": 0.2179686725139618,
+      "sad": 13.101776123046875,
+      "surprise": 0.8677358627319336,
+      "neutral": 75.9100112915039
     }
   },
   "proportions": {
-    "face_width_to_height": 0.798,
-    "eye_distance_to_face_width": 0.627,
-    "nose_to_chin_ratio": 0.394,
-    "forehead_to_face_ratio": 0.606,
-    "mouth_width_to_face_width": 0.337,
-    "brow_width_to_eye_distance": 0.341,
+    "face_width_to_height": 0.797,
+    "eye_distance_to_face_width": 0.628,
+    "nose_to_chin_ratio": 0.393,
+    "forehead_to_face_ratio": 0.607,
+    "mouth_width_to_face_width": 0.335,
+    "brow_width_to_eye_distance": 0.338,
     "face_shape": "вытянутая",
-    "head_pose": {"yaw": 7.02, "pitch": -0.92, "roll": 0.56},
+    "blendshapes": {
+      "_neutral": 0.0,
+      "browDownLeft": 0.2553,
+      "browDownRight": 0.2441,
+      "browInnerUp": 0.0096,
+      "browOuterUpLeft": 0.0032,
+      "browOuterUpRight": 0.0032,
+      "cheekPuff": 0.0,
+      "cheekSquintLeft": 0.0,
+      "cheekSquintRight": 0.0,
+      "eyeBlinkLeft": 0.1474,
+      "eyeBlinkRight": 0.1066,
+      "eyeLookDownLeft": 0.0472,
+      "eyeLookDownRight": 0.051,
+      "eyeLookInLeft": 0.0358,
+      "eyeLookInRight": 0.097,
+      "eyeLookOutLeft": 0.1018,
+      "eyeLookOutRight": 0.0363,
+      "eyeLookUpLeft": 0.1623,
+      "eyeLookUpRight": 0.1773,
+      "eyeSquintLeft": 0.4874,
+      "eyeSquintRight": 0.3368,
+      "eyeWideLeft": 0.0042,
+      "eyeWideRight": 0.0027,
+      "jawForward": 0.0,
+      "jawLeft": 0.0009,
+      "jawOpen": 0.0241,
+      "jawRight": 0.0001,
+      "mouthClose": 0.0048,
+      "mouthDimpleLeft": 0.0216,
+      "mouthDimpleRight": 0.0132,
+      "mouthFrownLeft": 0.0001,
+      "mouthFrownRight": 0.0001,
+      "mouthFunnel": 0.0003,
+      "mouthLeft": 0.0018,
+      "mouthLowerDownLeft": 0.0003,
+      "mouthLowerDownRight": 0.0002,
+      "mouthPressLeft": 0.0689,
+      "mouthPressRight": 0.0944,
+      "mouthPucker": 0.0179,
+      "mouthRight": 0.0014,
+      "mouthRollLower": 0.2244,
+      "mouthRollUpper": 0.1208,
+      "mouthShrugLower": 0.0708,
+      "mouthShrugUpper": 0.0055,
+      "mouthSmileLeft": 0.0001,
+      "mouthSmileRight": 0.0001,
+      "mouthStretchLeft": 0.0001,
+      "mouthStretchRight": 0.001,
+      "mouthUpperUpLeft": 0.0,
+      "mouthUpperUpRight": 0.0,
+      "noseSneerLeft": 0.0,
+      "noseSneerRight": 0.0
+    },
+    "head_pose": {
+      "yaw": 6.97,
+      "pitch": -0.75,
+      "roll": 0.52
+    },
     "details": {
       "eyes": {
-        "left_eye_width_to_face": 0.197,
-        "right_eye_width_to_face": 0.198,
-        "left_eye_height_to_width": 0.367,
-        "right_eye_height_to_width": 0.355,
+        "left_eye_width_to_face": 0.196,
+        "right_eye_width_to_face": 0.196,
+        "left_eye_height_to_width": 0.366,
+        "right_eye_height_to_width": 0.351,
         "left_eye_tilt": 129.7,
-        "right_eye_tilt": 131.2,
-        "eye_spacing_to_face_width": 0.627,
-        "eye_asymmetry": 0.0041
+        "right_eye_tilt": 131.7,
+        "eye_spacing_to_face_width": 0.628,
+        "eye_asymmetry": 0.0028
       },
       "nose": {
-        "nose_width_to_face_width": 0.252,
+        "nose_width_to_face_width": 0.251,
         "nose_length_to_face_height": 0.243,
-        "nose_width_to_length": 0.827
+        "nose_width_to_length": 0.823
       },
       "lips": {
-        "mouth_width_to_face_width": 0.337,
-        "mouth_height_to_width": 0.005,
-        "lip_fullness": 0.266,
-        "upper_lip_to_lower_ratio": 0.579
+        "mouth_width_to_face_width": 0.335,
+        "mouth_height_to_width": 0.003,
+        "lip_fullness": 0.253,
+        "upper_lip_to_lower_ratio": 0.594
       },
       "brows": {
-        "left_brow_length_to_face_width": 0.303,
+        "left_brow_length_to_face_width": 0.304,
         "right_brow_length_to_face_width": 0.316,
-        "left_brow_arch_height": 0.1155,
-        "right_brow_arch_height": 0.1173,
-        "brow_asymmetry": 0.0159
+        "left_brow_arch_height": 0.113,
+        "right_brow_arch_height": 0.1159,
+        "brow_asymmetry": 0.0251
       },
       "jaw": {
-        "jaw_angle_left": 134.5,
-        "jaw_angle_right": 135.8,
-        "jaw_width_to_face_width": 0.794
+        "jaw_angle_left": 134.8,
+        "jaw_angle_right": 136.3,
+        "jaw_width_to_face_width": 0.792
       },
-      "forehead": {"forehead_height_to_face": 0.363},
-      "cheekbones": {"cheekbone_width_to_face_width": 1.0},
-      "asymmetry": {"face_asymmetry": 0.0174, "eye_asymmetry": 0.0041, "brow_asymmetry": 0.0159}
+      "forehead": {
+        "forehead_height_to_face": 0.364
+      },
+      "cheekbones": {
+        "cheekbone_width_to_face_width": 1.0
+      },
+      "asymmetry": {
+        "face_asymmetry": 0.0148,
+        "eye_asymmetry": 0.0028,
+        "brow_asymmetry": 0.0251
+      }
     }
+  },
+  "skin": {
+    "tone": {
+      "hue": 0.0,
+      "saturation": 0.0,
+      "brightness": 0.608,
+      "undertone": "нейтральный"
+    },
+    "evenness": {
+      "overall": 0.047,
+      "by_zone": {
+        "nose": 0.358,
+        "forehead": 0.257,
+        "left_cheek": 0.499,
+        "right_cheek": 0.453,
+        "chin": 0.033
+      }
+    },
+    "texture": {
+      "smoothness": 0.089,
+      "roughness": 0.911
+    },
+    "zones_area": {
+      "skin": 0.659,
+      "nose": 0.01,
+      "eye_glass": 0.01,
+      "left_eye": 0.005,
+      "right_eye": 0.005,
+      "right_brow": 0.016,
+      "left_ear": 0.004,
+      "ear_ring": 0.052,
+      "upper_lip": 0.001,
+      "mouth_interior": 0.003,
+      "lower_lip": 0.234
+    },
+    "segmentation_available": true,
+    "_stub": false
   }
 }
