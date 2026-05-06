@@ -56,7 +56,6 @@ def generate_report(
     Для self и money — нужны face_data, name, birthdate.
     Для couple — дополнительно face_data_b, name_b, birthdate_b.
     palm_data — опциональные данные ладони (только для self).
-    photo_url — опциональный URL или data URI фото пользователя (для self).
     """
     if report_type == "self":
         return self_report.generate(
