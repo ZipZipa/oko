@@ -95,6 +95,7 @@ def cmd_report(args):
         "birthdate": args.birthdate,
         "ref_year": args.ref_year,
         "model": args.model,
+        "plan": args.plan,
     }
 
     if args.report_type == "self" and args.palm:
@@ -154,6 +155,9 @@ def main():
     p_report.add_argument("--photo", default=None, help="Фото для обложки отчёта (JPG/PNG)")
     p_report.add_argument("--ref-year", type=int, default=None)
     p_report.add_argument("--model", default=None)
+    p_report.add_argument("--plan", default="full",
+                          choices=["demo", "base", "extended", "full"],
+                          help="Пакет доступа: demo | base | extended | full")
 
     args = parser.parse_args()
 

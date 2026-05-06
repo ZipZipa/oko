@@ -242,6 +242,20 @@ hr::after { content: ""; position: absolute; left: 50%; top: 50%; width: 5px; he
   .cover-stage { gap: 1.5rem; margin-top: 1.25rem; }
 }
 
+/* LOCKED BLOCK */
+.locked-wrap { position: relative; margin-bottom: 1rem; border-radius: var(--r-lg); overflow: hidden; isolation: isolate; }
+.locked-content { filter: blur(2px) saturate(0.95); pointer-events: none; user-select: none; opacity: 0.95; }
+.locked-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.85rem; padding: 1.5rem; background: radial-gradient(ellipse at center, rgba(250,250,248,0.45) 0%, rgba(250,250,248,0.78) 70%, rgba(250,250,248,0.92) 100%); text-align: center; }
+.locked-icon { width: 46px; height: 46px; border-radius: 50%; background: var(--black); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(0,0,0,0.18), 0 0 0 6px rgba(184,153,104,0.12); }
+.locked-icon svg { width: 20px; height: 20px; stroke: var(--accent-soft); fill: none; stroke-width: 1.6; }
+.locked-eyebrow { font-size: 9.5px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--accent-deep); font-variant: small-caps; }
+.locked-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--black); line-height: 1.15; max-width: 26ch; }
+.locked-pkg-name { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; color: var(--accent-deep); letter-spacing: 0.04em; margin-top: 2px; }
+@media (max-width: 680px) {
+  .locked-title { font-size: 18px; }
+  .locked-icon { width: 40px; height: 40px; }
+}
+
 /* TWEAKS PANEL */
 #tweaks-panel { display: none; position: fixed; right: 16px; bottom: 16px; z-index: 100; background: #FAFAF8; border: 0.5px solid var(--border-md); border-radius: 12px; padding: 14px 16px; box-shadow: 0 18px 50px rgba(0,0,0,0.12); width: 240px; font-family: 'Jost', sans-serif; }
 #tweaks-panel.open { display: block; }
@@ -258,6 +272,48 @@ body.no-grain::before { display: none !important; }
 </style>
 </head>
 <body>
+{#- ══ ПЛАН ДОСТУПА ══════════════════════════════════════════════════════
+    plan: demo | base | extended | full (передаётся из CLI через --plan)
+    Иерархия включения: demo ⊂ base ⊂ extended ⊂ full
+      demo     — показывает заблюренный контент с замочком
+      base     — Базовый пакет (без замочков, недоступный контент скрыт)
+      extended — Расширенный пакет
+      full     — Премиум: всё включено
+
+    Конфигурация блоков — редактируйте только locked_cfg ниже:
+      min_plan — минимальный план для просмотра блока
+      title    — заголовок в оверлее замочка (только demo-режим)
+      pkg      — название пакета в подписи оверлея
+══════════════════════════════════════════════════════════════════════ -#}
+{%- set _plan_levels = {'demo': 0, 'base': 1, 'extended': 2, 'full': 3} -%}
+{%- set _cur_level   = _plan_levels.get(plan | default('full'), 3) -%}
+{%- set locked_cfg = {
+  'block_4': {'min_plan': 'base',     'title': 'Ошибка, которая тормозит жизнь', 'pkg': 'Базовый'},
+  'block_5': {'min_plan': 'base',     'title': 'Сценарий в отношениях',          'pkg': 'Базовый'},
+  'block_6': {'min_plan': 'extended', 'title': 'Жизненные сценарии',             'pkg': 'Расширенный'},
+  'block_7': {'min_plan': 'extended', 'title': 'Кармический урок',               'pkg': 'Расширенный'},
+  'block_8': {'min_plan': 'full',     'title': 'Скрытый талант',                 'pkg': 'Премиум'},
+  'block_9': {'min_plan': 'full',     'title': 'Скрытая правда',                 'pkg': 'Премиум'},
+  'summary': {'min_plan': 'full',     'title': 'Сводный портрет',                'pkg': 'Премиум'},
+} -%}
+{%- macro locked_card(min_plan, title, pkg) -%}
+  {%- set min_level = _plan_levels.get(min_plan, 1) -%}
+  {%- if _cur_level >= min_level -%}
+{{ caller() }}
+  {%- elif plan | default('full') == 'demo' -%}
+<div class="locked-wrap" aria-label="Заблокированный раздел">
+  <div class="locked-content" aria-hidden="true">{{ caller() }}</div>
+  <div class="locked-overlay">
+    <div class="locked-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V7.5a4 4 0 0 1 8 0V11"></path><circle cx="12" cy="15.5" r="1.1" fill="currentColor" stroke="none" style="fill: var(--accent-soft);"></circle></svg>
+    </div>
+    <div class="locked-eyebrow">Доступно в пакете</div>
+    <div class="locked-title">{{ title }}</div>
+    <div class="locked-pkg-name">{{ pkg }}</div>
+  </div>
+</div>
+  {%- endif -%}
+{%- endmacro -%}
 
 <!-- COVER -->
 <div class="cover">
@@ -653,6 +709,9 @@ body.no-grain::before { display: none !important; }
     {% endfor %}
   </div>
 
+
+{%- set _b4 = locked_cfg['block_4'] -%}
+{%- if plan | default('full') == 'demo' or _cur_level >= _plan_levels[_b4.min_plan] %}
   <hr>
 
   <!-- БЛОК 4: Ошибка -->
@@ -664,6 +723,7 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 
+  {%- call locked_card(_b4.min_plan, _b4.title, _b4.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.deep_portrait.block_4_mistake.quote }}</p>
     <div class="bt">
@@ -673,9 +733,12 @@ body.no-grain::before { display: none !important; }
     </div>
     <div class="final-line">{{ blocks.deep_portrait.block_4_mistake.final_line }}</div>
   </div>
+  {%- endcall %}
+{%- endif %}
 
+{%- set _b5 = locked_cfg['block_5'] -%}
+{%- if plan | default('full') == 'demo' or _cur_level >= _plan_levels[_b5.min_plan] %}
   <hr>
-
   <!-- БЛОК 5: Отношения -->
   <div class="sec-hdr">
     <div class="sec-n">5.5</div>
@@ -685,6 +748,7 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 
+  {%- call locked_card(_b5.min_plan, _b5.title, _b5.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.deep_portrait.block_5_relationships.quote }}</p>
     <div class="bt">
@@ -693,9 +757,12 @@ body.no-grain::before { display: none !important; }
       {% endfor %}
     </div>
   </div>
+  {%- endcall %}
+{%- endif %}
 
+{%- set _b6 = locked_cfg['block_6'] -%}
+{%- if plan | default('full') == 'demo' or _cur_level >= _plan_levels[_b6.min_plan] %}
   <hr>
-
   <!-- БЛОК 6: Сценарии -->
   <div class="sec-hdr">
     <div class="sec-n">5.6</div>
@@ -705,6 +772,7 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 
+  {%- call locked_card(_b6.min_plan, _b6.title, _b6.pkg) %}
   <div class="card">
     <div class="card-lbl">Четыре механизма</div>
     <div class="g2" style="margin-bottom:1rem;">
@@ -715,9 +783,12 @@ body.no-grain::before { display: none !important; }
     </div>
     <p class="bt">{{ blocks.deep_portrait.block_6_scenarios.summary }}</p>
   </div>
+  {%- endcall %}
+{%- endif %}
 
+{%- set _b7 = locked_cfg['block_7'] -%}
+{%- if plan | default('full') == 'demo' or _cur_level >= _plan_levels[_b7.min_plan] %}
   <hr>
-
   <!-- БЛОК 7: Карма -->
   <div class="sec-hdr">
     <div class="sec-n">5.7</div>
@@ -727,6 +798,7 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 
+  {%- call locked_card(_b7.min_plan, _b7.title, _b7.pkg) %}
   <div class="card">
     <div style="text-align:center;padding:1.25rem 0 1rem;margin-bottom:1rem;border-bottom:0.5px solid var(--border);">
       <div class="ml" style="margin-bottom:0.4rem;">Урок</div>
@@ -738,9 +810,12 @@ body.no-grain::before { display: none !important; }
       {% endfor %}
     </div>
   </div>
+  {%- endcall %}
+{%- endif %}
 
+{%- set _b8 = locked_cfg['block_8'] -%}
+{%- if plan | default('full') == 'demo' or _cur_level >= _plan_levels[_b8.min_plan] %}
   <hr>
-
   <!-- БЛОК 8: Талант -->
   <div class="sec-hdr">
     <div class="sec-n">5.8</div>
@@ -750,6 +825,7 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 
+  {%- call locked_card(_b8.min_plan, _b8.title, _b8.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.deep_portrait.block_8_hidden_talent.quote }}</p>
     <div class="bt">
@@ -759,9 +835,12 @@ body.no-grain::before { display: none !important; }
     </div>
     <div class="final-line">{{ blocks.deep_portrait.block_8_hidden_talent.final_line }}</div>
   </div>
+  {%- endcall %}
+{%- endif %}
 
+{%- set _b9 = locked_cfg['block_9'] -%}
+{%- if plan | default('full') == 'demo' or _cur_level >= _plan_levels[_b9.min_plan] %}
   <hr>
-
   <!-- БЛОК 9: Правда -->
   <div class="sec-hdr">
     <div class="sec-n">5.9</div>
@@ -771,6 +850,7 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 
+  {%- call locked_card(_b9.min_plan, _b9.title, _b9.pkg) %}
   <div class="card">
     <div class="card-lbl">Самый личный блок</div>
     <p class="q">{{ blocks.deep_portrait.block_9_hidden_truth.quote }}</p>
@@ -781,9 +861,13 @@ body.no-grain::before { display: none !important; }
     </div>
     <div class="final-line">{{ blocks.deep_portrait.block_9_hidden_truth.final_line }}</div>
   </div>
+  {%- endcall %}
+{%- endif %}
 </div>
 
 
+{%- set _bs = locked_cfg['summary'] -%}
+{%- if plan | default('full') == 'demo' or _cur_level >= _plan_levels[_bs.min_plan] %}
 <!-- ═══ ИТОГ ═══ -->
 <div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Итог</div>
@@ -791,6 +875,7 @@ body.no-grain::before { display: none !important; }
   <div class="chap-num">∑</div>
 </div>
 
+{%- call locked_card(_bs.min_plan, _bs.title, _bs.pkg) %}
 <div class="page">
   <div class="sum-card" style="background-color: #F1EFE8; color: var(--g900);">
     <div class="card-lbl" style="color: var(--g500); border-color: var(--border);">Все системы · Единый нарратив</div>
@@ -805,6 +890,8 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 </div>
+{%- endcall %}
+{%- endif %}
 
 <div class="footer">
   Персональный отчёт · {{ data.user.birthdate }}<br>

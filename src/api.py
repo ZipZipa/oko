@@ -46,6 +46,7 @@ def generate_report(
     model: str = None,
     palm_data: dict = None,
     photo_url: str = None,
+    plan: str = "full",
 ) -> str:
     """
     Генерирует HTML отчёта одного из трёх типов.
@@ -62,6 +63,7 @@ def generate_report(
             face_data=face_data, name=name, birthdate=birthdate,
             examples_dir=EXAMPLES_DIR, templates_dir=TEMPLATES_DIR,
             ref_year=ref_year, model=model, palm_data=palm_data,
+            plan=plan,
         )
 
     elif report_type == "money":

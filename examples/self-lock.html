@@ -1,0 +1,1039 @@
+<!DOCTYPE html><html lang="ru"><head>
+
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Полный портрет · 28.01.1995</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&amp;family=Jost:wght@300;400;500&amp;display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --black: #111110;
+  --g900: #2C2C2A;
+  --g700: #5F5E5A;
+  --g500: #888780;
+  --g300: #D3D1C7;
+  --g100: #F1EFE8;
+  --white: #FAFAF8;
+  --border: rgba(0,0,0,0.09);
+  --border-md: rgba(0,0,0,0.15);
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  /* ACCENT — gold by default */
+  --accent: #B89968;
+  --accent-deep: #8C6E3F;
+  --accent-soft: #E8DAB8;
+  --accent-faint: rgba(184,153,104,0.10);
+  --accent-line: rgba(184,153,104,0.45);
+}
+/* Paper-grain noise overlay (very subtle) */
+body::before {
+  content: "";
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.45 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.55'/></svg>");
+  background-size: 220px 220px;
+  opacity: 0.035;
+  mix-blend-mode: multiply;
+}
+body > * { position: relative; z-index: 1; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body { font-family: 'Jost', sans-serif; font-weight: 300; background: var(--white); color: var(--g900); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+/* COVER */
+.cover { min-height: 100vh; padding: 1.5rem 1.25rem 1.75rem; display: flex; flex-direction: column; border-bottom: 0.5px solid var(--border); position: relative; overflow: hidden; background: var(--white); }
+.cover-meta { width: 100%; max-width: 760px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--g500); position: relative; z-index: 3; }
+.cover-meta .mark { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 18px; letter-spacing: 0.05em; color: var(--black); text-transform: none; }
+
+/* Portrait stage — circular photo, beige band crossing the middle */
+.cover-stage { position: relative; flex: 1; width: 100%; max-width: 760px; margin: 2rem auto 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.25rem; }
+/* Beige horizontal band behind the circle */
+.cover-stage::before { content: ""; position: absolute; left: 0; right: 0; top: 28%; height: 28%; background: #f1efe8; z-index: 0; pointer-events: none; }
+
+.cover-portrait { position: relative; width: 100%; max-width: 380px; aspect-ratio: 1/1; border-radius: 50%; overflow: hidden; z-index: 1; }
+.cover-portrait img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.02); display: block; }
+.cover-portrait::after { content: ""; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; background: radial-gradient(circle at 50% 50%, transparent 0%, transparent 72%, rgba(250,250,248,0.55) 88%, rgba(250,250,248,1) 100%); }
+
+/* Title block — sits below the photo, dark on white */
+.cover-center { position: relative; z-index: 2; text-align: center; width: 100%; max-width: 560px; }
+.cover-eyebrow { font-size: 10px; letter-spacing: 0.32em; text-transform: uppercase; margin-bottom: 0.9rem; color: var(--g500); }
+.cover-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(44px, 9vw, 76px); font-weight: 300; line-height: 0.95; letter-spacing: -0.005em; color: var(--black); margin-bottom: 1rem; }
+.cover-sub { font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--g700); line-height: 1.8; }
+
+.cover-toc { width: 100%; max-width: 760px; margin: 1rem auto 0; display: flex; flex-direction: column; gap: 0.85rem; font-size: 9.5px; color: var(--g500); letter-spacing: 0.16em; text-transform: uppercase; position: relative; z-index: 3; }
+.toc-items { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem 1.25rem; }
+.toc-foot { display: flex; justify-content: space-between; padding-top: 0; }
+
+/* CHAPTER DIVIDER */
+.chapter-divider { padding: 3rem 4rem 1.5rem; border-top: 0.5px solid var(--border); max-width: 920px; margin: 0 auto; position: relative; }
+.chap-eyebrow { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--g500); margin-bottom: 0.4rem; }
+.chap-title-big { font-family: 'Cormorant Garamond', serif; font-size: clamp(36px, 5vw, 56px); font-weight: 300; color: var(--black); letter-spacing: 0.01em; }
+.chap-num { font-family: 'Cormorant Garamond', serif; font-size: 120px; font-weight: 300; color: var(--g100); line-height: 1; position: absolute; right: 4rem; top: 50%; transform: translateY(-50%); pointer-events: none; }
+.chap-wrap { position: relative; overflow: hidden; }
+
+/* CHAPTER GLYPH — soft OKO graphic */
+.chap-glyph { position: absolute; right: 4rem; top: 50%; transform: translateY(-50%); width: 88px; height: 88px; border-radius: 50%; overflow: hidden; opacity: 0.55; filter: grayscale(0.35) saturate(0.85) contrast(0.95); pointer-events: none; -webkit-mask-image: radial-gradient(closest-side, #000 55%, rgba(0,0,0,0) 100%); mask-image: radial-gradient(closest-side, #000 55%, rgba(0,0,0,0) 100%); }
+.chap-glyph img { width: 130%; height: 130%; object-fit: cover; object-position: center; margin: -15% 0 0 -15%; display: block; }
+
+/* COVER GLYPH — faint corner watermark, only on wide screens */
+.cover-glyph { position: absolute; pointer-events: none; width: 220px; height: 220px; border-radius: 50%; overflow: hidden; opacity: 0.18; filter: grayscale(0.25) saturate(0.7); -webkit-mask-image: radial-gradient(closest-side, #000 50%, rgba(0,0,0,0) 100%); mask-image: radial-gradient(closest-side, #000 50%, rgba(0,0,0,0) 100%); }
+.cover-glyph img { width: 100%; height: 100%; object-fit: cover; }
+.cover-glyph.cg-tl { top: -40px; left: -40px; }
+.cover-glyph.cg-br { bottom: -40px; right: -40px; }
+
+/* PAGE */
+.page { max-width: 920px; margin: 0 auto; padding: 3rem 4rem 4rem; }
+
+/* SECTION HDR */
+.sec-hdr { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1.25rem; border-bottom: 0.5px solid var(--border); }
+.sec-n { font-family: 'Cormorant Garamond', serif; font-size: 40px; font-weight: 300; color: var(--g300); line-height: 1; min-width: 48px; flex-shrink: 0; }
+.sec-info { flex: 1; min-width: 0; }
+.sec-info .sec-eyebrow { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--g500); margin-bottom: 0.15rem; }
+.sec-info .sec-title { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300; color: var(--black); white-space: nowrap; }
+
+/* CARDS */
+.card { background: #fff; border: 0.5px solid var(--border); border-radius: var(--r-lg); padding: 1.4rem 1.75rem; margin-bottom: 1rem; }
+.card-lbl { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--g500); margin-bottom: 1rem; padding-bottom: 0.7rem; border-bottom: 0.5px solid var(--border); }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-bottom: 0.9rem; }
+.g3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.75rem; margin-bottom: 0.9rem; }
+.g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.65rem; margin-bottom: 0.9rem; }
+.mc { background: var(--g100); border-radius: var(--r-sm); padding: 0.9rem 1rem; }
+.ml { font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--g500); margin-bottom: 0.3rem; }
+.mv { font-family: 'Cormorant Garamond', serif; font-size: 21px; font-weight: 400; color: var(--black); margin-bottom: 0.25rem; }
+.md { font-size: 12px; color: var(--g700); line-height: 1.55; }
+
+/* SCORE */
+.score-big { font-family: 'Cormorant Garamond', serif; font-size: 68px; font-weight: 300; line-height: 1; color: var(--black); }
+.score-d { font-size: 22px; color: var(--g500); }
+.sbar { height: 1.5px; background: var(--border-md); border-radius: 2px; margin: 0.9rem 0; }
+.sfill { height: 100%; background: var(--black); border-radius: 2px; }
+
+/* METRIC */
+.met { background: var(--g100); border-radius: var(--r-sm); padding: 0.9rem 1rem; }
+.met-name { font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--g500); margin-bottom: 0.4rem; }
+.met-row { display: flex; align-items: baseline; gap: 4px; margin-bottom: 0.4rem; }
+.met-s { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 400; color: var(--black); }
+.met-max { font-size: 12px; color: var(--g500); }
+.mbar { height: 1.5px; background: var(--border-md); border-radius: 2px; }
+.mfill { height: 100%; background: var(--black); border-radius: 2px; }
+
+/* TEXT */
+.q { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 17px; color: var(--g700); line-height: 1.65; margin-bottom: 1.1rem; padding-left: 1.1rem; border-left: 1px solid var(--g300); }
+.bt { font-size: 13px; color: var(--g700); line-height: 1.7; }
+.ri { display: flex; gap: 0.65rem; margin-bottom: 0.6rem; align-items: flex-start; }
+.d { width: 4px; height: 4px; border-radius: 50%; background: var(--g500); margin-top: 7px; flex-shrink: 0; }
+.dh { width: 4px; height: 4px; border-radius: 50%; border: 1px solid var(--g500); margin-top: 7px; flex-shrink: 0; }
+.hl { color: var(--black); font-weight: 400; }
+.formula { font-size: 12px; color: var(--g500); padding: 0.5rem 0.75rem; background: var(--g100); border-radius: var(--r-sm); margin: 0.5rem 0; }
+
+/* TAGS */
+.tags { margin-top: 0.9rem; }
+.tag { display: inline-block; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; border: 0.5px solid var(--border-md); border-radius: 20px; padding: 2px 11px; color: var(--g700); margin-right: 5px; margin-bottom: 4px; }
+
+/* NUM CELLS */
+.nc { background: var(--g100); border-radius: var(--r-sm); padding: 1.1rem 1rem; text-align: center; }
+.nc-big { font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 300; line-height: 1; color: var(--black); }
+.nc-lbl { font-size: 10px; letter-spacing: 0.11em; text-transform: uppercase; color: var(--g500); margin-top: 4px; }
+.nc-name { font-size: 12px; color: var(--g700); margin-top: 3px; }
+
+/* MATRIX */
+.mxc { background: var(--g100); border-radius: var(--r-sm); padding: 1rem 1.1rem; }
+.mx-num { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300; color: var(--black); line-height: 1; }
+.mx-lbl { font-size: 10px; letter-spacing: 0.11em; text-transform: uppercase; color: var(--g500); margin-top: 3px; }
+.mx-arc { font-size: 11px; color: var(--g700); margin-top: 2px; font-style: italic; }
+.mx-desc { font-size: 12px; color: var(--g700); line-height: 1.5; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 0.5px solid var(--border); }
+
+/* YEAR ROW */
+.yr { display: flex; gap: 1rem; align-items: flex-start; padding: 1rem 0; border-bottom: 0.5px solid var(--border); }
+.yr:last-child { border-bottom: none; }
+.yr-n { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300; color: var(--black); min-width: 70px; line-height: 1.1; }
+.yr-age { font-size: 10px; color: var(--g500); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; }
+.yr-title { font-size: 13px; font-weight: 400; color: var(--black); margin-bottom: 0.25rem; }
+.yr-desc { font-size: 12px; color: var(--g700); line-height: 1.55; }
+
+/* PERIOD */
+.pc { background: var(--g100); border-radius: var(--r-sm); padding: 0.9rem 1rem; text-align: center; }
+.p-n { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300; color: var(--black); }
+.p-age { font-size: 10px; color: var(--g500); margin-top: 2px; letter-spacing: 0.07em; }
+.p-d { font-size: 11px; color: var(--g700); margin-top: 3px; line-height: 1.4; }
+
+/* DARK */
+.dark-card { background: var(--black); color: var(--white); border-radius: var(--r-lg); padding: 2rem 2.25rem; margin-bottom: 0.9rem; }
+.dark-card .q { color: rgba(255,255,255,0.65); border-left-color: rgba(255,255,255,0.18); }
+.dark-card .bt { color: rgba(255,255,255,0.6); }
+.dark-card .hl { color: #fff; }
+.dark-card .d { background: rgba(255,255,255,0.35); }
+.dark-card .card-lbl { color: rgba(255,255,255,0.4); border-color: rgba(255,255,255,0.12); }
+
+/* FINAL LINE */
+.final-line { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 300; font-style: italic; color: var(--black); line-height: 1.6; margin-top: 1rem; padding: 1rem 1.25rem; border: 0.5px solid var(--border-md); border-radius: var(--r-md); }
+.dark-card .final-line { border-color: rgba(255,255,255,0.14); color: rgba(255,255,255,0.85); }
+
+/* SUMMARY */
+.sum-card { background: var(--black); color: var(--white); border-radius: var(--r-lg); padding: 2.5rem 3rem; }
+.sum-card .card-lbl { color: rgba(255,255,255,0.35); border-color: rgba(255,255,255,0.1); }
+.sum-card .q { color: rgba(255,255,255,0.65); border-left-color: rgba(255,255,255,0.18); }
+.sum-card .bt { color: rgba(255,255,255,0.6); }
+.sum-card .hl { color: #fff; }
+.sum-card .d { background: rgba(255,255,255,0.35); }
+.sum-card .tag { border-color: rgba(255,255,255,0.18); color: rgba(255,255,255,0.55); }
+
+/* HR — decorative diamond separator */
+hr { border: none; height: 1px; margin: 2rem 0; position: relative; background: linear-gradient(to right, transparent 0%, var(--border-md) 25%, var(--border-md) 75%, transparent 100%); overflow: visible; }
+hr::after {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  width: 5px; height: 5px;
+  transform: translate(-50%,-50%) rotate(45deg);
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--white);
+}
+
+/* ACCENT layer — gold details that elevate without dominating */
+.cover-meta .mark { color: var(--accent-deep); letter-spacing: 0.08em; }
+.cover-eyebrow, .chap-eyebrow, .sec-info .sec-eyebrow {
+  color: var(--accent-deep);
+  font-variant: small-caps;
+  letter-spacing: 0.28em;
+}
+.card-lbl, .ml, .met-name, .nc-lbl, .mx-lbl, .p-age, .yr-age {
+  font-variant: small-caps;
+  letter-spacing: 0.18em;
+}
+
+/* Chapter dividers — gold underline + ornamental roman numeral */
+.chapter-divider { border-top: none; padding-top: 4rem; }
+.chapter-divider::before {
+  content: ""; position: absolute; top: 0; left: 4rem; right: 4rem;
+  height: 1px;
+  background: linear-gradient(to right, transparent 0%, var(--accent-line) 20%, var(--accent-line) 80%, transparent 100%);
+}
+.chap-title-big { position: relative; display: inline-block; padding-bottom: 0.75rem; }
+.chap-title-big::after {
+  content: ""; position: absolute; left: 0; bottom: 0;
+  width: 56px; height: 1px; background: var(--accent);
+}
+.chap-num { background: linear-gradient(180deg, var(--accent-soft) 0%, rgba(232,218,184,0.25) 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-style: italic; }
+
+/* Cover title — subtle gold inflection */
+.cover-title { background: linear-gradient(180deg, var(--black) 0%, var(--black) 70%, var(--accent-deep) 130%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+
+/* Numerology + matrix cells — gold hairline frame */
+.nc, .mxc { border: 0.5px solid var(--accent-line); background: linear-gradient(180deg, #FBF8F0 0%, var(--g100) 100%); }
+.nc-big, .mx-num, .p-n, .yr-n { color: var(--accent-deep); }
+
+/* Score */
+.score-big { background: linear-gradient(180deg, var(--black) 0%, var(--accent-deep) 110%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.sfill { background: linear-gradient(to right, var(--accent-deep), var(--accent)); }
+.mfill { background: var(--accent-deep); }
+
+/* Tags — gold border */
+.tag { border-color: var(--accent-line); color: var(--accent-deep); font-variant: small-caps; letter-spacing: 0.14em; }
+
+/* Cover stage band — warmer gold-tinted beige */
+.cover-stage::before { background: linear-gradient(90deg, transparent 0%, #F1E9D6 20%, #F1E9D6 80%, transparent 100%); }
+
+/* Edition number on cover */
+.cover-edition { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 12px; letter-spacing: 0.04em; color: var(--accent-deep); text-transform: none; }
+
+/* Italic quote — keep neutral, but add gold drop-cap-style mark */
+.q { border-left-color: var(--accent-line); }
+
+/* Final line — warm cream background */
+.final-line { background: linear-gradient(180deg, #FBF8F0, #F5EFDF); border-color: var(--accent-line); color: var(--g900); }
+
+/* Section header n — gold serif */
+.sec-n { color: var(--accent-soft); font-style: italic; }
+
+/* Dark cards keep subtle gold accents */
+.dark-card .final-line, .sum-card .final-line { background: rgba(184,153,104,0.10); border-color: rgba(232,218,184,0.25); color: rgba(255,255,255,0.92); }
+.dark-card .tag, .sum-card .tag { color: var(--accent-soft); border-color: rgba(232,218,184,0.35); }
+
+/* LOCKED PREMIUM BLOCK */
+.locked-wrap { position: relative; margin-bottom: 1rem; border-radius: var(--r-lg); overflow: hidden; isolation: isolate; }
+.locked-content { filter: blur(2px) saturate(0.95); pointer-events: none; user-select: none; opacity: 0.95; padding: 1.4rem 1.75rem; background: #fff; border: 0.5px solid var(--border); border-radius: var(--r-lg); }
+.locked-content .lc-q { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 16px; color: var(--g700); line-height: 1.6; margin-bottom: 0.7rem; }
+.locked-content .lc-line { display: flex; gap: 0.6rem; margin-bottom: 0.45rem; align-items: flex-start; font-size: 12.5px; color: var(--g700); line-height: 1.6; }
+.locked-content .lc-line::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: var(--g500); margin-top: 8px; flex-shrink: 0; }
+.locked-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.85rem; padding: 1.5rem; background: radial-gradient(ellipse at center, rgba(250,250,248,0.45) 0%, rgba(250,250,248,0.78) 70%, rgba(250,250,248,0.92) 100%); text-align: center; }
+.locked-icon { width: 46px; height: 46px; border-radius: 50%; background: var(--black); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(0,0,0,0.18), 0 0 0 6px rgba(184,153,104,0.12); }
+.locked-icon svg { width: 20px; height: 20px; stroke: var(--accent-soft); fill: none; stroke-width: 1.6; }
+.locked-eyebrow { font-size: 9.5px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--accent-deep); font-variant: small-caps; }
+.locked-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--black); line-height: 1.15; max-width: 26ch; }
+.locked-pkg-name { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; color: var(--accent-deep); letter-spacing: 0.04em; margin-top: 2px; }
+.locked-pkg { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--black); color: var(--white); border-radius: 999px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; font-family: 'Jost', sans-serif; font-weight: 400; box-shadow: 0 6px 18px rgba(0,0,0,0.15); }
+.locked-pkg .lp-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px rgba(184,153,104,0.25); }
+.locked-pkg .lp-name { font-variant: small-caps; letter-spacing: 0.2em; }
+.locked-pkg .lp-arrow { font-family: 'Cormorant Garamond', serif; font-size: 16px; line-height: 1; opacity: 0.7; margin-left: 2px; }
+@media (max-width: 680px) {
+  .locked-title { font-size: 18px; }
+  .locked-icon { width: 40px; height: 40px; }
+  .locked-pkg { font-size: 10px; padding: 7px 14px 7px 10px; }
+}
+
+/* TWEAKS PANEL */
+#tweaks-panel { display: none; position: fixed; right: 16px; bottom: 16px; z-index: 100; background: #FAFAF8; border: 0.5px solid var(--border-md); border-radius: 12px; padding: 14px 16px; box-shadow: 0 18px 50px rgba(0,0,0,0.12); width: 240px; font-family: 'Jost', sans-serif; }
+#tweaks-panel.open { display: block; }
+#tweaks-panel .tp-title { font-family: 'Cormorant Garamond', serif; font-size: 18px; color: var(--black); margin-bottom: 2px; }
+#tweaks-panel .tp-sub { font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--g500); margin-bottom: 12px; }
+#tweaks-panel .tp-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 10px; }
+#tweaks-panel .tp-sw { aspect-ratio: 1/1; border-radius: 50%; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); position: relative; }
+#tweaks-panel .tp-sw.active { box-shadow: 0 0 0 2px #FAFAF8, 0 0 0 3.5px var(--black); }
+#tweaks-panel .tp-name { font-size: 10px; color: var(--g700); text-align: center; letter-spacing: 0.06em; }
+#tweaks-panel .tp-toggle { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--g700); padding: 8px 0; border-top: 0.5px solid var(--border); margin-top: 6px; }
+#tweaks-panel .tp-toggle input { accent-color: var(--accent-deep); }
+#tweaks-close { position: absolute; top: 8px; right: 10px; background: none; border: none; font-size: 18px; color: var(--g500); cursor: pointer; line-height: 1; }
+
+/* FOOTER */
+.footer { text-align: center; padding: 3rem 4rem; border-top: 0.5px solid var(--border); font-size: 11px; color: var(--g500); letter-spacing: 0.07em; line-height: 2.2; max-width: 920px; margin: 0 auto; }
+
+@media print {
+  .cover { page-break-after: always; min-height: auto; }
+  .page { page-break-inside: avoid; }
+}
+
+/* TABLET */
+@media (max-width: 920px) {
+  .cover { padding: 3rem 2rem 2.5rem; }
+  .page { padding: 2.5rem 2rem 3rem; }
+  .chapter-divider { padding: 2.5rem 2rem 1.25rem; }
+  .chap-num { right: 2rem; font-size: 96px; }
+  .chap-glyph { right: 2rem; width: 72px; height: 72px; opacity: 0.5; }
+  .cover-glyph { width: 160px; height: 160px; }
+  .sum-card { padding: 2rem; }
+  .card { padding: 1.25rem 1.4rem; }
+}
+
+/* PHONE — narrow */
+@media (max-width: 680px) {
+  html { font-size: 15px; }
+  .page { padding: 1.75rem 1.1rem 2.25rem; max-width: 100%; }
+  .chapter-divider { padding: 1.75rem 1.1rem 0.9rem; }
+  .chap-eyebrow { font-size: 9px; letter-spacing: 0.22em; }
+  .chap-title-big { font-size: clamp(28px, 7vw, 36px); }
+  .chap-num { display: none; }
+  .chap-glyph { width: 56px; height: 56px; right: 1.1rem; opacity: 0.45; }
+  .cover-glyph { display: none; }
+  .card { padding: 1.1rem 1.1rem; border-radius: var(--r-md); }
+  .card-lbl { font-size: 9px; letter-spacing: 0.18em; margin-bottom: 0.8rem; padding-bottom: 0.6rem; }
+  .g2 { grid-template-columns: 1fr; gap: 0.7rem; }
+  .g3 { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  .g4 { grid-template-columns: 1fr 1fr; gap: 0.55rem; }
+  .mc, .met, .nc, .pc, .mxc { padding: 0.85rem 0.9rem; }
+  .mv { font-size: 17px; }
+  .nc-big { font-size: 32px; }
+  .met-s { font-size: 21px; }
+  .score-big { font-size: 56px; }
+  .mx-num { font-size: 22px; }
+  .q { font-size: 15px; padding-left: 0.85rem; }
+  .bt { font-size: 12.5px; }
+  .sec-hdr { gap: 0.7rem; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+  .sec-n { font-size: 32px; min-width: 38px; }
+  .sec-info .sec-title { font-size: 21px; }
+  .yr { flex-direction: column; gap: 0.35rem; }
+  .yr-n { font-size: 22px; min-width: 0; }
+  .yr > div:first-child { display: flex; align-items: baseline; gap: 0.6rem; }
+  .yr-age { margin-top: 0; }
+  .dark-card, .sum-card { padding: 1.4rem 1.25rem; border-radius: var(--r-md); }
+  .final-line { font-size: 16px; padding: 0.85rem 1rem; }
+  .footer { padding: 2rem 1.25rem; font-size: 10px; line-height: 2; }
+  .formula { font-size: 11px; }
+}
+
+/* PHONE — very narrow */
+@media (max-width: 380px) {
+  .cover { padding: 2rem 1.1rem 1.75rem; }
+  .toc-items { grid-template-columns: 1fr; gap: 0.4rem; }
+  .g3 { grid-template-columns: 1fr; }
+  .g4 { grid-template-columns: 1fr 1fr; }
+  .cover-portrait { max-width: 78vw; }
+  .cover-stage { gap: 1.5rem; margin-top: 1.25rem; }
+}
+</style>
+</head>
+<body style="background-color: rgb(255, 255, 255); outline: rgb(250, 204, 21) solid 2px; outline-offset: 2px;">
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-meta">
+    <span class="mark">Oko</span>
+    <span class="cover-edition">Конфиденциально</span>
+  </div>
+
+  <div class="cover-stage">
+    <div class="cover-portrait">
+      <img src="assets/portrait.jpg" alt="Portrait" loading="eager" style="object-fit: cover; opacity: 1">
+    </div>
+    <div class="cover-center">
+      <div class="cover-eyebrow">Комплексный анализ личности</div>
+      <div class="cover-title">Полный портрет</div>
+      <div class="cover-sub">Внешность · Физиогномика · Нумерология<br>Матрица судьбы · Глубинный анализ</div>
+    </div>
+  </div>
+
+  <div class="cover-toc">
+    <div class="toc-foot">
+      <span>Персональный отчёт</span>
+      <span>28.01.1995</span>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ ЧАСТЬ I: ВИЗУАЛЬНЫЙ АНАЛИЗ ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Часть первая</div>
+  <div class="chap-title-big">Анализ внешности</div>
+  <div class="chap-num">I</div>
+</div>
+
+<div class="page">
+  <div class="card">
+    <div class="card-lbl">Общая оценка</div>
+    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:0.5rem;">
+      <span class="score-big">6.6</span>
+      <span class="score-d">/ 10</span>
+    </div>
+    <div class="sbar"><div class="sfill" style="width:66%;"></div></div>
+    <p class="q">Сердцевидная форма лица с широкими скулами — структура есть, но мягкая челюсть не даёт ей завершённости. Приятная внешность, в которой потенциал пока не реализован.</p>
+    <div class="bt">Тип привлекательности: Интеллектуальный наблюдатель — взгляд цепляет не яркостью, а глубиной. Не типичная маскулинность, а скорее загадочный минимализм.</div>
+  </div>
+
+  <div class="g3">
+    <div class="met"><div class="met-name">Симметрия</div><div class="met-row"><span class="met-s">7.0</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:70%;"></div></div></div>
+    <div class="met"><div class="met-name">Костная структура</div><div class="met-row"><span class="met-s">6.0</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:60%;"></div></div></div>
+    <div class="met"><div class="met-name">Пропорции</div><div class="met-row"><span class="met-s">7.3</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:73%;"></div></div></div>
+    <div class="met"><div class="met-name">Глаза</div><div class="met-row"><span class="met-s">6.2</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:62%;"></div></div></div>
+    <div class="met"><div class="met-name">Кожа</div><div class="met-row"><span class="met-s">1.5</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:15%;"></div></div></div>
+    <div class="met"><div class="met-name">Ухоженность</div><div class="met-row"><span class="met-s">2.0</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:20%;"></div></div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Сильные стороны</div>
+      <div class="bt">
+        <div class="ri"><div class="d"></div><span>Широкие скулы — сильная костная основа, визуально расширяет среднюю треть лица</span></div>
+        <div class="ri"><div class="d"></div><span>Прямой пропорциональный нос — устойчивая центральная ось, придаёт лицу собранность</span></div>
+        <div class="ri"><div class="d"></div><span>Среднего размера горизонтально посаженные глаза — спокойный, ненавязчивый взгляд</span></div>
+        <div class="ri"><div class="d"></div><span>Средняя арка бровей — умеренная выразительность без перегруза</span></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Области для работы</div>
+      <div class="bt">
+        <div class="ri"><div class="dh"></div><span>Мягкая округлая линия челюсти — нижняя треть теряет резкость на фоне широких скул</span></div>
+        <div class="ri"><div class="dh"></div><span>Сердцевидная форма создаёт визуальный перекос: верх шире низа, что требует компенсации</span></div>
+        <div class="ri"><div class="dh"></div><span>Заметная асимметрия бровей — разница между внутренним состоянием и внешним проявлением</span></div>
+        <div class="ri"><div class="dh"></div><span>Нейтральное выражение лица «по умолчанию» — может восприниматься как отстранённость или закрытость</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ ЧАСТЬ I.5: АНАЛИЗ ЛАДОНИ ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Часть первая · дополнение</div>
+  <div class="chap-title-big">Анализ ладони</div>
+  <div class="chap-num">I⁺</div>
+</div>
+
+<div class="page">
+  <div class="card">
+    <div class="card-lbl">Общая оценка</div>
+    <p class="q">Рука Земли: прямоугольная ладонь, три линии максимальной глубины. Волевой большой палец, но жизненная энергия — экономная. Строит на длинную дистанцию, не тратит попусту.</p>
+    <div class="mc" style="margin-bottom:1rem;"><div class="ml">Стихия</div><div class="mv">Земля</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Черты руки</div>
+    <div class="g2" style="margin-bottom:1rem;">
+      <div class="mc"><div class="ml">Форма</div><div class="mv">Прямоугольная ладонь (Земля)</div><div class="md">Практичность, методичность, выносливость. Строит на десятилетия — результат важнее скорости.</div></div>
+      <div class="mc"><div class="ml">Пальцы</div><div class="mv">Прямые, доминирует большой</div><div class="md">Большой палец значительно длиннее указательного — сильная воля, потребность контролировать. Указательный и безымянный близки по длине — баланс амбиций и творчества.</div></div>
+      <div class="mc"><div class="ml">Большой палец</div><div class="mv">Умеренный раскрыв (41.8°)</div><div class="md">Уверенность, но без агрессивного напора. Принимает решения после анализа, отстаивает позицию гибко.</div></div>
+      <div class="mc"><div class="ml">Бугры</div><div class="mv">Земляная основа</div><div class="md">Тип Земли — витальность как ресурс, физическая выносливость, практическая хватка. Холмы не выделены — энергия распределена равномерно.</div></div>
+    </div>
+    <div class="bt">
+      <div class="ri"><div class="d"></div><span>Линия сердца — самая глубокая, с ветвлением и лёгкой кривизной. Эмоциональная сфера выражена ярко, чувства идут своим путём. Ветвление указывает на значимый эмоциональный переход.</span></div>
+      <div class="ri"><div class="d"></div><span>Линия головы — глубокая и почти прямая, с ветвлением. Логика стабильна, аналитика доминирует. Ветвление добавляет гибкость там, где прямолинейный ум мог бы упереться.</span></div>
+      <div class="ri"><div class="d"></div><span>Линия жизни — единственная умеренной глубины (0.644). Длинная, изогнута, с ветвлением. Распределяет силы экономно, периоды восстановления обязательны. Ветвление — серьёзный поворот маршрута.</span></div>
+      <div class="ri"><div class="d"></div><span>Линия судьбы — глубокая, почти прямая, с ветвлением. Карьерный вектор ясный и целенаправленный. Ветвление открывает альтернативный коридор — осознанный выбор, не случайность.</span></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Сильные стороны</div>
+      <div class="bt">
+        <div class="ri"><div class="d"></div><span>Три из четырёх линий максимальной глубины — высокий общий потенциал</span></div>
+        <div class="ri"><div class="d"></div><span>Линия судьбы почти прямая — ясная карьерная определённость</span></div>
+        <div class="ri"><div class="d"></div><span>Сильная воля (большой палец) — способность настоять на своём</span></div>
+        <div class="ri"><div class="d"></div><span>Изогнутый мизинец — гибкость в коммуникации и адаптивность</span></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Слабые стороны</div>
+      <div class="bt">
+        <div class="ri"><div class="dh"></div><span>Линия жизни слабая на фоне остальных — витальность распределяется точечно, риск истощения</span></div>
+        <div class="ri"><div class="dh"></div><span>Узкий зазор между средним и безымянным пальцами — ответственность подавляет творческую сферу</span></div>
+        <div class="ri"><div class="dh"></div><span>Высокий ratio 2D:4D — чувствительность и эмпатия могут мешать в жёстких переговорах</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ЧАСТЬ I.6: УХОЖЕННОСТЬ И СТИЛЬ ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Часть первая · стиль</div>
+  <div class="chap-title-big">Ухоженность и стиль</div>
+  <div class="chap-num">Iˢ</div>
+</div>
+
+<div class="page">
+  <div class="card">
+    <div class="card-lbl">Впечатление</div>
+    <p class="q">Серьга — осознанный маркер самовыражения. Но кожа лица кричит о хронической нагрузке: шероховатость 0.91, четыре зоны напряжения. Ухоженность на минимуме.</p>
+    <div class="bt" style="margin-bottom:1rem;">Ухоженность низкая (оценка 2.0). Один значимый аксессуар, но состояние кожи резко снижает первое впечатление. Контраст показателен: ладонь гладкая (0.76), лицо шероховатое (0.09) — внутренняя устойчивость при внешней небрежности.</div>
+  </div>
+
+  <div class="g2">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Что работает</div>
+      <div class="bt">
+        <div class="ri"><div class="d"></div><span>Серьга добавляет характер и делает образ запоминающимся — стилистический выбор, а не случайность</span></div>
+        <div class="ri"><div class="d"></div><span>Нейтральная основа лица — легко адаптировать под любой стиль без потерь</span></div>
+        <div class="ri"><div class="d"></div><span>Костная структура (скулы) работает сама по себе, даже без ухода</span></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Что улучшить</div>
+      <div class="bt">
+        <div class="ri"><div class="dh"></div><span>Кожа требует системного ухода: высокая шероховатость — признак дегидратации или недосыпа, зоны напряжения на обеих щеках и носу</span></div>
+        <div class="ri"><div class="dh"></div><span>Увлажнение и очищение необходимы — сейчас лицо выглядит старше возраста из-за текстуры</span></div>
+        <div class="ri"><div class="dh"></div><span>Стиль есть, но без концепции: серьга — единичный акцент, всё остальное случайно. Нужна целостность</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:0.9rem;">
+    <div class="card-lbl">Архетип стиля</div>
+    <div class="mv" style="font-size:18px;">Минималист с одним акцентом</div>
+    <div class="tags" style="margin-top:0.5rem;">
+<span class="tag">Нейтральная база</span><span class="tag">Требует ухода</span><span class="tag">Потенциал есть</span>    </div>
+  </div>
+</div>
+
+<!-- ═══ ЧАСТЬ II: ФИЗИОГНОМИКА ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Часть вторая</div>
+  <div class="chap-title-big">Физиогномика</div>
+  <div class="chap-num">II</div>
+</div>
+
+<div class="page">
+  <div class="card">
+    <div class="card-lbl">Форма лица и ключевые черты</div>
+    <p class="q">Сердцевидное лицо с широкими скулами — знак человека, наделённого интуицией и скрытой силой, но прячущего уязвимость за мягкой линией челюсти.</p>
+    <div class="g2" style="margin-bottom:1rem;">
+      <div class="mc"><div class="ml">Лоб</div><div class="mv">Средней высоты, пропорциональный</div><div class="md">Сбалансированный интеллект, нет перекоса в аналитику или творчество.</div></div>
+      <div class="mc"><div class="ml">Глаза</div><div class="mv">Горизонтально посаженные, среднего размера</div><div class="md">Наблюдательность, спокойствие, умение держать дистанцию. Взгляд без напряжения.</div></div>
+      <div class="mc"><div class="ml">Нос</div><div class="mv">Прямой, средней ширины</div><div class="md">Честность, прямолинейность. Уверенность без напора.</div></div>
+      <div class="mc"><div class="ml">Рот / губы</div><div class="mv">Среднего объёма, сбалансированные</div><div class="md">Уравновешенность в словах — говорит по делу, не склонен к излишней экспрессии.</div></div>
+    </div>
+    <div class="bt">
+      <div class="ri"><div class="d"></div><span>Широкие скулы при сердцевидной форме — «архетип трикстера»: хитрость, адаптивность, умение скрывать истинные намерения</span></div>
+      <div class="ri"><div class="d"></div><span>Мягкий подбородок — чувствительность и потребность в безопасности, стремление избегать конфликтов</span></div>
+      <div class="ri"><div class="d"></div><span>Заметная асимметрия бровей — разрыв между публичным лицом и внутренним состоянием: одно показывает миру, другое хранит</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Три зоны лица · Китайская физиогномика</div>
+    <div class="g3">
+      <div class="mc"><div class="ml">Верхняя треть · Лоб</div><div class="mv" style="font-size:15px;">До 30 лет</div><div class="md">Интуитивное познание, скрытое знание. Первые 28 лет — период накопления и дипломатии (пинакль 2).</div></div>
+      <div class="mc"><div class="ml">Средняя треть · Нос</div><div class="mv" style="font-size:15px;">30–50 лет</div><div class="md">Воля и контроль, направленное действие. 28–37 лет — ключевой этап прорыва (пинакль 7).</div></div>
+      <div class="mc"><div class="ml">Нижняя треть · Подбородок</div><div class="mv" style="font-size:15px;">После 50</div><div class="md">Мудрость через уединение, роль наставника. После 37 — передача опыта (пинакль 9).</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ ЧАСТЬ III: НУМЕРОЛОГИЯ ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Часть третья</div>
+  <div class="chap-title-big">Нумерология</div>
+  <div class="chap-num">III</div>
+</div>
+
+<div class="page">
+  <div class="card">
+    <div class="card-lbl">Ключевые числа · Точный расчёт 28.01.1995</div>
+    <div class="g3">
+      <div class="nc"><div class="nc-big">8</div><div class="nc-lbl">Число жизненного пути</div><div class="nc-name">Правитель</div></div>
+      <div class="nc"><div class="nc-big">28</div><div class="nc-lbl">День рождения</div><div class="nc-name">→ 1</div></div>
+      <div class="nc"><div class="nc-big">3</div><div class="nc-lbl">Личный год 2026</div><div class="nc-name">Текущий цикл</div></div>
+    </div>
+    <div class="formula">2 + 8 + 0 + 1 + 1 + 9 + 9 + 5 = 35 → 3 + 5 = 8 &nbsp;·&nbsp; День: 28 → 2 + 8 = 1</div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Число жизненного пути — 8 «Правитель»</div>
+    <p class="q">Восьмёрка — число власти, которая приходит через испытания. Не подарок, а заработанное.</p>
+    <div class="bt">
+      <div class="ri"><div class="d"></div><span>Архетип: Правитель. Рождён для масштабных целей, управления ресурсами и людьми.</span></div>
+      <div class="ri"><div class="d"></div><span>Сильная связь с материальным миром: деньги, карьера, статус — инструмент, а не цель.</span></div>
+      <div class="ri"><div class="d"></div><span>Путь восьмёрки нелинеен: взлёты и падения чередуются. Каждый кризис — перезагрузка.</span></div>
+      <div class="ri"><div class="d"></div><span>Главный урок: научиться отдавать столько же, сколько брать.</span></div>
+      <div class="ri"><div class="d"></div><span>Зрелость приходит после 35–40 лет — именно тогда 8 начинает работать в полную силу.</span></div>
+    </div>
+    <div class="tags">
+<span class="tag">Власть</span><span class="tag">Ресурс</span><span class="tag">Испытания</span><span class="tag">Поздний расцвет</span>    </div>
+  </div>
+
+  <!-- LOCKED PREMIUM SECTION — full-card example -->
+  <div class="locked-wrap" aria-label="Заблокированный раздел">
+    <div class="locked-content" aria-hidden="true">
+      <div class="card-lbl">Теневая сторона восьмёрки · Кармический долг</div>
+      <p class="q">Власть восьмёрки — обоюдоострая. Когда контроль становится самоцелью, ресурс превращается в кандалы.</p>
+      <div class="g3" style="margin-bottom: 1rem;">
+        <div class="nc"><div class="nc-big">3×9</div><div class="nc-lbl">Финансовых цикла</div><div class="nc-name">Точки риска</div></div>
+        <div class="nc"><div class="nc-big">37</div><div class="nc-lbl">Год обнуления</div><div class="nc-name">Кармический пик</div></div>
+        <div class="nc"><div class="nc-big">5</div><div class="nc-lbl">Совместимых чисел</div><div class="nc-name">Усилители</div></div>
+      </div>
+      <div class="bt">
+        <div class="ri"><div class="d"></div><span>Кармический долг восьмёрки: научиться различать ответственность и тотальный контроль над окружением. Тонкая грань, которая определяет всё.</span></div>
+        <div class="ri"><div class="d"></div><span>Финансовый код 8: три цикла по 9 лет, каждый со своей точкой риска и окном прорыва. Конкретные даты на ближайшие 12 лет.</span></div>
+        <div class="ri"><div class="d"></div><span>Совместимость 8 с другими числами жизненного пути — кто усиливает, кто истощает, кого избегать в долгосрочных партнёрствах.</span></div>
+        <div class="ri"><div class="d"></div><span>Личные коды действий на каждый из ближайших трёх лет — с конкретными датами окон возможностей и фаз отступления.</span></div>
+        <div class="ri"><div class="d"></div><span>Карта родовых сценариев восьмёрки и способ выйти из повторяющегося цикла власть→потеря→восстановление.</span></div>
+      </div>
+      <div class="tags">
+<span class="tag">Тень</span><span class="tag">Карма</span><span class="tag">Финансы</span><span class="tag">Циклы</span><span class="tag">Совместимость</span>      </div>
+    </div>
+    <div class="locked-overlay">
+      <div class="locked-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V7.5a4 4 0 0 1 8 0V11"></path><circle cx="12" cy="15.5" r="1.1" fill="currentColor" stroke="none" style="fill: var(--accent-soft);"></circle></svg>
+      </div>
+      <div class="locked-eyebrow">Доступно в пакете</div>
+      <div class="locked-title">Теневая сторона восьмёрки и кармический долг</div>
+      <div class="locked-pkg-name">Глубина · Premium</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">День рождения — 28</div>
+    <div class="bt">
+      <div class="ri"><div class="d"></div><span>28 = 2 + 8: дипломатия (2) + сила воли (8). Умеет и договариваться, и продавливать — редкая комбинация.</span></div>
+      <div class="ri"><div class="d"></div><span>Сведённое к единице (1) — лидер, который предпочитает вести за собой, а не управлять напрямую.</span></div>
+      <div class="ri"><div class="d"></div><span>Скрытая ранимость за жёсткой оболочкой — нуждается в признании, хотя не просит.</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Периоды жизни · Пинакли</div>
+    <div class="g4" style="margin-bottom:1rem;">
+      <div class="pc">
+        <div class="p-n">2</div>
+        <div class="p-age">0–28 лет</div>
+        <div class="p-d">Партнёрство, терпение, ожидание. Время строить связи и учиться балансу.</div>
+      </div>
+      <div class="pc">
+        <div class="p-n">7</div>
+        <div class="p-age">28–37 лет</div>
+        <div class="p-d">Глубокое познание, анализ, уединение. Период сосредоточения на внутреннем мире.</div>
+      </div>
+      <div class="pc">
+        <div class="p-n">9</div>
+        <div class="p-age">37–46 лет</div>
+        <div class="p-d">Завершение, отпускание, мудрость. Итоги длительного цикла.</div>
+      </div>
+      <div class="pc">
+        <div class="p-n">7</div>
+        <div class="p-age">после 46</div>
+        <div class="p-d">Духовное учительство, передача опыта. Влияние через знание.</div>
+      </div>
+    </div>
+    <p class="bt">Сейчас ты во втором пинакле (7 — Колесница). Период активного движения, воли и преодоления. Первый пинакль (2) завершился в 28 лет — ты вышел из фазы ожидания. Третий пинакль (9) начнётся в 37 — это будет время подведения итогов и освобождения от старого.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Личный год 2026</div>
+    <div class="formula" style="margin-bottom:1rem;">Год творчества и общения. Самовыражение, расширение круга, публичность.</div>
+    <div class="bt">
+      <div class="ri"><div class="d"></div><span>2026 — год тройки. Время самовыражения, общения, новых контактов и идей.</span></div>
+      <div class="ri"><div class="d"></div><span>Год благоприятен для запуска проектов, расширения круга, публичных шагов.</span></div>
+      <div class="ri"><div class="d"></div><span>Риск года тройки: распыление. Важно выбрать одно главное направление.</span></div>
+    </div>
+    <div class="tags">
+<span class="tag">Творчество</span><span class="tag">Расширение</span><span class="tag">Действие</span>    </div>
+  </div>
+</div>
+
+
+<!-- ═══ ЧАСТЬ IV: МАТРИЦА СУДЬБЫ ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Часть четвёртая</div>
+  <div class="chap-title-big">Матрица судьбы</div>
+  <div class="chap-num">IV</div>
+</div>
+
+<div class="page">
+  <p class="q" style="margin-bottom:1.5rem;">Матрица видит человека не таким, какой он есть, а таким, каким ему предстоит стать.</p>
+
+  <div class="card">
+    <div class="card-lbl">Архетипы по 22 арканам Таро · 28.01.1995</div>
+    <div class="g2" style="margin-bottom:0.75rem;">
+      <div class="mxc"><div class="mx-num">2</div><div class="mx-lbl">Личность · центр</div><div class="mx-arc">Жрица</div><div class="mx-desc">Жрица — внутреннее знание, тайна, интуиция. Ты носишь в себе скрытую мудрость, которая не всегда видна снаружи.</div></div>
+      <div class="mxc"><div class="mx-num">7</div><div class="mx-lbl">Реализация</div><div class="mx-arc">Колесница</div><div class="mx-desc">Колесница — воля, контроль, победа через направленное действие. Ты реализуешься через преодоление препятствий.</div></div>
+      <div class="mxc"><div class="mx-num">9</div><div class="mx-lbl">Предназначение</div><div class="mx-arc">Отшельник</div><div class="mx-desc">Отшельник — уединение для познания, передача света через одиночество. Твоё предназначение — стать наставником, пройдя через глубину.</div></div>
+      <div class="mxc"><div class="mx-num">7</div><div class="mx-lbl">Карма рода</div><div class="mx-arc">Колесница</div><div class="mx-desc">Колесница — родовая энергия воли и движения. Ты унаследовал способность пробивать стены, но должен научиться выбирать направление.</div></div>
+      <div class="mxc"><div class="mx-num">9</div><div class="mx-lbl">Родовая программа</div><div class="mx-arc">Отшельник</div><div class="mx-desc">Отшельник — семейная программа уединения и мудрости. Возможно, в роду были те, кто нёс знание в тишине.</div></div>
+      <div class="mxc"><div class="mx-num">18</div><div class="mx-lbl">Главное испытание</div><div class="mx-arc">Луна</div><div class="mx-desc">Луна — иллюзии, страхи, подсознание. Главное испытание — не поддаться туману сомнений и интуитивно найти путь.</div></div>
+    </div>
+    <div class="bt">
+      <div class="ri"><div class="d"></div><span>Отшельник повторяется 4 раза — глубокое погружение внутрь себя, изоляция как ресурс и как ловушка</span></div>
+      <div class="ri"><div class="d"></div><span>Колесница и Башня — два мощных импульса движения и разрушения: сначала прорыв, потом обнуление</span></div>
+      <div class="ri"><div class="d"></div><span>Справедливость в деньгах и комфорте — кармический закон: честность окупается, но не быстро</span></div>
+      <div class="ri"><div class="d"></div><span>Луна как вызов — главная опасность не в реальности, а в её искажённом восприятии</span></div>
+      <div class="ri"><div class="d"></div><span>Миссия Башни и духовный путь Отшельника — контраст: разрушать внешнее, чтобы построить внутреннее</span></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ ЧАСТЬ V: ГЛУБИННЫЙ АНАЛИЗ ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Часть пятая</div>
+  <div class="chap-title-big">Глубинный анализ</div>
+  <div class="chap-num">V</div>
+</div>
+
+<div class="page">
+
+  <!-- БЛОК 1: Портрет -->
+  <div class="sec-hdr">
+    <div class="sec-n">5.1</div>
+    <div class="sec-info">
+      <div class="sec-eyebrow">Блок первый</div>
+      <div class="sec-title">Полный портрет личности</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="q">Ты не ищешь признания — ты ищешь доказательство, что интуиция тебя не подвела.</p>
+    <div class="bt">
+      <div class="ri"><div class="d"></div><span>Кто ты: Человек с глубоким внутренним миром и низкой внешней экспрессией. Снаружи — спокойный, наблюдательный, иногда отстранённый. Внутри — постоянный диалог с собой, анализ, сомнение.</span></div>
+      <div class="ri"><div class="d"></div><span>Разрыв: Тебя воспринимают как уравновешенного и даже холодного. На деле — часто в режиме внутренней борьбы. Люди думают, что тебе всё равно. Тебе не всё равно почти никогда — ты просто не показываешь.</span></div>
+      <div class="ri"><div class="d"></div><span>Главная сила: Способность видеть суть там, где другие видят форму. Ты не быстрый — ты точный. Пока остальные суетятся, ты ждёшь нужного момента.</span></div>
+      <div class="ri"><div class="d"></div><span>Главная слабость: Застреваешь в режиме наблюдения. Откладываешь действие, потому что хочешь быть уверен на 100%. Жизнь проходит мимо, пока ты анализируешь.</span></div>
+      <div class="ri"><div class="d"></div><span>Интеллект: Интуитивно-логический. Решения через внутренний резонанс, но проверяешь их логикой. Игнорируешь чувства — считаешь их ненадёжными, хотя они часто точнее.</span></div>
+      <div class="ri"><div class="d"></div><span>Социальная маска: Компетентность и независимость. Показываешь человека, которому никто не нужен. Скрываешь: острую потребность в глубокой связи и страх быть отвергнутым.</span></div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- БЛОК 2: Хиромантия -->
+  <div class="sec-hdr">
+    <div class="sec-n">5.2</div>
+    <div class="sec-info">
+      <div class="sec-eyebrow">Блок второй</div>
+      <div class="sec-title">Хиромантия</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="q">Ладонь — это карта намерений. Линии не предсказывают — они показывают, куда направлена энергия.</p>
+    <div class="bt">
+      <div class="ri"><div class="d"></div><span>Тип руки: Земля — прямоугольная ладонь. Методичность с оттенком системности. Большой палец доминирует — воля выше среднего, не агрессивная, но устойчивая.</span></div>
+      <div class="ri"><div class="d"></div><span>Линия сердца — самая выраженная из четырёх, с ветвлением. Эмоциональная сфера глубже, чем показывает снаружи. Кривизна 0.168 — чувства идут в своём темпе, без лишней экспрессии. Ветвление: значимый эмоциональный переход.</span></div>
+      <div class="ri"><div class="d"></div><span>Линия головы — глубокая и почти прямая, с ветвлением. Логика устойчива, но ветвление добавляет гибкость. Сила — в анализе, слепая зона — там, где логика не работает.</span></div>
+      <div class="ri"><div class="d"></div><span>Линия жизни — единственная умеренной глубины (0.644). Не слабость, а экономия. Изогнута — энергия распределяется адаптивно. Ветвление: один серьёзный поворот маршрута. Риск: принимаешь экономность за неуязвимость.</span></div>
+      <div class="ri"><div class="d"></div><span>Линия судьбы — глубокая, почти прямая, с ветвлением. Карьерный путь ясный и целенаправленный. Ветвление открывает альтернативный коридор — осознанный выбор. Подтверждает восьмёрку: путь не подарок, а заработанное.</span></div>
+      <div class="ri"><div class="d"></div><span>Ключевой паттерн: жизненная линия слабее трёх остальных. Это не истощение — это распределение. Вкладываешь витальную энергию точечно: в интеллект, эмоции, путь. Там, где нужна стихийная мощь — подключается анализ. Интуиция (Жрица) проигрывает логике — но зря.</span></div>
+    </div>
+    <div class="final-line">Рука говорит: хватит силы и ума — не хватает доверия к внутреннему знанию.</div>
+  </div>
+
+  <hr>
+
+  <!-- БЛОК 3: Периоды -->
+  <div class="sec-hdr">
+    <div class="sec-n">5.3</div>
+    <div class="sec-info">
+      <div class="sec-eyebrow">Блок третий</div>
+      <div class="sec-title">Ключевые периоды жизни</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="yr">
+      <div><div class="yr-n">2023</div><div class="yr-age">28 лет</div></div>
+      <div style="flex:1;"><div class="yr-title">Прошлый перелом — «Конец периода ожидания»</div><div class="yr-desc">Завершение первого пинакля (2 — дипломатия, терпение). Что-то важное закончилось или потребовало выхода из роли наблюдателя. Энергия: сброс. Требование: начать действовать.</div></div>
+    </div>
+    <div class="yr">
+      <div><div class="yr-n">2025–26</div><div class="yr-age">30–31 год</div></div>
+      <div style="flex:1;"><div class="yr-title">Текущий период — «Воля в действии»</div><div class="yr-desc">Второй пинакль (7 — Колесница), личный год тройки — время движения и самовыражения. Давление изнутри: «пора заявить о себе». Давление снаружи: нестабильность. Это не кризис — это инициация.</div></div>
+    </div>
+    <div class="yr">
+      <div><div class="yr-n">2032</div><div class="yr-age">37 лет</div></div>
+      <div style="flex:1;"><div class="yr-title">Опасный год — «Точка обнуления»</div><div class="yr-desc">Смена пинакля с 7 на 9, личный год 9 (завершение). Всё незаконченное выйдет наружу. Возможны потери — но только того, что уже не работало. Пройти через него — значит освободиться.</div></div>
+    </div>
+    <div class="yr">
+      <div><div class="yr-n">2031</div><div class="yr-age">36 лет</div></div>
+      <div style="flex:1;"><div class="yr-title">Самый сильный год — «Выход на мощность»</div><div class="yr-desc">Личный год 8, совпадающий с числом жизненного пути. Всё, что строилось с 2026 по 2030, даёт результат. Это не случайная удача — это сумма вложений. Именно здесь станет понятно, стоили ли усилия.</div></div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="mc"><div class="ml">Прошлое</div><div class="mv">2023</div><div class="md">Завершение периода ожидания</div></div>
+    <div class="mc"><div class="ml">Сейчас</div><div class="mv">2025–26</div><div class="md">Инициация и движение</div></div>
+    <div class="mc"><div class="ml">Самый сильный</div><div class="mv">2031</div><div class="md">Выход на полную мощность</div></div>
+  </div>
+
+  <hr>
+
+  <!-- БЛОК 4: Ошибка -->
+  <div class="sec-hdr">
+    <div class="sec-n">5.4</div>
+    <div class="sec-info">
+      <div class="sec-eyebrow">Блок четвёртый</div>
+      <div class="sec-title">Ошибка, которая тормозит жизнь</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="q">Синдром отложенного проявления.</p>
+    <div class="bt">
+      <div class="ri"><div class="d"></div><span>Паттерн: Предпочитаешь оставаться в тени, даже когда готов выйти на свет. Не потому что ленив — потому что боишься, что твой свет окажется недостаточно ярким.</span></div>
+      <div class="ri"><div class="d"></div><span>В деньгах: Проекты, которые «ещё не готовы». Идеи, в которые вложен интеллект, но не сделаны последние шаги к монетизации. Деньги не приходят — продукт формально не завершён.</span></div>
+      <div class="ri"><div class="d"></div><span>В отношениях: Не показываешь истинные чувства — ждёшь, что партнёр сам догадается. Когда не догадывается — замыкаешься. Старое не отпускаешь полностью, остаётся фон.</span></div>
+      <div class="ri"><div class="d"></div><span>В карьере: Навыки и результаты есть, но ты не предъявляешь себя рынку. Не заявляешь о достижениях — надеешься, что заметят сами. Не замечают.</span></div>
+      <div class="ri"><div class="d"></div><span>Корень: Страх оценки — не провала, а именно оценки. Боишься, что если покажешь себя настоящего, окажется, что этого недостаточно.</span></div>
+    </div>
+    <div class="final-line">Ты не боишься работы — ты боишься, что внутренний свет не увидят.</div>
+  </div>
+
+  <hr>
+
+  <!-- БЛОК 5: Отношения -->
+  <div class="sec-hdr">
+    <div class="sec-n">5.5</div>
+    <div class="sec-info">
+      <div class="sec-eyebrow">Блок пятый</div>
+      <div class="sec-title">Сценарий в отношениях</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="q">Ты даёшь пространство — и ждёшь, что за это не уйдут.</p>
+    <div class="bt">
+      <div class="ri"><div class="d"></div><span>Эмоциональная маска: Независимый, самодостаточный, нетребовательный. В паре ты тот, кто не давит и не просит. Прячешь: глубокую потребность в близости и страх быть покинутым.</span></div>
+      <div class="ri"><div class="d"></div><span>Сценарий: Начало — осторожное, с проверкой дистанции. Когда решаешь довериться — отдаёшь себя, но тихо, без гарантий. Слом там, где ждёшь, что другой прочитает твои мысли — и не читает.</span></div>
+      <div class="ri"><div class="d"></div><span>Главный страх: Что если открыться по-настоящему — окажется, что ты слишком сложный, слишком тёмный, слишком «отшельник». И тебя оставят.</span></div>
+      <div class="ri"><div class="d"></div><span>Что ищешь в партнёре: Того, кто примет твою глубину и не испугается тишины. Кто останется, даже когда ты ничего не просишь.</span></div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- БЛОК 6: Сценарии -->
+  <div class="sec-hdr">
+    <div class="sec-n">5.6</div>
+    <div class="sec-info">
+      <div class="sec-eyebrow">Блок шестой</div>
+      <div class="sec-title">Жизненные сценарии</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Четыре механизма</div>
+    <div class="g2" style="margin-bottom:1rem;">
+      <div class="mc"><div class="ml">Деньги</div><div class="mv">Интуитивный накопитель</div><div class="md">Умеет зарабатывать через анализ и честность. Теряет на незавершённых проектах. Деньги приходят, когда есть баланс (Справедливость), но уходят, если есть внутренний конфликт.</div></div>
+      <div class="mc"><div class="ml">Карьера</div><div class="mv">Сильный, невидимый</div><div class="md">Сила — воля и направленное действие (Колесница). Потолок — самопредставление. Возникает там, где нужно продать себя, а не просто хорошо работать.</div></div>
+      <div class="mc"><div class="ml">Любовь</div><div class="mv">Тихий отшельник</div><div class="md">Любит тихо и глубоко. Ждёт, что партнёр увидит его без слов. Разочарование приходит, когда слова всё-таки нужны.</div></div>
+      <div class="mc"><div class="ml">Паттерн</div><div class="mv">Наблюдение вместо участия</div><div class="md">В разных сферах — одна история: ты видишь верное направление, но медлишь с шагом вперёд. Анализ становится заменой действия.</div></div>
+    </div>
+    <p class="bt">Общий нарратив: человек обладает мощным внутренним компасом (Жрица, Отшельник), но боится довериться ему на 100%. Деньги зависают в незапущенном. Карьера упирается в невидимость. Отношения разрушаются от невысказанного. Три сферы — одна причина: недоверие к своему проявлению.</p>
+  </div>
+
+  <hr>
+
+  <!-- БЛОК 7: Карма -->
+  <div class="sec-hdr">
+    <div class="sec-n">5.7</div>
+    <div class="sec-info">
+      <div class="sec-eyebrow">Блок седьмой</div>
+      <div class="sec-title">Кармический урок</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="text-align:center;padding:1.25rem 0 1rem;margin-bottom:1rem;border-bottom:0.5px solid var(--border);">
+      <div class="ml" style="margin-bottom:0.4rem;">Урок</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:300;color:var(--black);">Право быть видимым</div>
+    </div>
+    <div class="bt">
+      <div class="ri"><div class="d"></div><span>Откуда: Где-то в раннем опыте сложилось убеждение: чтобы тебя приняли — надо быть полезным, ненавязчивым, не требовать внимания. Тот, кто много хочет для себя, — обременяет. Поэтому лучше молчать и наблюдать.</span></div>
+      <div class="ri"><div class="d"></div><span>Как проявляется: Снова и снова оказываешься в роли наблюдателя, поддерживаешь других — и ждёшь, что кто-то поддержит тебя. Не просишь. Не говоришь. Потом чувствуешь, что тебя не видят — хотя сам не показал.</span></div>
+      <div class="ri"><div class="d"></div><span>Когда урок пройден: Ты перестанешь доказывать ценность через молчание и начнёшь просто занимать пространство. Деньги придут легче, отношения станут равными, карьера сдвинется без героических усилий.</span></div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- БЛОК 8: Талант -->
+  <div class="sec-hdr">
+    <div class="sec-n">5.8</div>
+    <div class="sec-info">
+      <div class="sec-eyebrow">Блок восьмой</div>
+      <div class="sec-title">Скрытый талант</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="q">Ты думаешь, что это умеют все. Это не так.</p>
+    <div class="bt">
+      <div class="ri"><div class="d"></div><span>Талант: Способность улавливать скрытые смыслы и паттерны — видеть то, что не лежит на поверхности. Не просто логика, а интуитивное сканирование реальности. Ты считываешь настроение, подтекст, невысказанное.</span></div>
+      <div class="ri"><div class="d"></div><span>Почему скрыт: Считаешь это «нормой» — думаешь, все так чувствуют. Плюс — нет привычки говорить об этом вслух. Пропускаешь информацию, молчишь, используешь молча.</span></div>
+      <div class="ri"><div class="d"></div><span>Где уже проявлялся: В моментах, когда предугадывал чужие действия или находил решение там, где другие искали вслепую. В работе — когда видел слабое место в системе до того, как оно стало проблемой.</span></div>
+      <div class="ri"><div class="d"></div><span>Где даёт максимум: Любая среда, где нужно считывать людей, риски и скрытые процессы: психология, переговоры, стратегическое консультирование.</span></div>
+    </div>
+    <div class="final-line">Если ты начнёшь говорить вслух то, что видишь — люди будут платить за это деньги.</div>
+  </div>
+
+  <hr>
+
+  <!-- БЛОК 9: Правда -->
+  <div class="sec-hdr">
+    <div class="sec-n">5.9</div>
+    <div class="sec-info">
+      <div class="sec-eyebrow">Блок девятый</div>
+      <div class="sec-title">Скрытая правда</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Самый личный блок</div>
+    <p class="q">Пишу как будто знаю тебя годами.</p>
+    <div class="bt">
+      <div class="ri"><div class="d"></div><span>То, что знаешь, но не говоришь: Что устал быть в тени. Что внутри давно зреет желание выйти на свет и быть замеченным — но страх парализует.</span></div>
+      <div class="ri"><div class="d"></div><span>Страх, который не называешь вслух: Что если ты проявишь себя по-настоящему, то окажешься в центре внимания — и не справишься с этим. Что одиночество привычнее успеха.</span></div>
+      <div class="ri"><div class="d"></div><span>Что внутри сильнее, чем думаешь: Интуиция. Не та, что шепчет — а та, которая уже знает ответ, пока ты анализируешь. Доверься ей — она не подведёт.</span></div>
+    </div>
+    <div class="final-line">Ты знаешь, что способен на большее — и именно это знание тяжелее всего нести.</div>
+  </div>
+</div>
+
+
+<!-- ═══ ИТОГ ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Итог</div>
+  <div class="chap-title-big">Сводный портрет</div>
+  <div class="chap-num">∑</div>
+</div>
+
+<div class="page">
+  <div class="sum-card" style="background-color: rgb(241, 239, 232); color: var(--g900);">
+    <div class="card-lbl" style="color: var(--g500); border-color: var(--border);">Все системы · Единый нарратив</div>
+    <p class="q" style="color: var(--g700); border-left-color: var(--g300);">Пять систем говорят об одном: человек глубокой интуиции, который ещё не научился ей доверять настолько, чтобы проявиться в полную силу.</p>
+    <div class="bt" style="color: var(--g700);">
+      <div class="ri"><div class="d" style="background: var(--g500);"></div><span>Все системы указывают на поздний расцвет — лучшее впереди, после 35–40</span></div>
+      <div class="ri"><div class="d" style="background: var(--g500);"></div><span>Сильное повторение архетипа Отшельника — уединение как ресурс, но и как ограничение</span></div>
+      <div class="ri"><div class="d" style="background: var(--g500);"></div><span>Миссия Башни — обнулять ложное, чтобы построить истинное</span></div>
+      <div class="ri"><div class="d" style="background: var(--g500);"></div><span>Ключевое испытание — доверие к себе и к миру, выход из тени</span></div>
+      <div class="ri"><div class="d" style="background: var(--g500);"></div><span>Линия жизни слабее остальных — энергии нужно управлять осознанно, не ждать чуда</span></div>
+      <div class="ri"><div class="d" style="background: var(--g500);"></div><span>Синдром отложенного проявления пронизывает деньги, карьеру и отношения — три сферы, одна причина</span></div>
+      <div class="ri"><div class="d" style="background: var(--g500);"></div><span>2026 — год действия. То, что запускается сейчас, определит вторую половину жизни</span></div>
+    </div>
+    <div class="tags">
+<span class="tag" style="color: var(--g700); border-color: var(--border-md);">Поздний расцвет</span><span class="tag" style="color: var(--g700); border-color: var(--border-md);">Интуитивный лидер</span><span class="tag" style="color: var(--g700); border-color: var(--border-md);">Наблюдатель</span><span class="tag" style="color: var(--g700); border-color: var(--border-md);">Земля + Отшельник</span><span class="tag" style="color: var(--g700); border-color: var(--border-md);">Жрица · Колесница · Башня</span><span class="tag" style="color: var(--g700); border-color: var(--border-md);">Число 8</span>    </div>
+  </div>
+</div>
+
+<div class="footer">
+  Персональный отчёт · 28.01.1995<br>
+  Внешность · Физиогномика · Нумерология · Матрица судьбы · Глубинный анализ личности<br>
+  Анализ носит интерпретационный характер. Эзотерика — язык символов, не детерминизм.
+</div>
+
+
+<!-- TWEAKS PANEL -->
+<div id="tweaks-panel">
+  <button id="tweaks-close" aria-label="Close">×</button>
+  <div class="tp-title">Tweaks</div>
+  <div class="tp-sub">Цветовой акцент</div>
+  <div class="tp-row" id="tp-swatches">
+    <div class="tp-sw" data-accent="gold"   style="background: linear-gradient(135deg,#D9BC85,#8C6E3F);" title="Золото"></div>
+    <div class="tp-sw" data-accent="bordo"  style="background: linear-gradient(135deg,#7A3A36,#3F1E1B);" title="Бордо"></div>
+    <div class="tp-sw" data-accent="midnight" style="background: linear-gradient(135deg,#3C4A6B,#1A2238);" title="Ночь"></div>
+    <div class="tp-sw" data-accent="mono"   style="background: linear-gradient(135deg,#2C2C2A,#0F0F0E);" title="Монохром"></div>
+  </div>
+  <div style="display:flex;justify-content:space-between;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:var(--g500);margin-bottom:8px;padding:0 2px;">
+    <span>Gold</span><span>Bordo</span><span>Night</span><span>Mono</span>
+  </div>
+  <label class="tp-toggle">
+    <span style="font-variant:small-caps;letter-spacing:0.16em;">Бумажная текстура</span>
+    <input type="checkbox" id="tp-grain" checked>
+  </label>
+</div>
+
+<script>
+(function(){
+  const PALETTES = {
+    gold:     { accent:'#B89968', deep:'#8C6E3F', soft:'#E8DAB8', line:'rgba(184,153,104,0.45)', faint:'rgba(184,153,104,0.10)', band:'#F1E9D6', cream:'#FBF8F0', creamD:'#F5EFDF' },
+    bordo:    { accent:'#7A3A36', deep:'#5C2520', soft:'#D9B5B0', line:'rgba(122,58,54,0.40)',  faint:'rgba(122,58,54,0.08)',  band:'#EFE3E0', cream:'#FBF5F4', creamD:'#F4E6E3' },
+    midnight: { accent:'#3C4A6B', deep:'#26314A', soft:'#B8C2D9', line:'rgba(60,74,107,0.40)',  faint:'rgba(60,74,107,0.08)',  band:'#E5E8F0', cream:'#F6F7FB', creamD:'#E9ECF4' },
+    mono:     { accent:'#2C2C2A', deep:'#111110', soft:'#D3D1C7', line:'rgba(0,0,0,0.18)',      faint:'rgba(0,0,0,0.04)',      band:'#F1EFE8', cream:'#F7F5EE', creamD:'#EEEBE0' }
+  };
+  const root = document.documentElement;
+  function applyAccent(name){
+    const p = PALETTES[name] || PALETTES.gold;
+    root.style.setProperty('--accent', p.accent);
+    root.style.setProperty('--accent-deep', p.deep);
+    root.style.setProperty('--accent-soft', p.soft);
+    root.style.setProperty('--accent-line', p.line);
+    root.style.setProperty('--accent-faint', p.faint);
+    // Update cover band + cream final-line via inline style override
+    document.querySelectorAll('.cover-stage').forEach(el => el.style.setProperty('--band-color', p.band));
+    document.querySelectorAll('.tp-sw').forEach(el => el.classList.toggle('active', el.dataset.accent === name));
+    try { localStorage.setItem('oko_accent', name); } catch(e){}
+  }
+  function applyGrain(on){
+    document.body.classList.toggle('no-grain', !on);
+    try { localStorage.setItem('oko_grain', on ? '1':'0'); } catch(e){}
+  }
+  // restore
+  let saved = 'gold', grain = true;
+  try { saved = localStorage.getItem('oko_accent') || 'gold'; grain = localStorage.getItem('oko_grain') !== '0'; } catch(e){}
+  applyAccent(saved);
+  applyGrain(grain);
+
+  // panel
+  const panel = document.getElementById('tweaks-panel');
+  const grainBox = document.getElementById('tp-grain');
+  grainBox.checked = grain;
+  document.getElementById('tp-swatches').addEventListener('click', e => {
+    const sw = e.target.closest('.tp-sw'); if (!sw) return;
+    applyAccent(sw.dataset.accent);
+  });
+  grainBox.addEventListener('change', () => applyGrain(grainBox.checked));
+  document.getElementById('tweaks-close').addEventListener('click', () => {
+    panel.classList.remove('open');
+    try { window.parent.postMessage({type:'__edit_mode_dismissed'}, '*'); } catch(e){}
+  });
+
+  // host integration
+  window.addEventListener('message', (e) => {
+    const d = e.data || {};
+    if (d.type === '__activate_edit_mode') panel.classList.add('open');
+    if (d.type === '__deactivate_edit_mode') panel.classList.remove('open');
+  });
+  try { window.parent.postMessage({type:'__edit_mode_available'}, '*'); } catch(e){}
+})();
+</script>
+<style>
+body.no-grain::before { display: none !important; }
+</style>
+
+</body></html>

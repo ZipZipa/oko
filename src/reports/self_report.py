@@ -206,7 +206,7 @@ def build_target_input(face_data: dict, name: str, birthdate: str,
 def generate(face_data: dict, name: str, birthdate: str,
              examples_dir: Path, templates_dir: Path,
              ref_year: int = None, model: str = None,
-             palm_data: dict = None) -> str:
+             palm_data: dict = None, plan: str = "full") -> str:
     """Генерирует self отчёт и возвращает HTML."""
     target = build_target_input(face_data, name, birthdate, ref_year,
                                 palm_data=palm_data)
@@ -228,4 +228,4 @@ def generate(face_data: dict, name: str, birthdate: str,
         **kwargs,
     )
 
-    return render_template(templates_dir, TEMPLATE_NAME, target, blocks)
+    return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)
