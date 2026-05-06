@@ -18,6 +18,8 @@ from src.bot.states import RegistrationStates
 router = Router()
 
 
+# ─── Меню ───────────────────────────────────────────────────────────────────────
+
 def _main_menu() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="Портрет личности", callback_data="menu_self")],
@@ -25,6 +27,55 @@ def _main_menu() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="Денежная карта",    callback_data="menu_money")],
     ])
 
+
+_PACKAGES = {
+    "base": {
+        "label": "Базовый",
+        "text": (
+            "Базовый пакет\n\n"
+            "Включает всё из демо, плюс два закрытых раздела:\n"
+            "• Ошибка, которая тормозит жизнь — паттерн, который мешает двигаться вперёд\n"
+            "• Сценарий в отношениях — как ты строишь близкие связи и где ломаешься"
+        ),
+    },
+    "extended": {
+        "label": "Расширенный",
+        "text": (
+            "Расширенный пакет\n\n"
+            "Всё из Базового, плюс:\n"
+            "• Жизненные сценарии — глубокие программы, которые управляют твоими решениями\n"
+            "• Кармический урок — то, что повторяется до тех пор, пока не осознано"
+        ),
+    },
+    "full": {
+        "label": "Премиум",
+        "text": (
+            "Премиум пакет\n\n"
+            "Полный отчёт — все блоки без ограничений:\n"
+            "• Скрытый талант — ресурс, который ты скорее всего недооцениваешь\n"
+            "• Скрытая правда — то, что проявляется, когда уходит контроль\n"
+            "• Сводный портрет — итоговый психологический профиль"
+        ),
+    },
+}
+
+
+def _packages_menu() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Базовый",     callback_data="pkg_base")],
+        [InlineKeyboardButton(text="Расширенный", callback_data="pkg_extended")],
+        [InlineKeyboardButton(text="Премиум",     callback_data="pkg_full")],
+    ])
+
+
+def _package_detail_menu(plan_key: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Купить", callback_data=f"buy_{plan_key}")],
+        [InlineKeyboardButton(text="← Назад к пакетам", callback_data="show_packages")],
+    ])
+
+
+# ─── Хелперы БД ─────────────────────────────────────────────────────────────────
 
 def _is_complete(user: User) -> bool:
     return bool(user.name and user.birth_date and user.face_json)
@@ -38,8 +89,9 @@ async def get_user(telegram_id: int) -> User | None:
         return result.scalar_one_or_none()
 
 
+# ─── Фоновый анализ лица ────────────────────────────────────────────────────────
+
 async def _analyze_and_save_face(bot, file_id: str, telegram_id: int):
-    """Фоновая задача: скачивает фото, анализирует лицо, записывает face_json в БД."""
     from src.core.face_analyzer import analyze_face
     import os
 
@@ -205,10 +257,42 @@ async def cb_menu_money(callback: CallbackQuery):
     await callback.answer()
 
 
+# ─── Пакеты ─────────────────────────────────────────────────────────────────────
+
+@router.callback_query(F.data == "show_packages")
+async def cb_show_packages(callback: CallbackQuery):
+    await callback.message.edit_text(
+        "Выбери пакет, чтобы узнать подробнее:",
+        reply_markup=_packages_menu(),
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.in_({"pkg_base", "pkg_extended", "pkg_full"}))
+async def cb_package_detail(callback: CallbackQuery):
+    plan_key = callback.data.removeprefix("pkg_")
+    pkg = _PACKAGES[plan_key]
+    await callback.message.edit_text(
+        pkg["text"],
+        reply_markup=_package_detail_menu(plan_key),
+    )
+    await callback.answer()
+
+
 # ─── Запуск отчёта ──────────────────────────────────────────────────────────────
 
 @router.callback_query(F.data == "run_self_demo")
 async def cb_run_self_demo(callback: CallbackQuery):
+    await _start_report(callback, plan="demo")
+
+
+@router.callback_query(F.data.in_({"buy_base", "buy_extended", "buy_full"}))
+async def cb_buy(callback: CallbackQuery):
+    plan_key = callback.data.removeprefix("buy_")
+    await _start_report(callback, plan=plan_key)
+
+
+async def _start_report(callback: CallbackQuery, plan: str):
     user = await get_user(callback.from_user.id)
 
     if not user or not _is_complete(user):
@@ -221,10 +305,10 @@ async def cb_run_self_demo(callback: CallbackQuery):
     await callback.message.edit_text("Запускаю анализ... Это займёт минуту ⏳")
     await callback.answer()
 
-    asyncio.create_task(_run_self_report(callback.message, user))
+    asyncio.create_task(_run_self_report(callback.message, user, plan))
 
 
-async def _run_self_report(message: Message, user: User):
+async def _run_self_report(message: Message, user: User, plan: str):
     from src.api import generate_report
 
     try:
@@ -239,13 +323,19 @@ async def _run_self_report(message: Message, user: User):
                 face_data=face_data,
                 name=user.name,
                 birthdate=birthdate,
-                plan="demo",
+                plan=plan,
             ),
         )
 
         await message.delete()
         file = BufferedInputFile(html.encode("utf-8"), filename=f"portrait_{user.name}.html")
         await message.answer_document(file, caption="Твой портрет личности готов! 🎉")
+
+        if plan == "demo":
+            await message.answer(
+                "Хочешь получить полный анализ? Выбери пакет:",
+                reply_markup=_packages_menu(),
+            )
 
     except Exception as e:
         await message.edit_text(f"Ошибка при генерации отчёта: {e}")
