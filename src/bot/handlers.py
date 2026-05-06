@@ -183,7 +183,7 @@ async def process_birth_date_invalid(message: Message):
 
 @router.callback_query(F.data == "menu_self")
 async def cb_menu_self(callback: CallbackQuery):
-    await callback.message.answer(
+    await callback.message.edit_text(
         "Портрет личности — анализ твоей внешности, нумерологии и психологических паттернов.\n\n"
         "Запустим тестовый анализ?",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -195,13 +195,13 @@ async def cb_menu_self(callback: CallbackQuery):
 
 @router.callback_query(F.data == "menu_couple")
 async def cb_menu_couple(callback: CallbackQuery):
-    await callback.message.answer("Раздел «Совместимость пары» скоро будет доступен.")
+    await callback.message.edit_text("Раздел «Совместимость пары» скоро будет доступен.")
     await callback.answer()
 
 
 @router.callback_query(F.data == "menu_money")
 async def cb_menu_money(callback: CallbackQuery):
-    await callback.message.answer("Раздел «Денежная карта» скоро будет доступен.")
+    await callback.message.edit_text("Раздел «Денежная карта» скоро будет доступен.")
     await callback.answer()
 
 
@@ -212,13 +212,13 @@ async def cb_run_self_demo(callback: CallbackQuery):
     user = await get_user(callback.from_user.id)
 
     if not user or not _is_complete(user):
-        await callback.message.answer(
+        await callback.message.edit_text(
             "Для анализа нужны фото, имя и дата рождения. Пройди регистрацию: /start"
         )
         await callback.answer()
         return
 
-    await callback.message.answer("Запускаю анализ... Это займёт минуту ⏳")
+    await callback.message.edit_text("Запускаю анализ... Это займёт минуту ⏳")
     await callback.answer()
 
     asyncio.create_task(_run_self_report(callback.message, user))
@@ -243,8 +243,9 @@ async def _run_self_report(message: Message, user: User):
             ),
         )
 
+        await message.delete()
         file = BufferedInputFile(html.encode("utf-8"), filename=f"portrait_{user.name}.html")
         await message.answer_document(file, caption="Твой портрет личности готов! 🎉")
 
     except Exception as e:
-        await message.answer(f"Ошибка при генерации отчёта: {e}")
+        await message.edit_text(f"Ошибка при генерации отчёта: {e}")
