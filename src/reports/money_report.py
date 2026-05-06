@@ -45,7 +45,17 @@ SYSTEM_PROMPT = """Ты — автор персональных финансов
 """
 
 
+def _strip_photo_url(data: dict) -> dict:
+    """Убирает photo_url из данных — LLM не видит фото,
+    а base64-строка только расходует токены."""
+    d = dict(data)
+    if "user" in d:
+        d["user"] = {k: v for k, v in d["user"].items() if k != "photo_url"}
+    return d
+
+
 def build_user_prompt(reference_blocks: dict, target_input: dict) -> str:
+    target_input = _strip_photo_url(target_input)
     return f"""ЭТАЛОННЫЙ ПРИМЕР:
 {json.dumps(reference_blocks, ensure_ascii=False, indent=2)}
 
