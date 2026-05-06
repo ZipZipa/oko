@@ -288,13 +288,23 @@ body.no-grain::before { display: none !important; }
 {%- set _plan_levels = {'demo': 0, 'base': 1, 'extended': 2, 'full': 3} -%}
 {%- set _cur_level   = _plan_levels.get(plan | default('full'), 3) -%}
 {%- set locked_cfg = {
-  'block_4': {'min_plan': 'base',     'title': 'Ошибка, которая тормозит жизнь', 'pkg': 'Базовый'},
-  'block_5': {'min_plan': 'base',     'title': 'Сценарий в отношениях',          'pkg': 'Базовый'},
-  'block_6': {'min_plan': 'extended', 'title': 'Жизненные сценарии',             'pkg': 'Расширенный'},
-  'block_7': {'min_plan': 'extended', 'title': 'Кармический урок',               'pkg': 'Расширенный'},
-  'block_8': {'min_plan': 'full',     'title': 'Скрытый талант',                 'pkg': 'Премиум'},
-  'block_9': {'min_plan': 'full',     'title': 'Скрытая правда',                 'pkg': 'Премиум'},
-  'summary': {'min_plan': 'full',     'title': 'Сводный портрет',                'pkg': 'Премиум'},
+  'beauty':    {'min_plan': 'demo', 'title': 'Анализ внешности',         'pkg': ''},
+  'hand':      {'min_plan': 'demo', 'title': 'Анализ ладони',             'pkg': ''},
+  'grooming':  {'min_plan': 'demo', 'title': 'Ухоженность и стиль',      'pkg': ''},
+  'physio':    {'min_plan': 'demo', 'title': 'Физиогномика',              'pkg': ''},
+  'numerology':{'min_plan': 'demo', 'title': 'Нумерология',               'pkg': ''},
+  'matrix':    {'min_plan': 'demo', 'title': 'Матрица судьбы',            'pkg': ''},
+  'ch_deep':   {'min_plan': 'demo', 'title': 'Глубинный анализ',         'pkg': ''},
+  'block_1':   {'min_plan': 'demo', 'title': 'Портрет личности',         'pkg': ''},
+  'block_2':   {'min_plan': 'demo', 'title': 'Хиромантия',               'pkg': ''},
+  'block_3':   {'min_plan': 'demo', 'title': 'Ключевые периоды жизни',   'pkg': ''},
+  'block_4':   {'min_plan': 'base',     'title': 'Ошибка, которая тормозит жизнь', 'pkg': 'Базовый'},
+  'block_5':   {'min_plan': 'base',     'title': 'Сценарий в отношениях',          'pkg': 'Базовый'},
+  'block_6':   {'min_plan': 'extended', 'title': 'Жизненные сценарии',             'pkg': 'Расширенный'},
+  'block_7':   {'min_plan': 'extended', 'title': 'Кармический урок',               'pkg': 'Расширенный'},
+  'block_8':   {'min_plan': 'full',     'title': 'Скрытый талант',                 'pkg': 'Премиум'},
+  'block_9':   {'min_plan': 'full',     'title': 'Скрытая правда',                 'pkg': 'Премиум'},
+  'summary':   {'min_plan': 'full',     'title': 'Сводный портрет',                'pkg': 'Премиум'},
 } -%}
 {%- macro locked_card(min_plan, title, pkg) -%}
   {%- set min_level = _plan_levels.get(min_plan, 1) -%}
@@ -356,6 +366,8 @@ body.no-grain::before { display: none !important; }
 </div>
 
 
+{%- set _cb = locked_cfg['beauty'] -%}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_cb.min_plan] %}
 <!-- ═══ ЧАСТЬ I: ВИЗУАЛЬНЫЙ АНАЛИЗ ═══ -->
 <div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть первая</div>
@@ -363,6 +375,7 @@ body.no-grain::before { display: none !important; }
   <div class="chap-num">I</div>
 </div>
 
+{%- call locked_card(_cb.min_plan, _cb.title, _cb.pkg) %}
 <div class="page">
   <div class="card">
     <div class="card-lbl">Общая оценка</div>
@@ -403,9 +416,12 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 </div>
+{%- endcall %}
+{%- endif %}
 
 
-{% if blocks.hand_analysis %}
+{%- set _ch = locked_cfg['hand'] -%}
+{%- if blocks.hand_analysis and (plan == 'demo' or _cur_level >= _plan_levels[_ch.min_plan]) %}
 <!-- ═══ ЧАСТЬ I.5: АНАЛИЗ ЛАДОНИ ═══ -->
 <div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть первая · дополнение</div>
@@ -413,6 +429,7 @@ body.no-grain::before { display: none !important; }
   <div class="chap-num">I⁺</div>
 </div>
 
+{%- call locked_card(_ch.min_plan, _ch.title, _ch.pkg) %}
 <div class="page">
   <div class="card">
     <div class="card-lbl">Общая оценка</div>
@@ -454,9 +471,11 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 </div>
-{% endif %}
+{%- endcall %}
+{%- endif %}
 
-{% if blocks.grooming_and_style %}
+{%- set _cg = locked_cfg['grooming'] -%}
+{%- if blocks.grooming_and_style and (plan == 'demo' or _cur_level >= _plan_levels[_cg.min_plan]) %}
 <!-- ═══ ЧАСТЬ I.6: УХОЖЕННОСТЬ И СТИЛЬ ═══ -->
 <div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть первая · стиль</div>
@@ -464,6 +483,7 @@ body.no-grain::before { display: none !important; }
   <div class="chap-num">Iˢ</div>
 </div>
 
+{%- call locked_card(_cg.min_plan, _cg.title, _cg.pkg) %}
 <div class="page">
   <div class="card">
     <div class="card-lbl">Впечатление</div>
@@ -498,8 +518,11 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 </div>
-{% endif %}
+{%- endcall %}
+{%- endif %}
 
+{%- set _cp = locked_cfg['physio'] -%}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_cp.min_plan] %}
 <!-- ═══ ЧАСТЬ II: ФИЗИОГНОМИКА ═══ -->
 <div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть вторая</div>
@@ -507,6 +530,7 @@ body.no-grain::before { display: none !important; }
   <div class="chap-num">II</div>
 </div>
 
+{%- call locked_card(_cp.min_plan, _cp.title, _cp.pkg) %}
 <div class="page">
   <div class="card">
     <div class="card-lbl">Форма лица и ключевые черты</div>
@@ -533,8 +557,11 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 </div>
+{%- endcall %}
+{%- endif %}
 
-
+{%- set _cn = locked_cfg['numerology'] -%}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_cn.min_plan] %}
 <!-- ═══ ЧАСТЬ III: НУМЕРОЛОГИЯ ═══ -->
 <div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть третья</div>
@@ -542,6 +569,7 @@ body.no-grain::before { display: none !important; }
   <div class="chap-num">III</div>
 </div>
 
+{%- call locked_card(_cn.min_plan, _cn.title, _cn.pkg) %}
 <div class="page">
   <div class="card">
     <div class="card-lbl">Ключевые числа · Точный расчёт {{ data.user.birthdate }}</div>
@@ -602,8 +630,11 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 </div>
+{%- endcall %}
+{%- endif %}
 
-
+{%- set _cm = locked_cfg['matrix'] -%}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_cm.min_plan] %}
 <!-- ═══ ЧАСТЬ IV: МАТРИЦА СУДЬБЫ ═══ -->
 <div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть четвёртая</div>
@@ -611,6 +642,7 @@ body.no-grain::before { display: none !important; }
   <div class="chap-num">IV</div>
 </div>
 
+{%- call locked_card(_cm.min_plan, _cm.title, _cm.pkg) %}
 <div class="page">
   <p class="q" style="margin-bottom:1.5rem;">{{ blocks.matrix.intro_quote }}</p>
 
@@ -631,8 +663,11 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 </div>
+{%- endcall %}
+{%- endif %}
 
-
+{%- set _cd = locked_cfg['ch_deep'] -%}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_cd.min_plan] %}
 <!-- ═══ ЧАСТЬ V: ГЛУБИННЫЙ АНАЛИЗ ═══ -->
 <div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть пятая</div>
@@ -642,6 +677,8 @@ body.no-grain::before { display: none !important; }
 
 <div class="page">
 
+{%- set _b1 = locked_cfg['block_1'] -%}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_b1.min_plan] %}
   <!-- БЛОК 1: Портрет -->
   <div class="sec-hdr">
     <div class="sec-n">5.1</div>
@@ -651,6 +688,7 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 
+  {%- call locked_card(_b1.min_plan, _b1.title, _b1.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.deep_portrait.block_1_personality.quote }}</p>
     <div class="bt">
@@ -659,10 +697,12 @@ body.no-grain::before { display: none !important; }
       {% endfor %}
     </div>
   </div>
+  {%- endcall %}
+{%- endif %}
 
+{%- set _b2 = locked_cfg['block_2'] -%}
+{%- if blocks.deep_portrait.block_2_hiromantia and (plan == 'demo' or _cur_level >= _plan_levels[_b2.min_plan]) %}
   <hr>
-
-  {% if blocks.deep_portrait.block_2_hiromantia %}
   <!-- БЛОК 2: Хиромантия -->
   <div class="sec-hdr">
     <div class="sec-n">5.2</div>
@@ -672,6 +712,7 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 
+  {%- call locked_card(_b2.min_plan, _b2.title, _b2.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.deep_portrait.block_2_hiromantia.quote }}</p>
     <div class="bt">
@@ -681,10 +722,12 @@ body.no-grain::before { display: none !important; }
     </div>
     <div class="final-line">{{ blocks.deep_portrait.block_2_hiromantia.final_line }}</div>
   </div>
+  {%- endcall %}
+{%- endif %}
 
+{%- set _b3 = locked_cfg['block_3'] -%}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_b3.min_plan] %}
   <hr>
-  {% endif %}
-
   <!-- БЛОК 3: Периоды -->
   <div class="sec-hdr">
     <div class="sec-n">5.3</div>
@@ -694,6 +737,7 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 
+  {%- call locked_card(_b3.min_plan, _b3.title, _b3.pkg) %}
   <div class="card">
     {% for y in blocks.deep_portrait.block_3_periods.years %}
     <div class="yr">
@@ -708,7 +752,8 @@ body.no-grain::before { display: none !important; }
     <div class="mc"><div class="ml">{{ c.label }}</div><div class="mv">{{ c.value }}</div><div class="md">{{ c.desc }}</div></div>
     {% endfor %}
   </div>
-
+  {%- endcall %}
+{%- endif %}
 
 {%- set _b4 = locked_cfg['block_4'] -%}
 {%- if plan | default('full') == 'demo' or _cur_level >= _plan_levels[_b4.min_plan] %}
@@ -864,6 +909,7 @@ body.no-grain::before { display: none !important; }
   {%- endcall %}
 {%- endif %}
 </div>
+{%- endif %}
 
 
 {%- set _bs = locked_cfg['summary'] -%}
