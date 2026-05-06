@@ -15,3 +15,6 @@ class User(Base):
     photo_file_id = Column(String(512), nullable=True)
     birth_date = Column(Date, nullable=True)
     face_json = Column(Text, nullable=True)
+    blocks_json = Column(Text, nullable=True)
+    purchased_plan = Column(String(20), nullable=True)
+    report_html = Column(Text, nullable=True)

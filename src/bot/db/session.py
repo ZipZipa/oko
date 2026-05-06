@@ -1,3 +1,4 @@
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
 from src.bot.config import DATABASE_URL
@@ -10,6 +11,11 @@ async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit
 async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        for col in ("blocks_json TEXT", "purchased_plan VARCHAR(20)", "report_html TEXT"):
+            try:
+                await conn.execute(text(f"ALTER TABLE users ADD COLUMN {col}"))
+            except Exception:
+                pass
 
 
 async def get_session() -> AsyncSession:

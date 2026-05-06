@@ -28,6 +28,8 @@ def _main_menu() -> InlineKeyboardMarkup:
     ])
 
 
+_PLAN_LEVEL = {"demo": 0, "base": 1, "extended": 2, "full": 3}
+
 _PACKAGES = {
     "base": {
         "label": "Базовый",
@@ -60,12 +62,14 @@ _PACKAGES = {
 }
 
 
-def _packages_menu() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Базовый",     callback_data="pkg_base")],
-        [InlineKeyboardButton(text="Расширенный", callback_data="pkg_extended")],
-        [InlineKeyboardButton(text="Премиум",     callback_data="pkg_full")],
-    ])
+def _packages_menu(above_plan: str = "demo") -> InlineKeyboardMarkup:
+    current_level = _PLAN_LEVEL.get(above_plan, 0)
+    rows = [
+        [InlineKeyboardButton(text=pkg["label"], callback_data=f"pkg_{key}")]
+        for key, pkg in _PACKAGES.items()
+        if _PLAN_LEVEL[key] > current_level
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def _package_detail_menu(plan_key: str) -> InlineKeyboardMarkup:
@@ -235,13 +239,26 @@ async def process_birth_date_invalid(message: Message):
 
 @router.callback_query(F.data == "menu_self")
 async def cb_menu_self(callback: CallbackQuery):
-    await callback.message.edit_text(
-        "Портрет личности — анализ твоей внешности, нумерологии и психологических паттернов.\n\n"
-        "Запустим тестовый анализ?",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="Запустить анализ", callback_data="run_self_demo")],
-        ]),
-    )
+    user = await get_user(callback.from_user.id)
+
+    if user and user.blocks_json:
+        purchased = user.purchased_plan or "demo"
+        menu = _packages_menu(above_plan=purchased)
+        if menu.inline_keyboard:
+            await callback.message.edit_text(
+                "Тестовый анализ уже готов. Выбери пакет для полного отчёта:",
+                reply_markup=menu,
+            )
+        else:
+            await callback.message.edit_text("У тебя уже есть полный отчёт — Премиум пакет.")
+    else:
+        await callback.message.edit_text(
+            "Портрет личности — анализ твоей внешности, нумерологии и психологических паттернов.\n\n"
+            "Запустим тестовый анализ?",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="Запустить анализ", callback_data="run_self_demo")],
+            ]),
+        )
     await callback.answer()
 
 
@@ -261,9 +278,11 @@ async def cb_menu_money(callback: CallbackQuery):
 
 @router.callback_query(F.data == "show_packages")
 async def cb_show_packages(callback: CallbackQuery):
+    user = await get_user(callback.from_user.id)
+    purchased = (user.purchased_plan if user else None) or "demo"
     await callback.message.edit_text(
         "Выбери пакет, чтобы узнать подробнее:",
-        reply_markup=_packages_menu(),
+        reply_markup=_packages_menu(above_plan=purchased),
     )
     await callback.answer()
 
@@ -314,18 +333,54 @@ async def _run_self_report(message: Message, user: User, plan: str):
     try:
         face_data = json.loads(user.face_json)
         birthdate = user.birth_date.strftime("%d.%m.%Y")
-
         loop = asyncio.get_running_loop()
-        html = await loop.run_in_executor(
-            None,
-            lambda: generate_report(
-                report_type="self",
-                face_data=face_data,
-                name=user.name,
-                birthdate=birthdate,
-                plan=plan,
-            ),
-        )
+
+        if plan == "demo":
+            out_blocks: list = []
+            html = await loop.run_in_executor(
+                None,
+                lambda: generate_report(
+                    report_type="self",
+                    face_data=face_data,
+                    name=user.name,
+                    birthdate=birthdate,
+                    plan="demo",
+                    _out_blocks=out_blocks,
+                ),
+            )
+            if out_blocks:
+                async with async_session() as session:
+                    result = await session.execute(
+                        select(User).where(User.telegram_id == user.telegram_id)
+                    )
+                    db_user = result.scalar_one_or_none()
+                    if db_user:
+                        db_user.blocks_json = json.dumps(out_blocks[0], ensure_ascii=False)
+                        await session.commit()
+        else:
+            reference = user.blocks_json or None
+            html = await loop.run_in_executor(
+                None,
+                lambda: generate_report(
+                    report_type="self",
+                    face_data=face_data,
+                    name=user.name,
+                    birthdate=birthdate,
+                    plan=plan,
+                    reference=reference,
+                ),
+            )
+
+        if plan != "demo":
+            async with async_session() as session:
+                result = await session.execute(
+                    select(User).where(User.telegram_id == user.telegram_id)
+                )
+                db_user = result.scalar_one_or_none()
+                if db_user and _PLAN_LEVEL.get(plan, 0) > _PLAN_LEVEL.get(db_user.purchased_plan or "demo", 0):
+                    db_user.purchased_plan = plan
+                    db_user.report_html = html
+                    await session.commit()
 
         await message.delete()
         file = BufferedInputFile(html.encode("utf-8"), filename=f"portrait_{user.name}.html")
@@ -334,7 +389,7 @@ async def _run_self_report(message: Message, user: User, plan: str):
         if plan == "demo":
             await message.answer(
                 "Хочешь получить полный анализ? Выбери пакет:",
-                reply_markup=_packages_menu(),
+                reply_markup=_packages_menu(above_plan="demo"),
             )
 
     except Exception as e:

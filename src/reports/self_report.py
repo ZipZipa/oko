@@ -218,11 +218,14 @@ def generate(face_data: dict, name: str, birthdate: str,
              examples_dir: Path, templates_dir: Path,
              ref_year: int = None, model: str = None,
              palm_data: dict = None, plan: str = "full",
-             reference: str = None) -> str:
+             reference: str = None,
+             _out_blocks: list = None) -> str:
     """Генерирует self отчёт и возвращает HTML.
-    
-    reference: путь к JSON-файлу с блоками (референс).
-               Если указан — LLM не вызывается, блоки берутся из файла.
+
+    reference: путь к JSON-файлу с блоками ИЛИ сырая JSON-строка.
+               Если указан — LLM не вызывается.
+    _out_blocks: если передан пустой список, в него будет добавлен dict blocks
+                 после генерации через LLM (для сохранения в БД).
     """
     target = build_target_input(face_data, name, birthdate, ref_year,
                                 palm_data=palm_data)
@@ -230,8 +233,11 @@ def generate(face_data: dict, name: str, birthdate: str,
 
     # ── Режим референса: без LLM ──
     if reference:
-        with open(reference, encoding="utf-8") as f:
-            blocks = json.load(f)
+        if reference.strip().startswith("{"):
+            blocks = json.loads(reference)
+        else:
+            with open(reference, encoding="utf-8") as f:
+                blocks = json.load(f)
         errors = validate_blocks(blocks, has_palm=has_palm)
         if errors:
             print("Предупреждения валидации референса:", file=sys.stderr)
@@ -255,5 +261,8 @@ def generate(face_data: dict, name: str, birthdate: str,
         lambda b: validate_blocks(b, has_palm=has_palm),
         **kwargs,
     )
+
+    if _out_blocks is not None:
+        _out_blocks.append(blocks)
 
     return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)
