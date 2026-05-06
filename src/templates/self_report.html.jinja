@@ -288,29 +288,56 @@ body.no-grain::before { display: none !important; }
 {%- set _plan_levels = {'demo': 0, 'base': 1, 'extended': 2, 'full': 3} -%}
 {%- set _cur_level   = _plan_levels.get(plan | default('full'), 3) -%}
 {%- set locked_cfg = {
-  'beauty':    {'min_plan': 'demo', 'title': 'Анализ внешности',         'pkg': ''},
-  'hand':      {'min_plan': 'demo', 'title': 'Анализ ладони',             'pkg': ''},
-  'grooming':  {'min_plan': 'demo', 'title': 'Ухоженность и стиль',      'pkg': ''},
-  'physio':    {'min_plan': 'demo', 'title': 'Физиогномика',              'pkg': ''},
-  'numerology':{'min_plan': 'demo', 'title': 'Нумерология',               'pkg': ''},
-  'matrix':    {'min_plan': 'demo', 'title': 'Матрица судьбы',            'pkg': ''},
-  'ch_deep':   {'min_plan': 'demo', 'title': 'Глубинный анализ',         'pkg': ''},
-  'block_1':   {'min_plan': 'demo', 'title': 'Портрет личности',         'pkg': ''},
-  'block_2':   {'min_plan': 'demo', 'title': 'Хиромантия',               'pkg': ''},
-  'block_3':   {'min_plan': 'demo', 'title': 'Ключевые периоды жизни',   'pkg': ''},
-  'block_4':   {'min_plan': 'base',     'title': 'Ошибка, которая тормозит жизнь', 'pkg': 'Базовый'},
-  'block_5':   {'min_plan': 'base',     'title': 'Сценарий в отношениях',          'pkg': 'Базовый'},
-  'block_6':   {'min_plan': 'extended', 'title': 'Жизненные сценарии',             'pkg': 'Расширенный'},
-  'block_7':   {'min_plan': 'extended', 'title': 'Кармический урок',               'pkg': 'Расширенный'},
-  'block_8':   {'min_plan': 'full',     'title': 'Скрытый талант',                 'pkg': 'Премиум'},
-  'block_9':   {'min_plan': 'full',     'title': 'Скрытая правда',                 'pkg': 'Премиум'},
-  'summary':   {'min_plan': 'full',     'title': 'Сводный портрет',                'pkg': 'Премиум'},
+  'beauty':          {'min_plan': 'demo', 'title': 'Анализ внешности',              'pkg': ''},
+  'beauty_verdict':  {'min_plan': 'demo', 'title': 'Оценка и тип привлекательности','pkg': ''},
+  'beauty_scores':   {'min_plan': 'demo', 'title': 'Детальные метрики',             'pkg': ''},
+  'beauty_sides':    {'min_plan': 'demo', 'title': 'Сильные и слабые стороны',      'pkg': ''},
+
+  'hand':            {'min_plan': 'demo', 'title': 'Анализ ладони',                 'pkg': ''},
+  'hand_overview':   {'min_plan': 'demo', 'title': 'Общая оценка',                  'pkg': ''},
+  'hand_features':   {'min_plan': 'demo', 'title': 'Черты и линии руки',            'pkg': ''},
+  'hand_sides':      {'min_plan': 'demo', 'title': 'Сильные и слабые стороны',      'pkg': ''},
+
+  'grooming':            {'min_plan': 'demo', 'title': 'Ухоженность и стиль',       'pkg': ''},
+  'grooming_impression': {'min_plan': 'demo', 'title': 'Общее впечатление',         'pkg': ''},
+  'grooming_sides':      {'min_plan': 'demo', 'title': 'Что работает · Что улучшить','pkg': ''},
+  'grooming_archetype':  {'min_plan': 'demo', 'title': 'Архетип стиля',             'pkg': ''},
+
+  'physio':          {'min_plan': 'demo', 'title': 'Физиогномика',                  'pkg': ''},
+  'physio_form':     {'min_plan': 'demo', 'title': 'Форма лица и черты',            'pkg': ''},
+  'physio_zones':    {'min_plan': 'demo', 'title': 'Три зоны лица',                 'pkg': ''},
+
+  'numerology':      {'min_plan': 'demo', 'title': 'Нумерология',                   'pkg': ''},
+  'num_overview':    {'min_plan': 'demo', 'title': 'Ключевые числа',                'pkg': ''},
+  'num_life_path':   {'min_plan': 'demo', 'title': 'Число жизненного пути',         'pkg': ''},
+  'num_day':         {'min_plan': 'demo', 'title': 'День рождения',                 'pkg': ''},
+  'num_pinnacles':   {'min_plan': 'demo', 'title': 'Пиннакли',                      'pkg': ''},
+  'num_year':        {'min_plan': 'demo', 'title': 'Личный год',                    'pkg': ''},
+
+  'matrix':              {'min_plan': 'demo', 'title': 'Матрица судьбы',            'pkg': ''},
+  'matrix_archetypes':   {'min_plan': 'demo', 'title': 'Архетипы · Матрица судьбы', 'pkg': ''},
+  'matrix_insights':     {'min_plan': 'demo', 'title': 'Ключевые инсайты',          'pkg': ''},
+
+  'ch_deep': {'min_plan': 'demo', 'title': 'Глубинный анализ',         'pkg': ''},
+  'block_1': {'min_plan': 'demo', 'title': 'Портрет личности',         'pkg': ''},
+  'block_2': {'min_plan': 'demo', 'title': 'Хиромантия',               'pkg': ''},
+  'block_3': {'min_plan': 'demo', 'title': 'Ключевые периоды жизни',   'pkg': ''},
+  'block_4': {'min_plan': 'base',     'title': 'Ошибка, которая тормозит жизнь', 'pkg': 'Базовый'},
+  'block_5': {'min_plan': 'base',     'title': 'Сценарий в отношениях',          'pkg': 'Базовый'},
+  'block_6': {'min_plan': 'extended', 'title': 'Жизненные сценарии',             'pkg': 'Расширенный'},
+  'block_7': {'min_plan': 'extended', 'title': 'Кармический урок',               'pkg': 'Расширенный'},
+  'block_8': {'min_plan': 'full',     'title': 'Скрытый талант',                 'pkg': 'Премиум'},
+  'block_9': {'min_plan': 'full',     'title': 'Скрытая правда',                 'pkg': 'Премиум'},
+
+  'summary':          {'min_plan': 'full', 'title': 'Сводный портрет',             'pkg': 'Премиум'},
+  'summary_portrait': {'min_plan': 'full', 'title': 'Итоговый портрет',            'pkg': 'Премиум'},
+  'summary_tags':     {'min_plan': 'full', 'title': 'Итоговые теги',               'pkg': 'Премиум'},
 } -%}
 {%- macro locked_card(min_plan, title, pkg) -%}
   {%- set min_level = _plan_levels.get(min_plan, 1) -%}
   {%- if _cur_level >= min_level -%}
 {{ caller() }}
-  {%- elif plan | default('full') == 'demo' -%}
+  {%- elif plan == 'demo' -%}
 <div class="locked-wrap" aria-label="Заблокированный раздел">
   <div class="locked-content" aria-hidden="true">{{ caller() }}</div>
   <div class="locked-overlay">
@@ -375,8 +402,9 @@ body.no-grain::before { display: none !important; }
   <div class="chap-num">I</div>
 </div>
 
-{%- call locked_card(_cb.min_plan, _cb.title, _cb.pkg) %}
 <div class="page">
+{%- set _cbv = locked_cfg['beauty_verdict'] -%}
+{%- call locked_card(_cbv.min_plan, _cbv.title, _cbv.pkg) %}
   <div class="card">
     <div class="card-lbl">Общая оценка</div>
     <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:0.5rem;">
@@ -387,7 +415,10 @@ body.no-grain::before { display: none !important; }
     <p class="q">{{ blocks.beauty.verdict_quote }}</p>
     <div class="bt">Тип привлекательности: {{ blocks.beauty.attractiveness_type }}</div>
   </div>
+{%- endcall %}
 
+{%- set _cbs = locked_cfg['beauty_scores'] -%}
+{%- call locked_card(_cbs.min_plan, _cbs.title, _cbs.pkg) %}
   <div class="g3">
     <div class="met"><div class="met-name">Симметрия</div><div class="met-row"><span class="met-s">{{ data.scores.symmetry }}</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:{{ (data.scores.symmetry * 10) | round | int }}%;"></div></div></div>
     <div class="met"><div class="met-name">Костная структура</div><div class="met-row"><span class="met-s">{{ data.scores.bone_structure }}</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:{{ (data.scores.bone_structure * 10) | round | int }}%;"></div></div></div>
@@ -396,7 +427,10 @@ body.no-grain::before { display: none !important; }
     <div class="met"><div class="met-name">Кожа</div><div class="met-row"><span class="met-s">{{ data.scores.skin }}</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:{{ (data.scores.skin * 10) | round | int }}%;"></div></div></div>
     <div class="met"><div class="met-name">Ухоженность</div><div class="met-row"><span class="met-s">{{ data.scores.grooming }}</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:{{ (data.scores.grooming * 10) | round | int }}%;"></div></div></div>
   </div>
+{%- endcall %}
 
+{%- set _cbw = locked_cfg['beauty_sides'] -%}
+{%- call locked_card(_cbw.min_plan, _cbw.title, _cbw.pkg) %}
   <div class="g2">
     <div class="card" style="margin-bottom:0;">
       <div class="card-lbl">Сильные стороны</div>
@@ -415,8 +449,8 @@ body.no-grain::before { display: none !important; }
       </div>
     </div>
   </div>
-</div>
 {%- endcall %}
+</div>
 {%- endif %}
 
 
@@ -429,14 +463,18 @@ body.no-grain::before { display: none !important; }
   <div class="chap-num">I⁺</div>
 </div>
 
-{%- call locked_card(_ch.min_plan, _ch.title, _ch.pkg) %}
 <div class="page">
+{%- set _cho = locked_cfg['hand_overview'] -%}
+{%- call locked_card(_cho.min_plan, _cho.title, _cho.pkg) %}
   <div class="card">
     <div class="card-lbl">Общая оценка</div>
     <p class="q">{{ blocks.hand_analysis.verdict_quote }}</p>
     <div class="mc" style="margin-bottom:1rem;"><div class="ml">Стихия</div><div class="mv">{{ blocks.hand_analysis.element_type }}</div></div>
   </div>
+{%- endcall %}
 
+{%- set _chf = locked_cfg['hand_features'] -%}
+{%- call locked_card(_chf.min_plan, _chf.title, _chf.pkg) %}
   <div class="card">
     <div class="card-lbl">Черты руки</div>
     <div class="g2" style="margin-bottom:1rem;">
@@ -451,7 +489,10 @@ body.no-grain::before { display: none !important; }
       {% endfor %}
     </div>
   </div>
+{%- endcall %}
 
+{%- set _chw = locked_cfg['hand_sides'] -%}
+{%- call locked_card(_chw.min_plan, _chw.title, _chw.pkg) %}
   <div class="g2">
     <div class="card" style="margin-bottom:0;">
       <div class="card-lbl">Сильные стороны</div>
@@ -470,8 +511,8 @@ body.no-grain::before { display: none !important; }
       </div>
     </div>
   </div>
-</div>
 {%- endcall %}
+</div>
 {%- endif %}
 
 {%- set _cg = locked_cfg['grooming'] -%}
@@ -483,14 +524,18 @@ body.no-grain::before { display: none !important; }
   <div class="chap-num">Iˢ</div>
 </div>
 
-{%- call locked_card(_cg.min_plan, _cg.title, _cg.pkg) %}
 <div class="page">
+{%- set _cgi = locked_cfg['grooming_impression'] -%}
+{%- call locked_card(_cgi.min_plan, _cgi.title, _cgi.pkg) %}
   <div class="card">
     <div class="card-lbl">Впечатление</div>
     <p class="q">{{ blocks.grooming_and_style.verdict_quote }}</p>
     <div class="bt" style="margin-bottom:1rem;">{{ blocks.grooming_and_style.current_impression }}</div>
   </div>
+{%- endcall %}
 
+{%- set _cgs = locked_cfg['grooming_sides'] -%}
+{%- call locked_card(_cgs.min_plan, _cgs.title, _cgs.pkg) %}
   <div class="g2">
     <div class="card" style="margin-bottom:0;">
       <div class="card-lbl">Что работает</div>
@@ -509,16 +554,19 @@ body.no-grain::before { display: none !important; }
       </div>
     </div>
   </div>
+{%- endcall %}
 
-  <div class="card" style="margin-top:0.9rem;">
+{%- set _cga = locked_cfg['grooming_archetype'] -%}
+{%- call locked_card(_cga.min_plan, _cga.title, _cga.pkg) %}
+  <div class="card">
     <div class="card-lbl">Архетип стиля</div>
     <div class="mv" style="font-size:18px;">{{ blocks.grooming_and_style.style_archetype }}</div>
     <div class="tags" style="margin-top:0.5rem;">
       {% for tag in blocks.grooming_and_style.style_tags %}<span class="tag">{{ tag }}</span>{% endfor %}
     </div>
   </div>
-</div>
 {%- endcall %}
+</div>
 {%- endif %}
 
 {%- set _cp = locked_cfg['physio'] -%}
@@ -530,8 +578,9 @@ body.no-grain::before { display: none !important; }
   <div class="chap-num">II</div>
 </div>
 
-{%- call locked_card(_cp.min_plan, _cp.title, _cp.pkg) %}
 <div class="page">
+{%- set _cpf = locked_cfg['physio_form'] -%}
+{%- call locked_card(_cpf.min_plan, _cpf.title, _cpf.pkg) %}
   <div class="card">
     <div class="card-lbl">Форма лица и ключевые черты</div>
     <p class="q">{{ blocks.physiognomy.form_quote }}</p>
@@ -547,7 +596,10 @@ body.no-grain::before { display: none !important; }
       {% endfor %}
     </div>
   </div>
+{%- endcall %}
 
+{%- set _cpz = locked_cfg['physio_zones'] -%}
+{%- call locked_card(_cpz.min_plan, _cpz.title, _cpz.pkg) %}
   <div class="card">
     <div class="card-lbl">Три зоны лица · Китайская физиогномика</div>
     <div class="g3">
@@ -556,8 +608,8 @@ body.no-grain::before { display: none !important; }
       <div class="mc"><div class="ml">Нижняя треть · Подбородок</div><div class="mv" style="font-size:15px;">После 50</div><div class="md">{{ blocks.physiognomy.three_zones.lower }}</div></div>
     </div>
   </div>
-</div>
 {%- endcall %}
+</div>
 {%- endif %}
 
 {%- set _cn = locked_cfg['numerology'] -%}
@@ -569,8 +621,9 @@ body.no-grain::before { display: none !important; }
   <div class="chap-num">III</div>
 </div>
 
-{%- call locked_card(_cn.min_plan, _cn.title, _cn.pkg) %}
 <div class="page">
+{%- set _cno = locked_cfg['num_overview'] -%}
+{%- call locked_card(_cno.min_plan, _cno.title, _cno.pkg) %}
   <div class="card">
     <div class="card-lbl">Ключевые числа · Точный расчёт {{ data.user.birthdate }}</div>
     <div class="g3">
@@ -580,7 +633,10 @@ body.no-grain::before { display: none !important; }
     </div>
     <div class="formula">{{ data.numerology.formula.life_path }} &nbsp;·&nbsp; День: {{ data.numerology.formula.day }}</div>
   </div>
+{%- endcall %}
 
+{%- set _cnl = locked_cfg['num_life_path'] -%}
+{%- call locked_card(_cnl.min_plan, _cnl.title, _cnl.pkg) %}
   <div class="card">
     <div class="card-lbl">Число жизненного пути — {{ data.numerology.life_path }} «{{ data.numerology.life_path_archetype.name }}»</div>
     <p class="q">{{ blocks.numerology.life_path_quote }}</p>
@@ -593,7 +649,10 @@ body.no-grain::before { display: none !important; }
       {% for tag in blocks.numerology.life_path_tags %}<span class="tag">{{ tag }}</span>{% endfor %}
     </div>
   </div>
+{%- endcall %}
 
+{%- set _cnd = locked_cfg['num_day'] -%}
+{%- call locked_card(_cnd.min_plan, _cnd.title, _cnd.pkg) %}
   <div class="card">
     <div class="card-lbl">День рождения — {{ data.numerology.day.day }}</div>
     <div class="bt">
@@ -602,7 +661,10 @@ body.no-grain::before { display: none !important; }
       {% endfor %}
     </div>
   </div>
+{%- endcall %}
 
+{%- set _cnp = locked_cfg['num_pinnacles'] -%}
+{%- call locked_card(_cnp.min_plan, _cnp.title, _cnp.pkg) %}
   <div class="card">
     <div class="card-lbl">Периоды жизни · Пинакли</div>
     <div class="g4" style="margin-bottom:1rem;">
@@ -616,7 +678,10 @@ body.no-grain::before { display: none !important; }
     </div>
     <p class="bt">{{ blocks.numerology.pinnacles_summary }}</p>
   </div>
+{%- endcall %}
 
+{%- set _cny = locked_cfg['num_year'] -%}
+{%- call locked_card(_cny.min_plan, _cny.title, _cny.pkg) %}
   <div class="card">
     <div class="card-lbl">Личный год {{ data.numerology.personal_year.year }}</div>
     <div class="formula" style="margin-bottom:1rem;">{{ data.numerology.personal_year.meaning }}</div>
@@ -629,8 +694,8 @@ body.no-grain::before { display: none !important; }
       {% for tag in blocks.numerology.personal_year_tags %}<span class="tag">{{ tag }}</span>{% endfor %}
     </div>
   </div>
-</div>
 {%- endcall %}
+</div>
 {%- endif %}
 
 {%- set _cm = locked_cfg['matrix'] -%}
@@ -642,12 +707,12 @@ body.no-grain::before { display: none !important; }
   <div class="chap-num">IV</div>
 </div>
 
-{%- call locked_card(_cm.min_plan, _cm.title, _cm.pkg) %}
 <div class="page">
-  <p class="q" style="margin-bottom:1.5rem;">{{ blocks.matrix.intro_quote }}</p>
-
+{%- set _cma = locked_cfg['matrix_archetypes'] -%}
+{%- call locked_card(_cma.min_plan, _cma.title, _cma.pkg) %}
   <div class="card">
     <div class="card-lbl">Архетипы по 22 арканам Таро · {{ data.user.birthdate }}</div>
+    <p class="q" style="margin-bottom:1rem;">{{ blocks.matrix.intro_quote }}</p>
     <div class="g2" style="margin-bottom:0.75rem;">
       <div class="mxc"><div class="mx-num">{{ data.matrix.personality.number }}</div><div class="mx-lbl">Личность · центр</div><div class="mx-arc">{{ data.matrix.personality.name }}</div><div class="mx-desc">{{ blocks.matrix.positions.personality }}</div></div>
       <div class="mxc"><div class="mx-num">{{ data.matrix.realization.number }}</div><div class="mx-lbl">Реализация</div><div class="mx-arc">{{ data.matrix.realization.name }}</div><div class="mx-desc">{{ blocks.matrix.positions.realization }}</div></div>
@@ -656,14 +721,20 @@ body.no-grain::before { display: none !important; }
       <div class="mxc"><div class="mx-num">{{ data.matrix.family_program.number }}</div><div class="mx-lbl">Родовая программа</div><div class="mx-arc">{{ data.matrix.family_program.name }}</div><div class="mx-desc">{{ blocks.matrix.positions.family_program }}</div></div>
       <div class="mxc"><div class="mx-num">{{ data.matrix.challenge.number }}</div><div class="mx-lbl">Главное испытание</div><div class="mx-arc">{{ data.matrix.challenge.name }}</div><div class="mx-desc">{{ blocks.matrix.positions.challenge }}</div></div>
     </div>
+  </div>
+{%- endcall %}
+
+{%- set _cmi = locked_cfg['matrix_insights'] -%}
+{%- call locked_card(_cmi.min_plan, _cmi.title, _cmi.pkg) %}
+  <div class="card">
     <div class="bt">
       {% for ins in blocks.matrix.key_insights %}
       <div class="ri"><div class="d"></div><span>{{ ins }}</span></div>
       {% endfor %}
     </div>
   </div>
-</div>
 {%- endcall %}
+</div>
 {%- endif %}
 
 {%- set _cd = locked_cfg['ch_deep'] -%}
@@ -756,7 +827,7 @@ body.no-grain::before { display: none !important; }
 {%- endif %}
 
 {%- set _b4 = locked_cfg['block_4'] -%}
-{%- if plan | default('full') == 'demo' or _cur_level >= _plan_levels[_b4.min_plan] %}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_b4.min_plan] %}
   <hr>
 
   <!-- БЛОК 4: Ошибка -->
@@ -782,7 +853,7 @@ body.no-grain::before { display: none !important; }
 {%- endif %}
 
 {%- set _b5 = locked_cfg['block_5'] -%}
-{%- if plan | default('full') == 'demo' or _cur_level >= _plan_levels[_b5.min_plan] %}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_b5.min_plan] %}
   <hr>
   <!-- БЛОК 5: Отношения -->
   <div class="sec-hdr">
@@ -806,7 +877,7 @@ body.no-grain::before { display: none !important; }
 {%- endif %}
 
 {%- set _b6 = locked_cfg['block_6'] -%}
-{%- if plan | default('full') == 'demo' or _cur_level >= _plan_levels[_b6.min_plan] %}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_b6.min_plan] %}
   <hr>
   <!-- БЛОК 6: Сценарии -->
   <div class="sec-hdr">
@@ -832,7 +903,7 @@ body.no-grain::before { display: none !important; }
 {%- endif %}
 
 {%- set _b7 = locked_cfg['block_7'] -%}
-{%- if plan | default('full') == 'demo' or _cur_level >= _plan_levels[_b7.min_plan] %}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_b7.min_plan] %}
   <hr>
   <!-- БЛОК 7: Карма -->
   <div class="sec-hdr">
@@ -859,7 +930,7 @@ body.no-grain::before { display: none !important; }
 {%- endif %}
 
 {%- set _b8 = locked_cfg['block_8'] -%}
-{%- if plan | default('full') == 'demo' or _cur_level >= _plan_levels[_b8.min_plan] %}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_b8.min_plan] %}
   <hr>
   <!-- БЛОК 8: Талант -->
   <div class="sec-hdr">
@@ -884,7 +955,7 @@ body.no-grain::before { display: none !important; }
 {%- endif %}
 
 {%- set _b9 = locked_cfg['block_9'] -%}
-{%- if plan | default('full') == 'demo' or _cur_level >= _plan_levels[_b9.min_plan] %}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_b9.min_plan] %}
   <hr>
   <!-- БЛОК 9: Правда -->
   <div class="sec-hdr">
@@ -913,7 +984,7 @@ body.no-grain::before { display: none !important; }
 
 
 {%- set _bs = locked_cfg['summary'] -%}
-{%- if plan | default('full') == 'demo' or _cur_level >= _plan_levels[_bs.min_plan] %}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_bs.min_plan] %}
 <!-- ═══ ИТОГ ═══ -->
 <div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Итог</div>
@@ -921,8 +992,9 @@ body.no-grain::before { display: none !important; }
   <div class="chap-num">∑</div>
 </div>
 
-{%- call locked_card(_bs.min_plan, _bs.title, _bs.pkg) %}
 <div class="page">
+{%- set _bsp = locked_cfg['summary_portrait'] -%}
+{%- call locked_card(_bsp.min_plan, _bsp.title, _bsp.pkg) %}
   <div class="sum-card" style="background-color: #F1EFE8; color: var(--g900);">
     <div class="card-lbl" style="color: var(--g500); border-color: var(--border);">Все системы · Единый нарратив</div>
     <p class="q" style="color: var(--g700); border-left-color: var(--g300);">{{ blocks.summary.quote }}</p>
@@ -931,12 +1003,18 @@ body.no-grain::before { display: none !important; }
       <div class="ri"><div class="d" style="background: var(--g500);"></div><span>{{ item }}</span></div>
       {% endfor %}
     </div>
+  </div>
+{%- endcall %}
+
+{%- set _bst = locked_cfg['summary_tags'] -%}
+{%- call locked_card(_bst.min_plan, _bst.title, _bst.pkg) %}
+  <div class="sum-card" style="background-color: #F1EFE8; color: var(--g900); padding: 1rem 1.25rem;">
     <div class="tags">
       {% for tag in blocks.summary.tags %}<span class="tag" style="color: var(--g700); border-color: var(--border-md);">{{ tag }}</span>{% endfor %}
     </div>
   </div>
-</div>
 {%- endcall %}
+</div>
 {%- endif %}
 
 <div class="footer">
