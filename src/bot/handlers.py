@@ -382,9 +382,12 @@ async def _run_self_report(message: Message, user: User, plan: str):
                     db_user.report_html = html
                     await session.commit()
 
+        _plan_label = {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
+        caption = f"Портрет личности · {_plan_label.get(plan, plan)} готов!"
+
         await message.delete()
         file = BufferedInputFile(html.encode("utf-8"), filename=f"portrait_{user.name}.html")
-        await message.answer_document(file, caption="Твой портрет личности готов! 🎉")
+        await message.answer_document(file, caption=caption)
 
         if plan == "demo":
             await message.answer(
