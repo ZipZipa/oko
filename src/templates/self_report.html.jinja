@@ -237,6 +237,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 </div>
 
 
+{% if blocks.hand_analysis %}
 <!-- ═══ ЧАСТЬ I.5: АНАЛИЗ ЛАДОНИ ═══ -->
 <div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть первая · дополнение</div>
@@ -285,7 +286,9 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
     </div>
   </div>
 </div>
+{% endif %}
 
+{% if blocks.grooming_and_style %}
 <!-- ═══ ЧАСТЬ I.6: УХОЖЕННОСТЬ И СТИЛЬ ═══ -->
 <div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть первая · стиль</div>
@@ -327,6 +330,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
     </div>
   </div>
 </div>
+{% endif %}
 
 <!-- ═══ ЧАСТЬ II: ФИЗИОГНОМИКА ═══ -->
 <div class="chapter-divider chap-wrap">

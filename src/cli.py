@@ -81,6 +81,10 @@ def cmd_report(args):
         "model": args.model,
     }
 
+    if args.report_type == "self" and args.palm:
+        with open(args.palm, encoding="utf-8") as f:
+            kwargs["palm_data"] = json.load(f)
+
     if args.report_type == "couple":
         if not args.face_b or not args.name_b or not args.birthdate_b:
             print("Для couple нужны --face-b, --name-b, --birthdate-b", file=sys.stderr)
