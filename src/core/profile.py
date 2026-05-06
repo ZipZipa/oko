@@ -111,38 +111,10 @@ def _build_grooming_signals(face_data: dict, face_signals: dict,
     if not skin_raw or skin_raw.get("_stub", True):
         skin_raw = {}
 
-    # Состояние кожи из сырых метрик
     roughness = skin_raw.get("texture", {}).get("roughness", None)
     evenness = skin_raw.get("evenness", {}).get("by_zone", {})
 
-    # Зоны напряжения из evenness (значения могут быть float или вложенными dict)
-    tension_zones = []
-    if evenness:
-        for zone, val in evenness.items():
-            if isinstance(val, (int, float)) and val > 0.25:
-                tension_zones.append({"zone": zone, "value": val})
-            elif isinstance(val, dict):
-                for sub_zone, sub_val in val.items():
-                    if isinstance(sub_val, (int, float)) and sub_val > 0.25:
-                        tension_zones.append({"zone": f"{zone}.{sub_zone}", "value": sub_val})
-
-    # Аксессуары из stylistic_markers (это list, не dict)
-    stylistic = face_signals.get("stylistic_markers", [])
-    accessories = stylistic  # список маркеров [{name, value, label, interpretation}, ...]
-
-    # Кожа из face_signals
-    skin_signals = face_signals.get("skin_signals", {})
-
-    # Контраст ладонь/лицо (если есть palm_data)
-    skin_contrast = None
-    if hand_signals and "skin_contrast" in hand_signals:
-        skin_contrast = hand_signals["skin_contrast"]
-
-    # Скоры
-    grooming_score = scores.get("grooming", None)
-    skin_score = scores.get("skin", None)
-
-    # Текстовые итоги
+    # Состояние кожи — только текстовая метка, без числа
     if roughness is not None and roughness > 0.8:
         skin_condition = "Кожа с выраженной шероховатостью — нужен уход"
     elif roughness is not None and roughness > 0.5:
@@ -152,13 +124,59 @@ def _build_grooming_signals(face_data: dict, face_signals: dict,
     else:
         skin_condition = "Данные о текстуре кожи недоступны"
 
+    # Зоны напряжения — только названия зон, без числовых значений
+    tension_zone_names = []
+    if evenness:
+        for zone, val in evenness.items():
+            if isinstance(val, (int, float)) and val > 0.25:
+                tension_zone_names.append(zone)
+            elif isinstance(val, dict):
+                for sub_zone, sub_val in val.items():
+                    if isinstance(sub_val, (int, float)) and sub_val > 0.25:
+                        tension_zone_names.append(f"{zone}.{sub_zone}")
+
+    # Аксессуары — только label и interpretation, без числового value
+    stylistic = face_signals.get("stylistic_markers", [])
+    accessories = [{"label": m["label"], "interpretation": m["interpretation"]} for m in stylistic]
+
+    # Кожа из face_signals — только summary и tension_zones (без числовых zone_signals)
+    skin_signals_raw = face_signals.get("skin_signals", {})
+    skin_signals = {
+        "summary": skin_signals_raw.get("summary", ""),
+        "tension_zones": skin_signals_raw.get("tension_zones", []),
+    } if skin_signals_raw else {}
+
+    # Контраст ладонь/лицо — только интерпретация
+    skin_contrast = None
+    if hand_signals and "skin_contrast" in hand_signals:
+        skin_contrast = hand_signals["skin_contrast"].get("interpretation", "")
+
+    # Скоры — текстовые метки вместо чисел
+    grooming_score_raw = scores.get("grooming", None)
+    skin_score_raw = scores.get("skin", None)
+    grooming_level = _score_label(grooming_score_raw)
+    skin_level = _score_label(skin_score_raw)
+
     return {
         "skin_condition": skin_condition,
-        "roughness": roughness,
-        "tension_zones": tension_zones,
+        "tension_zones": tension_zone_names,
         "skin_signals": skin_signals,
         "accessories": accessories,
         "skin_contrast": skin_contrast,
-        "grooming_score": grooming_score,
-        "skin_score": skin_score,
+        "grooming_level": grooming_level,
+        "skin_level": skin_level,
     }
+
+
+def _score_label(score: float | None) -> str:
+    if score is None:
+        return "нет данных"
+    if score >= 8.0:
+        return "высокий"
+    if score >= 6.0:
+        return "выше среднего"
+    if score >= 4.0:
+        return "средний"
+    if score >= 2.0:
+        return "ниже среднего"
+    return "низкий"

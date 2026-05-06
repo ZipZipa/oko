@@ -251,7 +251,7 @@ def extract_stylistic_markers(skin_data: dict) -> list:
     zones_area = skin_data.get("zones_area", {})
 
     ear_ring = zones_area.get("ear_ring", 0.0)
-    if ear_ring > 0.03:
+    if ear_ring > 0.12:
         markers.append({
             "name": "ear_ring",
             "value": round(ear_ring, 3),
