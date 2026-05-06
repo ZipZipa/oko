@@ -3,6 +3,7 @@ Self report: персональный портрет одного человек
 Анализ внешности + физиогномика + нумерология + матрица + глубинный анализ.
 """
 import json
+import sys
 from pathlib import Path
 
 from ..core.profile import build_person_profile
@@ -216,16 +217,33 @@ def build_target_input(face_data: dict, name: str, birthdate: str,
 def generate(face_data: dict, name: str, birthdate: str,
              examples_dir: Path, templates_dir: Path,
              ref_year: int = None, model: str = None,
-             palm_data: dict = None, plan: str = "full") -> str:
-    """Генерирует self отчёт и возвращает HTML."""
+             palm_data: dict = None, plan: str = "full",
+             reference: str = None) -> str:
+    """Генерирует self отчёт и возвращает HTML.
+    
+    reference: путь к JSON-файлу с блоками (референс).
+               Если указан — LLM не вызывается, блоки берутся из файла.
+    """
     target = build_target_input(face_data, name, birthdate, ref_year,
                                 palm_data=palm_data)
+    has_palm = palm_data is not None
 
+    # ── Режим референса: без LLM ──
+    if reference:
+        with open(reference, encoding="utf-8") as f:
+            blocks = json.load(f)
+        errors = validate_blocks(blocks, has_palm=has_palm)
+        if errors:
+            print("Предупреждения валидации референса:", file=sys.stderr)
+            for e in errors:
+                print(f"  • {e}", file=sys.stderr)
+        return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)
+
+    # ── Обычный режим: через LLM ──
     examples_subdir = examples_dir / EXAMPLES_SUBDIR
     with open(examples_subdir / "reference_blocks.json", encoding="utf-8") as f:
         ref_blocks = json.load(f)
 
-    has_palm = palm_data is not None
     user_msg = build_user_prompt(ref_blocks, target, has_palm=has_palm)
     messages = [{"role": "user", "content": user_msg}]
 
