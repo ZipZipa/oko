@@ -14,6 +14,15 @@ Self:
     --photo examples/photo.jpeg \
     --output output/self.html
 
+Self (без LLM, по референсу):
+  python -m src.cli report self \
+    --face examples/sample_face_artem.json \
+    --name "Артём" --birthdate 28.01.1995 \
+    --photo examples/photo.jpeg \
+    --palm examples/sample_palm_artem.json \
+    --reference examples/self/reference_blocks.json \
+    --output output/self.html
+
 Money:
   python -m src.cli report money \
     --face examples/sample_face_artem.json \
@@ -96,6 +105,7 @@ def cmd_report(args):
         "ref_year": args.ref_year,
         "model": args.model,
         "plan": args.plan,
+        "reference": getattr(args, "reference", None),
     }
 
     if args.report_type == "self" and args.palm:
@@ -158,6 +168,8 @@ def main():
     p_report.add_argument("--plan", default="full",
                           choices=["demo", "base", "extended", "full"],
                           help="Пакет доступа: demo | base | extended | full")
+    p_report.add_argument("--reference", default=None,
+                          help="JSON с готовыми блоками (без вызова LLM, только рендеринг HTML)")
 
     args = parser.parse_args()
 
