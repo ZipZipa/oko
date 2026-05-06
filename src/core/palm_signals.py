@@ -169,32 +169,33 @@ def _element_type(props: dict) -> dict:
     return {
         "element": element,
         "name_ru": info["name_ru"],
-        "ratio": w_to_h,
-        "avg_finger_length": round(avg_finger, 3),
         "palm_shape": props.get("palm_shape", ""),
         "description": info["description"],
     }
 
 
+def _thumb_angle_label(angle: float) -> str:
+    if angle < 30:
+        return "узкий раскрыв — контроль, сдержанность"
+    if angle < 60:
+        return "умеренный раскрыв — баланс воли и гибкости"
+    return "широкий раскрыв — независимость, своеволие"
+
+
 def _dominant_finger(props: dict) -> dict:
     """Доминирующий палец и его значение."""
     dominant = props.get("dominant_finger", "")
-    ratios = props.get("finger_ratios", {})
-    lengths = props.get("finger_lengths", {})
-
     info = FINGER_MEANINGS.get(dominant, {})
-    thumb_to_idx = ratios.get("thumb_to_index", 0)
     thumb_angle = props.get("finger_angles", {}).get("thumb_angle", None)
 
     result = {
         "finger": dominant,
         "name_ru": info.get("name_ru", dominant),
         "theme": info.get("theme", ""),
-        "thumb_to_index": thumb_to_idx,
         "interpretation": info.get("dominant", ""),
     }
     if thumb_angle is not None:
-        result["thumb_angle"] = thumb_angle
+        result["thumb_angle"] = _thumb_angle_label(thumb_angle)
     return result
 
 
@@ -209,7 +210,6 @@ def _ratio_2d4d(props: dict) -> dict:
         info = RATIO_2D4D["masculine"]
 
     return {
-        "value": val,
         "label": info["label"],
         "interpretation": info["interpretation"],
     }
@@ -236,7 +236,8 @@ def _spread_and_curvature(props: dict) -> dict:
             interp = "Умеренный зазор — баланс амбиций и ответственности"
         elif key == "middle_ring" and val > 0.5:
             interp = "Связь ответственности и творчества"
-        spread_items.append({"pair": label, "value": val, "interpretation": interp})
+        if interp:
+            spread_items.append({"pair": label, "interpretation": interp})
 
     avg_spread = spread.get("avg_spread_to_palm", 0)
     spread_summary = ""
@@ -255,7 +256,6 @@ def _spread_and_curvature(props: dict) -> dict:
             if lo <= val < hi:
                 curv_items.append({
                     "finger": info.get("name_ru", finger),
-                    "value": val,
                     "label": curv_label,
                     "interpretation": f"{info.get('theme', '')}: {interp}",
                 })
@@ -263,7 +263,6 @@ def _spread_and_curvature(props: dict) -> dict:
 
     return {
         "spread": spread_items,
-        "avg_spread": avg_spread,
         "spread_summary": spread_summary,
         "curvature": curv_items,
     }
@@ -295,10 +294,6 @@ def _line_patterns(lines: dict) -> list[dict]:
         strength = "strong" if depth >= 0.8 else "weak"
         strength_interp = info[strength]
 
-        details = f"длина={length}, глубина={depth}, кривизна={curvature}"
-        if branching:
-            details += ", ветвление"
-
         # Дополнительная интерпретация по параметрам
         extra = []
         if curvature > 0.15:
@@ -311,13 +306,10 @@ def _line_patterns(lines: dict) -> list[dict]:
         result.append({
             "name": info["name_ru"],
             "present": True,
-            "depth": depth,
             "length": length,
-            "curvature": curvature,
             "branching": branching,
             "strength": strength,
             "strength_label": "глубокая" if strength == "strong" else "слабая",
-            "details": details,
             "interpretation": strength_interp,
             "nuances": extra,
         })
@@ -345,9 +337,6 @@ def _skin_contrast(skin: dict, face_data: dict = None) -> dict:
         interp = "Ладонь грубее лица — активная практическая деятельность, руки в работе"
 
     return {
-        "palm_smoothness": palm_smooth,
-        "face_smoothness": face_smooth,
-        "contrast": diff,
         "interpretation": interp,
     }
 
