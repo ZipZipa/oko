@@ -26,12 +26,14 @@ def load(p):
 
 
 face_a = load(EXAMPLES / "sample_face_artem.json")
+palm_a = load(EXAMPLES / "sample_palm_artem.json")
 # face_b = load(EXAMPLES / "sample_face_alina.json")
 
 
 def test_self():
     target = build_input_only(
         "self", face_data=face_a, name="Артём", birthdate="28.01.1995", ref_year=2026,
+        palm_data=palm_a,
     )
     print(target)
     blocks = load(EXAMPLES / "self" / "reference_blocks.json")

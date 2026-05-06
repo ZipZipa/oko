@@ -45,6 +45,7 @@ def generate_report(
     ref_year: int = None,
     model: str = None,
     palm_data: dict = None,
+    photo_url: str = None,
 ) -> str:
     """
     Генерирует HTML отчёта одного из трёх типов.
@@ -54,6 +55,7 @@ def generate_report(
     Для self и money — нужны face_data, name, birthdate.
     Для couple — дополнительно face_data_b, name_b, birthdate_b.
     palm_data — опциональные данные ладони (только для self).
+    photo_url — опциональный URL или data URI фото пользователя (для self).
     """
     if report_type == "self":
         return self_report.generate(

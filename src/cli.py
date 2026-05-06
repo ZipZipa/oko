@@ -11,6 +11,7 @@ Self:
   python -m src.cli report self \
     --face examples/sample_face_artem.json \
     --name "Артём" --birthdate 28.01.1995 \
+    --photo examples/photo.jpeg \
     --output output/self.html
 
 Money:
@@ -26,6 +27,7 @@ Couple:
     --output output/couple.html
 """
 import argparse
+import base64
 import json
 import sys
 from pathlib import Path
@@ -67,10 +69,24 @@ def cmd_palm(args):
     print(f"Готово: {output_path}")
 
 
+def _photo_to_data_uri(path: str) -> str:
+    """Кодирует фото в base64 data URI для встраивания в HTML."""
+    photo_path = Path(path)
+    ext = photo_path.suffix.lower().lstrip(".")
+    mime = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
+            "gif": "image/gif", "webp": "image/webp"}.get(ext, "image/jpeg")
+    data = base64.b64encode(photo_path.read_bytes()).decode("ascii")
+    return f"data:{mime};base64,{data}"
+
+
 def cmd_report(args):
     """Команда генерации отчёта."""
     with open(args.face, encoding="utf-8") as f:
         face_data = json.load(f)
+
+    # Если передано фото — встраиваем как base64 data URI в face_data
+    if args.photo:
+        face_data["photo_url"] = _photo_to_data_uri(args.photo)
 
     kwargs = {
         "report_type": args.report_type,
@@ -135,6 +151,7 @@ def main():
     p_report.add_argument("--birthdate-b")
     p_report.add_argument("--output", default="output/report.html")
     p_report.add_argument("--palm", default=None, help="JSON ладони (опционально, для self)")
+    p_report.add_argument("--photo", default=None, help="Фото для обложки отчёта (JPG/PNG)")
     p_report.add_argument("--ref-year", type=int, default=None)
     p_report.add_argument("--model", default=None)
 

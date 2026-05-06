@@ -61,16 +61,21 @@ def build_person_profile(face_data: dict, name: str, birthdate: str,
     face_signals = extract_face_signals(face_data)
     hand_signals = extract_hand_signals(palm_data, face_data) if palm_data else None
 
+    user_dict = {
+        "name": name,
+        "birthdate": birthdate,
+        "age": numerology["age"],
+        "gender": df["gender"],
+        "ethnicity_dominant": df.get("race", ""),
+        # face_shape канонический — из features (детерминированный алгоритм)
+        "face_shape": features["face_shape"],
+    }
+    # photo_url может быть передан внутри face_data (например, из CLI как base64 data URI)
+    if face_data.get("photo_url"):
+        user_dict["photo_url"] = face_data["photo_url"]
+
     profile = {
-        "user": {
-            "name": name,
-            "birthdate": birthdate,
-            "age": numerology["age"],
-            "gender": df["gender"],
-            "ethnicity_dominant": df.get("race", ""),
-            # face_shape канонический — из features (детерминированный алгоритм)
-            "face_shape": features["face_shape"],
-        },
+        "user": user_dict,
         "features": features,
         "face_signals": face_signals,
         "hand_signals": hand_signals,
