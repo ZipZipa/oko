@@ -66,29 +66,125 @@ def score_eyes(eye_height_to_width_avg: float, eye_asymmetry: float) -> float:
     return _clamp(openness - asym_penalty)
 
 
-def score_skin_placeholder(emotion_neutral: float) -> float:
-    """Без модели кожи возвращаем нейтральный скор 6.0.
-    В будущем можно подключить skin-model или Haut.AI."""
-    return 6.0
-
-
-def score_grooming_placeholder() -> float:
-    """Без модели волос/бороды возвращаем нейтральный скор 5.5."""
-    return 5.5
-
-
 def calculate_overall_score(scores: dict) -> float:
     """Взвешенное среднее основных метрик."""
     weights = {
-        "symmetry": 0.20,
-        "proportions": 0.20,
-        "bone_structure": 0.20,
-        "eyes": 0.20,
-        "skin": 0.10,
-        "grooming": 0.10,
+        "symmetry": 0.25,
+        "proportions": 0.25,
+        "bone_structure": 0.25,
+        "eyes": 0.25,
     }
     total = sum(scores[k] * weights[k] for k in weights if k in scores)
     return round(total, 1)
+
+
+def score_grooming(skin_data: dict, stylistic_markers: list | None = None) -> float:
+    """Скор ухоженности на основе кожи и стилистических маркеров.
+
+    Факторы:
+    - roughness (ниже = лучше) → 0-4 балла
+    - evenness по зонам (ниже = лучше) → 0-3 балла
+    - stylistic_markers (серьга и т.д.) → 0-1.5 балла
+    - smoothness → 0-1.5 балла
+    """
+    texture = skin_data.get("texture", {})
+    roughness = texture.get("roughness", 0.5)
+    smoothness = texture.get("smoothness", 0.5)
+
+    # Roughness: 0.0-0.3 → 4.0, 0.3-0.5 → 3.0, 0.5-0.7 → 2.0, 0.7-0.9 → 1.0, >0.9 → 0.5
+    if roughness < 0.3:
+        rough_score = 4.0
+    elif roughness < 0.5:
+        rough_score = 3.0
+    elif roughness < 0.7:
+        rough_score = 2.0
+    elif roughness < 0.9:
+        rough_score = 1.0
+    else:
+        rough_score = 0.5
+
+    # Evenness: среднее по зонам, ниже = ровнее
+    evenness = skin_data.get("evenness", {})
+    by_zone = evenness.get("by_zone", {})
+    if by_zone:
+        avg_evenness = sum(by_zone.values()) / len(by_zone)
+        # avg_evenness 0.0-0.15 → 3.0, 0.15-0.25 → 2.0, 0.25-0.35 → 1.0, >0.35 → 0.5
+        if avg_evenness < 0.15:
+            even_score = 3.0
+        elif avg_evenness < 0.25:
+            even_score = 2.0
+        elif avg_evenness < 0.35:
+            even_score = 1.0
+        else:
+            even_score = 0.5
+    else:
+        even_score = 1.5  # нет данных — средний
+
+    # Stylistic markers (серьга и т.д.) — признак заботы о внешности
+    marker_score = 1.5 if stylistic_markers else 0.0
+
+    # Smoothness
+    if smoothness > 0.7:
+        smooth_score = 1.5
+    elif smoothness > 0.4:
+        smooth_score = 1.0
+    else:
+        smooth_score = 0.5
+
+    return _clamp(rough_score + even_score + marker_score + smooth_score)
+
+
+def score_skin(skin_data: dict) -> float:
+    """Скор качества кожи на основе текстуры и ровности.
+
+    Факторы:
+    - roughness (ниже = лучше) → 0-4 балла
+    - smoothness (выше = лучше) → 0-3 балла
+    - evenness среднее по зонам (ниже = лучше) → 0-3 балла
+    """
+    texture = skin_data.get("texture", {})
+    roughness = texture.get("roughness", 0.5)
+    smoothness = texture.get("smoothness", 0.5)
+
+    # Roughness
+    if roughness < 0.2:
+        rough_score = 4.0
+    elif roughness < 0.4:
+        rough_score = 3.0
+    elif roughness < 0.6:
+        rough_score = 2.0
+    elif roughness < 0.8:
+        rough_score = 1.0
+    else:
+        rough_score = 0.5
+
+    # Smoothness
+    if smoothness > 0.8:
+        smooth_score = 3.0
+    elif smoothness > 0.5:
+        smooth_score = 2.0
+    elif smoothness > 0.3:
+        smooth_score = 1.0
+    else:
+        smooth_score = 0.5
+
+    # Evenness
+    evenness = skin_data.get("evenness", {})
+    by_zone = evenness.get("by_zone", {})
+    if by_zone:
+        avg_evenness = sum(by_zone.values()) / len(by_zone)
+        if avg_evenness < 0.10:
+            even_score = 3.0
+        elif avg_evenness < 0.20:
+            even_score = 2.0
+        elif avg_evenness < 0.30:
+            even_score = 1.0
+        else:
+            even_score = 0.5
+    else:
+        even_score = 1.5
+
+    return _clamp(rough_score + smooth_score + even_score)
 
 
 def calculate_all_scores(face_data: dict) -> dict:
@@ -116,8 +212,18 @@ def calculate_all_scores(face_data: dict) -> dict:
             jaw["jaw_width_to_face_width"]
         ),
         "eyes": score_eyes(eye_avg_h_w, asym["eye_asymmetry"]),
-        "skin": score_skin_placeholder(face_data["deepface"]["emotions"]["neutral"]),
-        "grooming": score_grooming_placeholder(),
     }
     scores["overall"] = calculate_overall_score(scores)
+
+    # Grooming & skin — из skin_data
+    skin_data = face_data.get("skin", {})
+    stylistic_markers = None
+    # Попробуем получить stylistic_markers из face_signals, если они есть
+    if "face_signals" in face_data:
+        stylistic_markers = face_data["face_signals"].get("stylistic_markers")
+
+    if skin_data and not skin_data.get("_stub", True):
+        scores["grooming"] = score_grooming(skin_data, stylistic_markers)
+        scores["skin"] = score_skin(skin_data)
+
     return scores

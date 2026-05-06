@@ -130,6 +130,7 @@ def main():
     p_report.add_argument("--name-b")
     p_report.add_argument("--birthdate-b")
     p_report.add_argument("--output", default="output/report.html")
+    p_report.add_argument("--palm", default=None, help="JSON ладони (опционально, для self)")
     p_report.add_argument("--ref-year", type=int, default=None)
     p_report.add_argument("--model", default=None)
 

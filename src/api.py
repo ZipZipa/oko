@@ -44,6 +44,7 @@ def generate_report(
     birthdate_b: str = None,
     ref_year: int = None,
     model: str = None,
+    palm_data: dict = None,
 ) -> str:
     """
     Генерирует HTML отчёта одного из трёх типов.
@@ -52,12 +53,13 @@ def generate_report(
 
     Для self и money — нужны face_data, name, birthdate.
     Для couple — дополнительно face_data_b, name_b, birthdate_b.
+    palm_data — опциональные данные ладони (только для self).
     """
     if report_type == "self":
         return self_report.generate(
             face_data=face_data, name=name, birthdate=birthdate,
             examples_dir=EXAMPLES_DIR, templates_dir=TEMPLATES_DIR,
-            ref_year=ref_year, model=model,
+            ref_year=ref_year, model=model, palm_data=palm_data,
         )
 
     elif report_type == "money":
@@ -88,7 +90,7 @@ def build_input_only(report_type: str, **kwargs) -> dict:
     if report_type == "self":
         return self_report.build_target_input(
             kwargs["face_data"], kwargs["name"], kwargs["birthdate"],
-            kwargs.get("ref_year"),
+            kwargs.get("ref_year"), kwargs.get("palm_data"),
         )
     elif report_type == "money":
         return money_report.build_target_input(

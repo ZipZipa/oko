@@ -237,6 +237,97 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 </div>
 
 
+<!-- ═══ ЧАСТЬ I.5: АНАЛИЗ ЛАДОНИ ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Часть первая · дополнение</div>
+  <div class="chap-title-big">Анализ ладони</div>
+  <div class="chap-num">I⁺</div>
+</div>
+
+<div class="page">
+  <div class="card">
+    <div class="card-lbl">Общая оценка</div>
+    <p class="q">{{ blocks.hand_analysis.verdict_quote }}</p>
+    <div class="mc" style="margin-bottom:1rem;"><div class="ml">Стихия</div><div class="mv">{{ blocks.hand_analysis.element_type }}</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-lbl">Черты руки</div>
+    <div class="g2" style="margin-bottom:1rem;">
+      <div class="mc"><div class="ml">Форма</div><div class="mv">{{ blocks.hand_analysis.hand_features.shape.label }}</div><div class="md">{{ blocks.hand_analysis.hand_features.shape.desc }}</div></div>
+      <div class="mc"><div class="ml">Пальцы</div><div class="mv">{{ blocks.hand_analysis.hand_features.fingers.label }}</div><div class="md">{{ blocks.hand_analysis.hand_features.fingers.desc }}</div></div>
+      <div class="mc"><div class="ml">Большой палец</div><div class="mv">{{ blocks.hand_analysis.hand_features.thumb.label }}</div><div class="md">{{ blocks.hand_analysis.hand_features.thumb.desc }}</div></div>
+      <div class="mc"><div class="ml">Бугры</div><div class="mv">{{ blocks.hand_analysis.hand_features.mounts.label }}</div><div class="md">{{ blocks.hand_analysis.hand_features.mounts.desc }}</div></div>
+    </div>
+    <div class="bt">
+      {% for obs in blocks.hand_analysis.line_observations %}
+      <div class="ri"><div class="d"></div><span>{{ obs }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Сильные стороны</div>
+      <div class="bt">
+        {% for item in blocks.hand_analysis.strengths %}
+        <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Слабые стороны</div>
+      <div class="bt">
+        {% for item in blocks.hand_analysis.weaknesses %}
+        <div class="ri"><div class="dh"></div><span>{{ item }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ЧАСТЬ I.6: УХОЖЕННОСТЬ И СТИЛЬ ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Часть первая · стиль</div>
+  <div class="chap-title-big">Ухоженность и стиль</div>
+  <div class="chap-num">Iˢ</div>
+</div>
+
+<div class="page">
+  <div class="card">
+    <div class="card-lbl">Впечатление</div>
+    <p class="q">{{ blocks.grooming_and_style.verdict_quote }}</p>
+    <div class="bt" style="margin-bottom:1rem;">{{ blocks.grooming_and_style.current_impression }}</div>
+  </div>
+
+  <div class="g2">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Что работает</div>
+      <div class="bt">
+        {% for item in blocks.grooming_and_style.strengths %}
+        <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Что улучшить</div>
+      <div class="bt">
+        {% for item in blocks.grooming_and_style.improvements %}
+        <div class="ri"><div class="dh"></div><span>{{ item }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:0.9rem;">
+    <div class="card-lbl">Архетип стиля</div>
+    <div class="mv" style="font-size:18px;">{{ blocks.grooming_and_style.style_archetype }}</div>
+    <div class="tags" style="margin-top:0.5rem;">
+      {% for tag in blocks.grooming_and_style.style_tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+    </div>
+  </div>
+</div>
+
 <!-- ═══ ЧАСТЬ II: ФИЗИОГНОМИКА ═══ -->
 <div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть вторая</div>
@@ -399,11 +490,34 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 
   <hr>
 
-  <!-- БЛОК 3: Периоды -->
+  {% if blocks.deep_portrait.block_2_hiromantia %}
+  <!-- БЛОК 2: Хиромантия -->
   <div class="sec-hdr">
     <div class="sec-n">5.2</div>
     <div class="sec-info">
       <div class="sec-eyebrow">Блок второй</div>
+      <div class="sec-title">Хиромантия</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <p class="q">{{ blocks.deep_portrait.block_2_hiromantia.quote }}</p>
+    <div class="bt">
+      {% for item in blocks.deep_portrait.block_2_hiromantia.points %}
+      <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+      {% endfor %}
+    </div>
+    <div class="final-line">{{ blocks.deep_portrait.block_2_hiromantia.final_line }}</div>
+  </div>
+
+  <hr>
+  {% endif %}
+
+  <!-- БЛОК 3: Периоды -->
+  <div class="sec-hdr">
+    <div class="sec-n">5.3</div>
+    <div class="sec-info">
+      <div class="sec-eyebrow">Блок третий</div>
       <div class="sec-title">Ключевые периоды жизни</div>
     </div>
   </div>
@@ -427,9 +541,9 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 
   <!-- БЛОК 4: Ошибка -->
   <div class="sec-hdr">
-    <div class="sec-n">5.3</div>
+    <div class="sec-n">5.4</div>
     <div class="sec-info">
-      <div class="sec-eyebrow">Блок третий</div>
+      <div class="sec-eyebrow">Блок четвёртый</div>
       <div class="sec-title">Ошибка, которая тормозит жизнь</div>
     </div>
   </div>
@@ -448,9 +562,9 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 
   <!-- БЛОК 5: Отношения -->
   <div class="sec-hdr">
-    <div class="sec-n">5.4</div>
+    <div class="sec-n">5.5</div>
     <div class="sec-info">
-      <div class="sec-eyebrow">Блок четвёртый</div>
+      <div class="sec-eyebrow">Блок пятый</div>
       <div class="sec-title">Сценарий в отношениях</div>
     </div>
   </div>
@@ -468,9 +582,9 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 
   <!-- БЛОК 6: Сценарии -->
   <div class="sec-hdr">
-    <div class="sec-n">5.5</div>
+    <div class="sec-n">5.6</div>
     <div class="sec-info">
-      <div class="sec-eyebrow">Блок пятый</div>
+      <div class="sec-eyebrow">Блок шестой</div>
       <div class="sec-title">Жизненные сценарии</div>
     </div>
   </div>
@@ -490,9 +604,9 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 
   <!-- БЛОК 7: Карма -->
   <div class="sec-hdr">
-    <div class="sec-n">5.6</div>
+    <div class="sec-n">5.7</div>
     <div class="sec-info">
-      <div class="sec-eyebrow">Блок шестой</div>
+      <div class="sec-eyebrow">Блок седьмой</div>
       <div class="sec-title">Кармический урок</div>
     </div>
   </div>
@@ -513,9 +627,9 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 
   <!-- БЛОК 8: Талант -->
   <div class="sec-hdr">
-    <div class="sec-n">5.7</div>
+    <div class="sec-n">5.8</div>
     <div class="sec-info">
-      <div class="sec-eyebrow">Блок седьмой</div>
+      <div class="sec-eyebrow">Блок восьмой</div>
       <div class="sec-title">Скрытый талант</div>
     </div>
   </div>
@@ -534,9 +648,9 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 
   <!-- БЛОК 9: Правда -->
   <div class="sec-hdr">
-    <div class="sec-n">5.8</div>
+    <div class="sec-n">5.9</div>
     <div class="sec-info">
-      <div class="sec-eyebrow">Блок восьмой</div>
+      <div class="sec-eyebrow">Блок девятый</div>
       <div class="sec-title">Скрытая правда</div>
     </div>
   </div>
