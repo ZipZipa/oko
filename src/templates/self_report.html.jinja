@@ -293,10 +293,12 @@ body.no-grain::before { display: none !important; }
   'beauty_scores':   {'min_plan': 'demo', 'title': 'Детальные метрики',             'pkg': ''},
   'beauty_sides':    {'min_plan': 'demo', 'title': 'Сильные и слабые стороны',      'pkg': ''},
 
-  'hand':            {'min_plan': 'demo', 'title': 'Анализ ладони',                 'pkg': ''},
-  'hand_overview':   {'min_plan': 'demo', 'title': 'Общая оценка',                  'pkg': ''},
-  'hand_features':   {'min_plan': 'demo', 'title': 'Черты и линии руки',            'pkg': ''},
-  'hand_sides':      {'min_plan': 'demo', 'title': 'Сильные и слабые стороны',      'pkg': ''},
+  'hand':            {'min_plan': 'full', 'title': 'Анализ ладони',                 'pkg': ''},
+  'hand_overview':   {'min_plan': 'full', 'title': 'Общая оценка',                  'pkg': ''},
+  'hand_features':   {'min_plan': 'full', 'title': 'Черты и линии руки',            'pkg': ''},
+  'hand_sides':      {'min_plan': 'full', 'title': 'Сильные и слабые стороны',      'pkg': ''},
+
+  'chiromancy':      {'min_plan': 'full', 'title': 'Хиромантия',                    'pkg': ''},
 
   'grooming':            {'min_plan': 'demo', 'title': 'Ухоженность и стиль',       'pkg': ''},
   'grooming_impression': {'min_plan': 'demo', 'title': 'Общее впечатление',         'pkg': ''},
@@ -320,7 +322,6 @@ body.no-grain::before { display: none !important; }
 
   'ch_deep': {'min_plan': 'demo', 'title': 'Глубинный анализ',         'pkg': ''},
   'block_1': {'min_plan': 'demo', 'title': 'Портрет личности',         'pkg': ''},
-  'block_2': {'min_plan': 'demo', 'title': 'Хиромантия',               'pkg': ''},
   'block_3': {'min_plan': 'demo', 'title': 'Ключевые периоды жизни',   'pkg': ''},
   'block_4': {'min_plan': 'base',     'title': 'Ошибка, которая тормозит жизнь', 'pkg': 'Базовый'},
   'block_5': {'min_plan': 'base',     'title': 'Сценарий в отношениях',          'pkg': 'Базовый'},
@@ -471,6 +472,24 @@ body.no-grain::before { display: none !important; }
     <p class="q">{{ blocks.hand_analysis.verdict_quote }}</p>
     <div class="mc" style="margin-bottom:1rem;"><div class="ml">Стихия</div><div class="mv">{{ blocks.hand_analysis.element_type }}</div></div>
   </div>
+  {%- if blocks.hand_analysis.left_hand or blocks.hand_analysis.right_hand %}
+  <div class="g2" style="margin-top:0.75rem;">
+    {%- if blocks.hand_analysis.left_hand %}
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Левая рука · природа</div>
+      <div class="mc"><div class="ml">Стихия</div><div class="mv">{{ blocks.hand_analysis.left_hand.element_type }}</div></div>
+      <p style="margin-top:0.5rem;font-size:0.82rem;color:var(--g700);">{{ blocks.hand_analysis.left_hand.key_trait }}</p>
+    </div>
+    {%- endif %}
+    {%- if blocks.hand_analysis.right_hand %}
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-lbl">Правая рука · путь</div>
+      <div class="mc"><div class="ml">Стихия</div><div class="mv">{{ blocks.hand_analysis.right_hand.element_type }}</div></div>
+      <p style="margin-top:0.5rem;font-size:0.82rem;color:var(--g700);">{{ blocks.hand_analysis.right_hand.key_trait }}</p>
+    </div>
+    {%- endif %}
+  </div>
+  {%- endif %}
 {%- endcall %}
 
 {%- set _chf = locked_cfg['hand_features'] -%}
@@ -515,9 +534,33 @@ body.no-grain::before { display: none !important; }
 </div>
 {%- endif %}
 
+{%- set _chiro = locked_cfg['chiromancy'] -%}
+{%- if blocks.chiromancy and (plan == 'demo' or _cur_level >= _plan_levels[_chiro.min_plan]) %}
+<!-- ═══ ЧАСТЬ I.6: ХИРОМАНТИЯ ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Часть первая · хиромантия</div>
+  <div class="chap-title-big">Хиромантия</div>
+  <div class="chap-num">I⁶</div>
+</div>
+
+<div class="page">
+{%- call locked_card(_chiro.min_plan, _chiro.title, _chiro.pkg) %}
+  <div class="card">
+    <p class="q">{{ blocks.chiromancy.quote }}</p>
+    <div class="bt">
+      {% for item in blocks.chiromancy.points %}
+      <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+      {% endfor %}
+    </div>
+    <div class="final-line">{{ blocks.chiromancy.final_line }}</div>
+  </div>
+{%- endcall %}
+</div>
+{%- endif %}
+
 {%- set _cg = locked_cfg['grooming'] -%}
 {%- if blocks.grooming_and_style and (plan == 'demo' or _cur_level >= _plan_levels[_cg.min_plan]) %}
-<!-- ═══ ЧАСТЬ I.6: УХОЖЕННОСТЬ И СТИЛЬ ═══ -->
+<!-- ═══ ЧАСТЬ I.7: УХОЖЕННОСТЬ И СТИЛЬ ═══ -->
 <div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть первая · стиль</div>
   <div class="chap-title-big">Ухоженность и стиль</div>
@@ -767,31 +810,6 @@ body.no-grain::before { display: none !important; }
       <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
       {% endfor %}
     </div>
-  </div>
-  {%- endcall %}
-{%- endif %}
-
-{%- set _b2 = locked_cfg['block_2'] -%}
-{%- if blocks.deep_portrait.block_2_hiromantia and (plan == 'demo' or _cur_level >= _plan_levels[_b2.min_plan]) %}
-  <hr>
-  <!-- БЛОК 2: Хиромантия -->
-  <div class="sec-hdr">
-    <div class="sec-n">5.2</div>
-    <div class="sec-info">
-      <div class="sec-eyebrow">Блок второй</div>
-      <div class="sec-title">Хиромантия</div>
-    </div>
-  </div>
-
-  {%- call locked_card(_b2.min_plan, _b2.title, _b2.pkg) %}
-  <div class="card">
-    <p class="q">{{ blocks.deep_portrait.block_2_hiromantia.quote }}</p>
-    <div class="bt">
-      {% for item in blocks.deep_portrait.block_2_hiromantia.points %}
-      <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
-      {% endfor %}
-    </div>
-    <div class="final-line">{{ blocks.deep_portrait.block_2_hiromantia.final_line }}</div>
   </div>
   {%- endcall %}
 {%- endif %}

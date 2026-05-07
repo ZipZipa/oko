@@ -108,9 +108,13 @@ def cmd_report(args):
         "reference": getattr(args, "reference", None),
     }
 
-    if args.report_type == "self" and args.palm:
-        with open(args.palm, encoding="utf-8") as f:
-            kwargs["palm_data"] = json.load(f)
+    if args.report_type == "self":
+        if args.palm_left:
+            with open(args.palm_left, encoding="utf-8") as f:
+                kwargs["palm_data_left"] = json.load(f)
+        if args.palm_right:
+            with open(args.palm_right, encoding="utf-8") as f:
+                kwargs["palm_data_right"] = json.load(f)
 
     if args.report_type == "couple":
         if not args.face_b or not args.name_b or not args.birthdate_b:
@@ -161,7 +165,8 @@ def main():
     p_report.add_argument("--name-b")
     p_report.add_argument("--birthdate-b")
     p_report.add_argument("--output", default="output/report.html")
-    p_report.add_argument("--palm", default=None, help="JSON ладони (опционально, для self)")
+    p_report.add_argument("--palm-left", default=None, dest="palm_left", help="JSON левой ладони (для self, план full)")
+    p_report.add_argument("--palm-right", default=None, dest="palm_right", help="JSON правой ладони (для self, план full)")
     p_report.add_argument("--photo", default=None, help="Фото для обложки отчёта (JPG/PNG)")
     p_report.add_argument("--ref-year", type=int, default=None)
     p_report.add_argument("--model", default=None)

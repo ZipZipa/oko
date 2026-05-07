@@ -110,15 +110,32 @@ LINE_MEANINGS = {
 # Основная функция
 # ═══════════════════════════════════════════════════════════════
 
-def extract_hand_signals(palm_data: dict,
+def extract_hand_signals(palm_data_left: dict,
+                         palm_data_right: dict,
                          face_data: dict = None) -> dict:
     """
-    Извлечь психологические сигналы из данных ладони.
+    Извлечь психологические сигналы из данных обеих ладоней.
 
-    Возвращает dict с 6 секциями:
-      element_type, dominant_finger, ratio_2d4d, spread_and_curvature,
-      line_patterns, skin_contrast
+    Левая рука — врождённый потенциал (то, с чем пришёл).
+    Правая рука — реализованный путь (то, что сделал).
+
+    Возвращает dict с тремя ключами:
+      left  — сигналы левой руки
+      right — сигналы правой руки
+      comparison — сравнение: где руки совпадают, где расходятся
     """
+    left = _extract_single(palm_data_left, face_data)
+    right = _extract_single(palm_data_right, face_data)
+
+    return {
+        "left": left,
+        "right": right,
+        "comparison": _compare_palms(left, right),
+    }
+
+
+def _extract_single(palm_data: dict, face_data: dict = None) -> dict:
+    """Сигналы одной ладони — внутренний аналог старого extract_hand_signals."""
     props = palm_data.get("proportions", {})
     lines = palm_data.get("lines", {})
     skin = palm_data.get("skin", {})
@@ -129,14 +146,11 @@ def extract_hand_signals(palm_data: dict,
         "ratio_2d4d": _ratio_2d4d(props),
         "spread_and_curvature": _spread_and_curvature(props),
         "line_patterns": _line_patterns(lines),
+        "key_line_pattern": _key_line_pattern(lines),
     }
 
-    # Контраст кожи ладони vs лица — только если face_data передан
     if face_data:
         result["skin_contrast"] = _skin_contrast(skin, face_data)
-
-    # Ключевой паттерн линий — итоговый инсайт
-    result["key_line_pattern"] = _key_line_pattern(lines)
 
     return result
 
@@ -339,6 +353,91 @@ def _skin_contrast(skin: dict, face_data: dict = None) -> dict:
     return {
         "interpretation": interp,
     }
+
+
+def _compare_palms(left: dict, right: dict) -> dict:
+    """
+    Сравнение левой и правой ладони — основа хиромантического анализа.
+
+    Левая = врождённое, правая = реализованное.
+    Совпадение → человек живёт по своей природе.
+    Расхождение → трансформация: либо рост, либо уход от себя.
+    """
+    insights = []
+
+    # Стихия
+    left_el = left.get("element_type", {}).get("element", "")
+    right_el = right.get("element_type", {}).get("element", "")
+    if left_el == right_el:
+        insights.append(
+            f"Стихия совпадает на обеих руках ({left_el}) — человек живёт в согласии с природой, "
+            "не ломает себя под внешние роли."
+        )
+    else:
+        insights.append(
+            f"Стихия расходится: левая ({left_el}) vs правая ({right_el}) — "
+            "жизненный путь трансформировал врождённый характер. Это либо осознанный рост, "
+            "либо адаптация под давлением среды."
+        )
+
+    # Линии — сравниваем глубину ключевых линий
+    left_lines = {p["name"]: p for p in left.get("line_patterns", []) if isinstance(p, dict)}
+    right_lines = {p["name"]: p for p in right.get("line_patterns", []) if isinstance(p, dict)}
+
+    line_comparisons = []
+    for name_ru, key in [
+        ("Линия жизни", "Линия жизни"),
+        ("Линия судьбы", "Линия судьбы"),
+        ("Линия сердца", "Линия сердца"),
+        ("Линия головы", "Линия головы"),
+    ]:
+        l = left_lines.get(key)
+        r = right_lines.get(key)
+        if not l or not r:
+            continue
+        l_strength = l.get("strength", "")
+        r_strength = r.get("strength", "")
+        l_present = l.get("present", False)
+        r_present = r.get("present", False)
+
+        if not l_present and r_present:
+            line_comparisons.append(
+                f"{name_ru}: на левой не выражена, на правой присутствует — "
+                "сфера не была дана природой, но была сформирована опытом."
+            )
+        elif l_present and not r_present:
+            line_comparisons.append(
+                f"{name_ru}: на левой есть, на правой ослаблена — "
+                "врождённый потенциал реализован не полностью."
+            )
+        elif l_strength == "strong" and r_strength == "weak":
+            line_comparisons.append(
+                f"{name_ru}: левая глубже правой — потенциал выше реализации. "
+                "Есть незадействованный ресурс."
+            )
+        elif l_strength == "weak" and r_strength == "strong":
+            line_comparisons.append(
+                f"{name_ru}: правая глубже левой — человек превзошёл врождённое. "
+                "Результат приобретён трудом, а не дан от природы."
+            )
+
+    if line_comparisons:
+        insights.extend(line_comparisons)
+
+    # Доминантный палец
+    left_finger = left.get("dominant_finger", {}).get("finger", "")
+    right_finger = right.get("dominant_finger", {}).get("finger", "")
+    if left_finger and right_finger and left_finger != right_finger:
+        l_info = FINGER_MEANINGS.get(left_finger, {})
+        r_info = FINGER_MEANINGS.get(right_finger, {})
+        insights.append(
+            f"Доминантный палец: левая — {l_info.get('name_ru', left_finger)} "
+            f"({l_info.get('theme', '')}), правая — {r_info.get('name_ru', right_finger)} "
+            f"({r_info.get('theme', '')}). "
+            "Вектор энергии сместился от врождённой темы к приобретённой."
+        )
+
+    return {"insights": insights}
 
 
 def _key_line_pattern(lines: dict) -> dict:

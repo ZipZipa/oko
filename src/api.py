@@ -44,7 +44,8 @@ def generate_report(
     birthdate_b: str = None,
     ref_year: int = None,
     model: str = None,
-    palm_data: dict = None,
+    palm_data_left: dict = None,
+    palm_data_right: dict = None,
     photo_url: str = None,
     plan: str = "full",
     reference: str = None,
@@ -63,7 +64,9 @@ def generate_report(
         return self_report.generate(
             face_data=face_data, name=name, birthdate=birthdate,
             examples_dir=EXAMPLES_DIR, templates_dir=TEMPLATES_DIR,
-            ref_year=ref_year, model=model, palm_data=palm_data,
+            ref_year=ref_year, model=model,
+            palm_data_left=palm_data_left,
+            palm_data_right=palm_data_right,
             plan=plan, reference=reference, _out_blocks=_out_blocks,
         )
 
@@ -95,7 +98,9 @@ def build_input_only(report_type: str, **kwargs) -> dict:
     if report_type == "self":
         return self_report.build_target_input(
             kwargs["face_data"], kwargs["name"], kwargs["birthdate"],
-            kwargs.get("ref_year"), kwargs.get("palm_data"),
+            kwargs.get("ref_year"),
+            kwargs.get("palm_data_left"),
+            kwargs.get("palm_data_right"),
         )
     elif report_type == "money":
         return money_report.build_target_input(

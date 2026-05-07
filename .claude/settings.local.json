@@ -4,7 +4,9 @@
       "Bash(python -c \"import json; json.load\\(open\\('examples/self/reference_blocks.json', encoding='utf-8'\\)\\); print\\('JSON valid'\\)\")",
       "PowerShell(Set-Location \"c:\\\\Users\\\\zig-zag\\\\Documents\\\\oko1\"; $py = \"c:\\\\Users\\\\zig-zag\\\\Documents\\\\oko1\\\\.venv\\\\bin\\\\python\"; & $py -c \"import json; json.load\\(open\\('examples/self/reference_blocks.json', encoding='utf-8'\\)\\); print\\('JSON valid'\\)\")",
       "Bash(Get-ChildItem -Recurse -Depth 2)",
-      "Bash(Select-Object FullName)"
+      "Bash(Select-Object FullName)",
+      "Bash(Get-ChildItem -Path c:\\\\Users\\\\zig-zag\\\\Documents\\\\oko1 -Recurse -Name)",
+      "Bash(python -c \"import json; d=json.load\\(open\\('examples/self/reference_blocks.json',encoding='utf-8'\\)\\); print\\(json.dumps\\({k:d[k] for k in ['hand_analysis','deep_portrait'] if k in d}, ensure_ascii=False, indent=2\\)\\)\")"
     ]
   }
 }

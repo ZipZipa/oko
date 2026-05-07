@@ -14,7 +14,7 @@ from aiogram.fsm.context import FSMContext
 from sqlalchemy import select
 
 from src.bot.db import async_session, User
-from src.bot.states import RegistrationStates
+from src.bot.states import RegistrationStates, PalmStates
 
 router = Router()
 
@@ -314,17 +314,17 @@ async def cb_package_detail(callback: CallbackQuery):
 # ─── Запуск отчёта ──────────────────────────────────────────────────────────────
 
 @router.callback_query(F.data == "run_self_demo")
-async def cb_run_self_demo(callback: CallbackQuery):
-    await _start_report(callback, plan="demo")
+async def cb_run_self_demo(callback: CallbackQuery, state: FSMContext):
+    await _start_report(callback, plan="demo", state=state)
 
 
 @router.callback_query(F.data.in_({"buy_base", "buy_extended", "buy_full"}))
-async def cb_buy(callback: CallbackQuery):
+async def cb_buy(callback: CallbackQuery, state: FSMContext):
     plan_key = callback.data.removeprefix("buy_")
-    await _start_report(callback, plan=plan_key)
+    await _start_report(callback, plan=plan_key, state=state)
 
 
-async def _start_report(callback: CallbackQuery, plan: str):
+async def _start_report(callback: CallbackQuery, plan: str, state: FSMContext):
     user = await get_user(callback.from_user.id)
 
     if not user or not _is_complete(user):
@@ -334,11 +334,125 @@ async def _start_report(callback: CallbackQuery, plan: str):
         await callback.answer()
         return
 
+    if plan == "full":
+        has_both_palms = bool(user.palm_left_json and user.palm_right_json)
+        if not has_both_palms:
+            await state.set_state(PalmStates.waiting_for_palm_left)
+            await state.update_data(pending_plan=plan)
+            await callback.message.edit_text(
+                "Для Премиум-анализа нужны фото обеих ладоней — это основа хиромантии.\n\n"
+                "Пришли фото левой ладони (ладонью вверх, линии хорошо видны) 🤚",
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
+                ]),
+            )
+            await callback.answer()
+            return
+
     await callback.message.edit_text("Запускаю анализ... Это займёт минуту ⏳")
     await callback.answer()
 
     asyncio.create_task(_run_self_report(callback.message, user, plan))
 
+
+# ─── Сбор ладоней (FSM для Премиум) ─────────────────────────────────────────
+
+async def _download_and_analyze_palm(bot, file_id: str) -> dict | None:
+    """Скачивает фото ладони и запускает analyze_palm. Возвращает dict или None."""
+    from src.core.palm_analyzer import analyze_palm
+    import os
+
+    try:
+        file = await bot.get_file(file_id)
+        if not file.file_path:
+            return None
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
+            await bot.download_file(file.file_path, tmp.name)
+            tmp_path = tmp.name
+        try:
+            loop = asyncio.get_running_loop()
+            palm_data = await loop.run_in_executor(None, lambda: analyze_palm(tmp_path))
+        finally:
+            os.unlink(tmp_path)
+        return palm_data
+    except Exception:
+        return None
+
+
+@router.message(PalmStates.waiting_for_palm_left, F.photo)
+async def process_palm_left(message: Message, state: FSMContext):
+    photo: PhotoSize = message.photo[-1]
+    processing_msg = await message.answer("Анализирую левую ладонь... ⏳")
+
+    palm_data = await _download_and_analyze_palm(message.bot, photo.file_id)
+
+    if not palm_data:
+        await processing_msg.delete()
+        await message.answer("Не удалось распознать ладонь. Попробуй другое фото — ладонь вверх, хорошее освещение.")
+        return
+
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.telegram_id == message.from_user.id)
+        )
+        user = result.scalar_one_or_none()
+        if user:
+            user.palm_left_json = json.dumps(palm_data, ensure_ascii=False)
+            await session.commit()
+
+    await processing_msg.delete()
+    await state.set_state(PalmStates.waiting_for_palm_right)
+    await message.answer(
+        "Левая ладонь принята.\n\n"
+        "Теперь пришли фото правой ладони (ладонью вверх) 🤚",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
+        ]),
+    )
+
+
+@router.message(PalmStates.waiting_for_palm_left)
+async def process_palm_left_invalid(message: Message):
+    await message.answer("Пожалуйста, пришли именно фото ладони 📷")
+
+
+@router.message(PalmStates.waiting_for_palm_right, F.photo)
+async def process_palm_right(message: Message, state: FSMContext):
+    photo: PhotoSize = message.photo[-1]
+    processing_msg = await message.answer("Анализирую правую ладонь... ⏳")
+
+    palm_data = await _download_and_analyze_palm(message.bot, photo.file_id)
+
+    if not palm_data:
+        await processing_msg.delete()
+        await message.answer("Не удалось распознать ладонь. Попробуй другое фото — ладонь вверх, хорошее освещение.")
+        return
+
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.telegram_id == message.from_user.id)
+        )
+        user = result.scalar_one_or_none()
+        if user:
+            user.palm_right_json = json.dumps(palm_data, ensure_ascii=False)
+            await session.commit()
+
+    data = await state.get_data()
+    await state.clear()
+
+    user = await get_user(message.from_user.id)
+
+    await processing_msg.delete()
+    status_msg = await message.answer("Обе ладони приняты. Запускаю полный анализ... Это займёт минуту ⏳")
+    asyncio.create_task(_run_self_report(status_msg, user, data.get("pending_plan", "full")))
+
+
+@router.message(PalmStates.waiting_for_palm_right)
+async def process_palm_right_invalid(message: Message):
+    await message.answer("Пожалуйста, пришли именно фото ладони 📷")
+
+
+# ─── Генерация отчёта ────────────────────────────────────────────────────────
 
 async def _download_photo_data_uri(bot, file_id: str) -> str | None:
     try:
@@ -386,6 +500,23 @@ async def _run_self_report(message: Message, user: User, plan: str):
                     if db_user:
                         db_user.blocks_json = json.dumps(out_blocks[0], ensure_ascii=False)
                         await session.commit()
+
+        elif plan == "full":
+            palm_left = json.loads(user.palm_left_json) if user.palm_left_json else None
+            palm_right = json.loads(user.palm_right_json) if user.palm_right_json else None
+            html = await loop.run_in_executor(
+                None,
+                lambda: generate_report(
+                    report_type="self",
+                    face_data=face_data,
+                    name=user.name,
+                    birthdate=birthdate,
+                    plan="full",
+                    palm_data_left=palm_left,
+                    palm_data_right=palm_right,
+                ),
+            )
+
         else:
             reference = user.blocks_json or None
             html = await loop.run_in_executor(

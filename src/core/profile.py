@@ -21,7 +21,8 @@ def build_person_profile(face_data: dict, name: str, birthdate: str,
                          ref_year: int = None,
                          include_scores: bool = True,
                          include_matrix_raw: bool = False,
-                         palm_data: dict = None) -> dict:
+                         palm_data_left: dict = None,
+                         palm_data_right: dict = None) -> dict:
     """
     Профиль одного человека. Используется как кирпич всеми типами отчётов.
 
@@ -59,7 +60,8 @@ def build_person_profile(face_data: dict, name: str, birthdate: str,
     features = describe_all_features(face_data)
     df = face_data["deepface"]
     face_signals = extract_face_signals(face_data)
-    hand_signals = extract_hand_signals(palm_data, face_data) if palm_data else None
+    has_both_palms = palm_data_left is not None and palm_data_right is not None
+    hand_signals = extract_hand_signals(palm_data_left, palm_data_right, face_data) if has_both_palms else None
 
     user_dict = {
         "name": name,
@@ -86,9 +88,10 @@ def build_person_profile(face_data: dict, name: str, birthdate: str,
     if include_scores:
         profile["scores"] = calculate_all_scores(face_data)
 
-    # Grooming-сигналы — отдельная секция для блока grooming_and_style
+    # Grooming-сигналы — берём skin_contrast из правой руки (ближе к реальности)
+    grooming_hand = hand_signals.get("right") if hand_signals else None
     profile["grooming_signals"] = _build_grooming_signals(
-        face_data, face_signals, hand_signals,
+        face_data, face_signals, grooming_hand,
         profile.get("scores", {}),
     )
 
