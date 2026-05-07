@@ -399,7 +399,8 @@ async def _run_self_report(message: Message, user: User, plan: str):
 
         await message.delete()
         file = BufferedInputFile(html.encode("utf-8"), filename=f"Портрет личности {_plan_label.get(plan, plan)}.html")
-        await message.answer_document(file, caption=caption)
+        sent = await message.answer_document(file, caption=caption)
+        await message.bot.pin_chat_message(chat_id=sent.chat.id, message_id=sent.message_id, disable_notification=True)
 
         menu = _packages_menu(above_plan=plan)
         if menu.inline_keyboard[:-1]:  # есть пакеты выше текущего плана
