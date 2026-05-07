@@ -242,6 +242,51 @@ def build_target_input(face_data: dict, name: str, birthdate: str,
                                 palm_data_right=palm_data_right)
 
 
+def _load_reference_blocks(reference: str) -> dict:
+    if reference.strip().startswith("{"):
+        return json.loads(reference)
+    with open(reference, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _generate_palm_blocks(target: dict, ref_hand_analysis: dict, ref_chiromancy: dict,
+                          model: str = None) -> dict:
+    """Точечный LLM-вызов: только hand_analysis + chiromancy."""
+    ha_fields = REQUIRED_STRUCTURE["hand_analysis"]
+    ch_fields = REQUIRED_STRUCTURE["chiromancy"]
+
+    def validate_fn(blocks):
+        errors = []
+        for section, fields in [("hand_analysis", ha_fields), ("chiromancy", ch_fields)]:
+            if section not in blocks:
+                errors.append(f"Missing top-level: {section}")
+            else:
+                errors += [f"Missing: {section}.{f}" for f in fields if f not in blocks[section]]
+        return errors
+
+    user_msg = f"""Эталонный пример блоков hand_analysis и chiromancy:
+{json.dumps({"hand_analysis": ref_hand_analysis, "chiromancy": ref_chiromancy}, ensure_ascii=False, indent=2)}
+
+ЗАДАЧА: сгенерируй блоки "hand_analysis" и "chiromancy" для нового пользователя.
+- Используй hand_signals.left, hand_signals.right, hand_signals.comparison.insights
+- Левая рука = врождённое, правая = реализованное
+- В chiromancy.points — минимум один пункт сравнения left vs right для каждой из 4 линий
+- Свяжи с нумерологией и матрицей судьбы из входных данных
+- final_line — одно жёсткое предложение-вывод
+
+Данные пользователя:
+{json.dumps(target, ensure_ascii=False, indent=2)}
+
+Верни ТОЛЬКО JSON вида:
+{{"hand_analysis": {{...}}, "chiromancy": {{...}}}}
+Без обёрток, без комментариев."""
+
+    kwargs = {}
+    if model:
+        kwargs["model"] = model
+    return generate_blocks(SYSTEM_PROMPT, [{"role": "user", "content": user_msg}], validate_fn, **kwargs)
+
+
 def generate(face_data: dict, name: str, birthdate: str,
              examples_dir: Path, templates_dir: Path,
              ref_year: int = None, model: str = None,
@@ -253,7 +298,8 @@ def generate(face_data: dict, name: str, birthdate: str,
     """Генерирует self отчёт и возвращает HTML.
 
     reference: путь к JSON-файлу с блоками ИЛИ сырая JSON-строка.
-               Если указан — LLM не вызывается.
+               Если указан — LLM не вызывается (кроме случая reference + has_palm:
+               тогда точечно генерируются только hand_analysis и chiromancy).
     _out_blocks: если передан пустой список, в него будет добавлен dict blocks
                  после генерации через LLM (для сохранения в БД).
     """
@@ -261,23 +307,41 @@ def generate(face_data: dict, name: str, birthdate: str,
                                 palm_data_left=palm_data_left,
                                 palm_data_right=palm_data_right)
     has_palm = palm_data_left is not None and palm_data_right is not None
+    examples_subdir = examples_dir / EXAMPLES_SUBDIR
 
-    # ── Режим референса: без LLM ──
+    # ── Референс + ладони: берём готовые блоки, точечно добавляем хиромантию ──
+    if reference and has_palm:
+        blocks = _load_reference_blocks(reference)
+        with open(examples_subdir / "reference_blocks.json", encoding="utf-8") as f:
+            ref_ex = json.load(f)
+        palm_blocks = _generate_palm_blocks(
+            target,
+            ref_ex.get("hand_analysis", {}),
+            ref_ex.get("chiromancy", {}),
+            model=model,
+        )
+        blocks["hand_analysis"] = palm_blocks["hand_analysis"]
+        blocks["chiromancy"] = palm_blocks["chiromancy"]
+        errors = validate_blocks(blocks, has_palm=True)
+        if errors:
+            print("Предупреждения валидации (reference + palm):", file=sys.stderr)
+            for e in errors:
+                print(f"  • {e}", file=sys.stderr)
+        if _out_blocks is not None:
+            _out_blocks.append(blocks)
+        return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)
+
+    # ── Референс без ладоней: только рендеринг ──
     if reference:
-        if reference.strip().startswith("{"):
-            blocks = json.loads(reference)
-        else:
-            with open(reference, encoding="utf-8") as f:
-                blocks = json.load(f)
-        errors = validate_blocks(blocks, has_palm=has_palm)
+        blocks = _load_reference_blocks(reference)
+        errors = validate_blocks(blocks, has_palm=False)
         if errors:
             print("Предупреждения валидации референса:", file=sys.stderr)
             for e in errors:
                 print(f"  • {e}", file=sys.stderr)
         return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)
 
-    # ── Обычный режим: через LLM ──
-    examples_subdir = examples_dir / EXAMPLES_SUBDIR
+    # ── Обычный режим: полный LLM ──
     with open(examples_subdir / "reference_blocks.json", encoding="utf-8") as f:
         ref_blocks = json.load(f)
 

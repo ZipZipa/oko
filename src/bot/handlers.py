@@ -504,6 +504,7 @@ async def _run_self_report(message: Message, user: User, plan: str):
         elif plan == "full":
             palm_left = json.loads(user.palm_left_json) if user.palm_left_json else None
             palm_right = json.loads(user.palm_right_json) if user.palm_right_json else None
+            out_blocks: list = []
             html = await loop.run_in_executor(
                 None,
                 lambda: generate_report(
@@ -514,8 +515,19 @@ async def _run_self_report(message: Message, user: User, plan: str):
                     plan="full",
                     palm_data_left=palm_left,
                     palm_data_right=palm_right,
+                    reference=user.blocks_json or None,
+                    _out_blocks=out_blocks,
                 ),
             )
+            if out_blocks:
+                async with async_session() as session:
+                    result = await session.execute(
+                        select(User).where(User.telegram_id == user.telegram_id)
+                    )
+                    db_user = result.scalar_one_or_none()
+                    if db_user:
+                        db_user.blocks_json = json.dumps(out_blocks[0], ensure_ascii=False)
+                        await session.commit()
 
         else:
             reference = user.blocks_json or None
