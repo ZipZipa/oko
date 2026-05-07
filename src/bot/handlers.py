@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import json
 import tempfile
 from datetime import datetime
@@ -339,12 +340,28 @@ async def _start_report(callback: CallbackQuery, plan: str):
     asyncio.create_task(_run_self_report(callback.message, user, plan))
 
 
+async def _download_photo_data_uri(bot, file_id: str) -> str | None:
+    try:
+        file = await bot.get_file(file_id)
+        buf = await bot.download_file(file.file_path)
+        data = base64.b64encode(buf.read()).decode("ascii")
+        return f"data:image/jpeg;base64,{data}"
+    except Exception:
+        return None
+
+
 async def _run_self_report(message: Message, user: User, plan: str):
     from src.api import generate_report
 
     try:
         face_data = json.loads(user.face_json)
         birthdate = user.birth_date.strftime("%d.%m.%Y")
+
+        if user.photo_file_id and "photo_url" not in face_data:
+            photo_uri = await _download_photo_data_uri(message.bot, user.photo_file_id)
+            if photo_uri:
+                face_data["photo_url"] = photo_uri
+
         loop = asyncio.get_running_loop()
 
         if plan == "demo":
