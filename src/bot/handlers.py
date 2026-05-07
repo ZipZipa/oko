@@ -69,6 +69,7 @@ def _packages_menu(above_plan: str = "demo") -> InlineKeyboardMarkup:
         for key, pkg in _PACKAGES.items()
         if _PLAN_LEVEL[key] > current_level
     ]
+    rows.append([InlineKeyboardButton(text="← В меню", callback_data="back_to_main")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -276,6 +277,15 @@ async def cb_menu_money(callback: CallbackQuery):
 
 # ─── Пакеты ─────────────────────────────────────────────────────────────────────
 
+@router.callback_query(F.data == "back_to_main")
+async def cb_back_to_main(callback: CallbackQuery):
+    await callback.message.edit_text(
+        "Выбери раздел:",
+        reply_markup=_main_menu(),
+    )
+    await callback.answer()
+
+
 @router.callback_query(F.data == "show_packages")
 async def cb_show_packages(callback: CallbackQuery):
     user = await get_user(callback.from_user.id)
@@ -386,7 +396,7 @@ async def _run_self_report(message: Message, user: User, plan: str):
         caption = f"Портрет личности · {_plan_label.get(plan, plan)} готов!"
 
         await message.delete()
-        file = BufferedInputFile(html.encode("utf-8"), filename=f"portrait_{user.name}.html")
+        file = BufferedInputFile(html.encode("utf-8"), filename=f"Портрет личности {_plan_label.get(plan, plan)}.html")
         await message.answer_document(file, caption=caption)
 
         if plan == "demo":
