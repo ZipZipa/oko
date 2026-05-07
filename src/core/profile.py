@@ -4,6 +4,7 @@ self_report использует её напрямую,
 couple_report зовёт её дважды (для A и B),
 money_report использует + добавляет money_dynamics.
 """
+import copy
 from datetime import datetime
 
 from .numerology import full_numerology_profile
@@ -174,6 +175,44 @@ def _build_grooming_signals(face_data: dict, face_signals: dict,
         "grooming_level": grooming_level,
         "skin_level": skin_level,
     }
+
+
+_MATRIX_KEY_RU = {
+    "personality":    "Личность",
+    "realization":    "Реализация",
+    "destiny":        "Предназначение",
+    "karma_rod":      "Карма рода",
+    "family_program": "Родовая программа",
+    "challenge":      "Испытание",
+    "money":          "Деньги",
+    "love":           "Любовь",
+    "health":         "Здоровье",
+    "mission":        "Миссия",
+    "spiritual_path": "Духовный путь",
+    "creativity":     "Творчество",
+    "comfort":        "Комфорт",
+}
+
+_PALM_KEY_RU = {
+    "ratio_2d4d": "соотношение_указательного_к_безымянному",
+}
+
+
+def prepare_for_llm(profile: dict) -> dict:
+    """Переименовывает технические английские ключи перед отправкой в LLM."""
+    profile = copy.deepcopy(profile)
+
+    if "matrix" in profile:
+        profile["matrix"] = {
+            _MATRIX_KEY_RU.get(k, k): v for k, v in profile["matrix"].items()
+        }
+
+    for side in ("left", "right"):
+        palm = (profile.get("hand_signals") or {}).get(side)
+        if palm:
+            palm.update({_PALM_KEY_RU[k]: palm.pop(k) for k in list(palm) if k in _PALM_KEY_RU})
+
+    return profile
 
 
 def _score_label(score: float | None) -> str:
