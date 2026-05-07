@@ -39,6 +39,17 @@ BLENDSHAPE_THRESHOLDS = {
     "cheekSquintRight": {"threshold": 0.25, "label": "напряжённая щека (право)", "interpretation": "Сдерживаемая эмоция, привычка контролировать мимику"},
 }
 
+# Перевод английских названий эмоций DeepFace → русский
+EMOTION_NAMES_RU = {
+    "neutral": "нейтральный",
+    "sad": "грусть",
+    "angry": "гнев",
+    "disgust": "отвращение",
+    "surprise": "удивление",
+    "fear": "страх",
+    "happy": "радость",
+}
+
 # Интерпретации эмоций
 EMOTION_INTERPRETATIONS = {
     "neutral": "Внутреннее спокойствие или отключённость — лицо «по умолчанию»",
@@ -75,13 +86,14 @@ def extract_emotional_profile(emotions: dict) -> dict:
     top_list = []
     for emotion, value in top:
         top_list.append({
-            "emotion": emotion,
+            "emotion": EMOTION_NAMES_RU.get(emotion, emotion),
             "value": round(value, 1),
             "interpretation": EMOTION_INTERPRETATIONS.get(emotion, "")
         })
 
     dominant = top[0][0]
     dominant_val = top[0][1]
+    dominant_ru = EMOTION_NAMES_RU.get(dominant, dominant)
 
     # Формируем summary
     if dominant == "neutral" and dominant_val > 70:
@@ -93,10 +105,10 @@ def extract_emotional_profile(emotions: dict) -> dict:
     elif dominant == "happy" and dominant_val > 30:
         summary = "Естественная позитивность — мышцы лица привыкли к расслаблению и улыбке"
     else:
-        summary = f"Доминирующая эмоция — {dominant} ({dominant_val:.1f}%), но лицо контролирует выражение"
+        summary = f"Доминирующая эмоция — {dominant_ru} ({dominant_val:.1f}%), но лицо контролирует выражение"
 
     return {
-        "dominant": dominant,
+        "dominant": dominant_ru,
         "top": top_list,
         "summary": summary,
     }
