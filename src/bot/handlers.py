@@ -238,20 +238,21 @@ async def process_birth_date_invalid(message: Message):
 
 # ─── Главное меню ───────────────────────────────────────────────────────────────
 
+async def _edit_to_packages(message, user: User):
+    purchased = (user.purchased_plan if user else None) or "demo"
+    menu = _packages_menu(above_plan=purchased)
+    if menu.inline_keyboard[:-1]:  # есть хоть один пакет помимо кнопки "← В меню"
+        await message.edit_text("Выбери пакет:", reply_markup=menu)
+    else:
+        await message.edit_text("У тебя уже есть полный отчёт — Премиум пакет.")
+
+
 @router.callback_query(F.data == "menu_self")
 async def cb_menu_self(callback: CallbackQuery):
     user = await get_user(callback.from_user.id)
 
     if user and user.blocks_json:
-        purchased = user.purchased_plan or "demo"
-        menu = _packages_menu(above_plan=purchased)
-        if menu.inline_keyboard:
-            await callback.message.edit_text(
-                "Тестовый анализ уже готов. Выбери пакет для полного отчёта:",
-                reply_markup=menu,
-            )
-        else:
-            await callback.message.edit_text("У тебя уже есть полный отчёт — Премиум пакет.")
+        await _edit_to_packages(callback.message, user)
     else:
         await callback.message.edit_text(
             "Портрет личности — анализ твоей внешности, нумерологии и психологических паттернов.\n\n"
@@ -289,11 +290,7 @@ async def cb_back_to_main(callback: CallbackQuery):
 @router.callback_query(F.data == "show_packages")
 async def cb_show_packages(callback: CallbackQuery):
     user = await get_user(callback.from_user.id)
-    purchased = (user.purchased_plan if user else None) or "demo"
-    await callback.message.edit_text(
-        "Выбери пакет, чтобы узнать подробнее:",
-        reply_markup=_packages_menu(above_plan=purchased),
-    )
+    await _edit_to_packages(callback.message, user)
     await callback.answer()
 
 
@@ -399,10 +396,15 @@ async def _run_self_report(message: Message, user: User, plan: str):
         file = BufferedInputFile(html.encode("utf-8"), filename=f"Портрет личности {_plan_label.get(plan, plan)}.html")
         await message.answer_document(file, caption=caption)
 
-        if plan == "demo":
+        menu = _packages_menu(above_plan=plan)
+        if menu.inline_keyboard[:-1]:  # есть пакеты выше текущего плана
+            await message.answer("Выбери пакет:", reply_markup=menu)
+        else:
             await message.answer(
-                "Хочешь получить полный анализ? Выбери пакет:",
-                reply_markup=_packages_menu(above_plan="demo"),
+                "Это максимальный пакет.",
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                    [InlineKeyboardButton(text="← В меню", callback_data="back_to_main")],
+                ]),
             )
 
     except Exception as e:
