@@ -244,7 +244,12 @@ async def _edit_to_packages(message, user: User):
     if menu.inline_keyboard[:-1]:  # есть хоть один пакет помимо кнопки "← В меню"
         await message.edit_text("Выбери пакет:", reply_markup=menu)
     else:
-        await message.edit_text("У тебя уже есть полный отчёт — Премиум пакет.")
+        await message.edit_text(
+            "Это максимальный пакет.",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="← В меню", callback_data="back_to_main")],
+            ]),
+        )
 
 
 @router.callback_query(F.data == "menu_self")
