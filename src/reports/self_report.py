@@ -357,6 +357,11 @@ def generate(face_data: dict, name: str, birthdate: str,
         **kwargs,
     )
 
+    # Без ладоней — подставляем референсные блоки как заглушки для отображения замка
+    if not has_palm:
+        blocks.setdefault("hand_analysis", ref_blocks.get("hand_analysis"))
+        blocks.setdefault("chiromancy", ref_blocks.get("chiromancy"))
+
     if _out_blocks is not None:
         _out_blocks.append(blocks)
 
