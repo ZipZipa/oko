@@ -534,30 +534,6 @@ body.no-grain::before { display: none !important; }
 </div>
 {%- endif %}
 
-{%- set _chiro = locked_cfg['chiromancy'] -%}
-{%- if blocks.chiromancy and (plan == 'demo' or _cur_level >= _plan_levels[_chiro.min_plan]) %}
-<!-- ═══ ЧАСТЬ I.6: ХИРОМАНТИЯ ═══ -->
-<div class="chapter-divider chap-wrap">
-  <div class="chap-eyebrow">Часть первая · хиромантия</div>
-  <div class="chap-title-big">Хиромантия</div>
-  <div class="chap-num">I⁶</div>
-</div>
-
-<div class="page">
-{%- call locked_card(_chiro.min_plan, _chiro.title, _chiro.pkg) %}
-  <div class="card">
-    <p class="q">{{ blocks.chiromancy.quote }}</p>
-    <div class="bt">
-      {% for item in blocks.chiromancy.points %}
-      <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
-      {% endfor %}
-    </div>
-    <div class="final-line">{{ blocks.chiromancy.final_line }}</div>
-  </div>
-{%- endcall %}
-</div>
-{%- endif %}
-
 {%- set _cg = locked_cfg['grooming'] -%}
 {%- if blocks.grooming_and_style and (plan == 'demo' or _cur_level >= _plan_levels[_cg.min_plan]) %}
 <!-- ═══ ЧАСТЬ I.7: УХОЖЕННОСТЬ И СТИЛЬ ═══ -->
@@ -655,13 +631,37 @@ body.no-grain::before { display: none !important; }
 </div>
 {%- endif %}
 
-{%- set _cn = locked_cfg['numerology'] -%}
-{%- if plan == 'demo' or _cur_level >= _plan_levels[_cn.min_plan] %}
-<!-- ═══ ЧАСТЬ III: НУМЕРОЛОГИЯ ═══ -->
+{%- set _chiro = locked_cfg['chiromancy'] -%}
+{%- if blocks.chiromancy and (plan == 'demo' or _cur_level >= _plan_levels[_chiro.min_plan]) %}
+<!-- ═══ ЧАСТЬ III: ХИРОМАНТИЯ ═══ -->
 <div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть третья</div>
-  <div class="chap-title-big">Нумерология</div>
+  <div class="chap-title-big">Хиромантия</div>
   <div class="chap-num">III</div>
+</div>
+
+<div class="page">
+{%- call locked_card(_chiro.min_plan, _chiro.title, _chiro.pkg) %}
+  <div class="card">
+    <p class="q">{{ blocks.chiromancy.quote }}</p>
+    <div class="bt">
+      {% for item in blocks.chiromancy.points %}
+      <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
+      {% endfor %}
+    </div>
+    <div class="final-line">{{ blocks.chiromancy.final_line }}</div>
+  </div>
+{%- endcall %}
+</div>
+{%- endif %}
+
+{%- set _cn = locked_cfg['numerology'] -%}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_cn.min_plan] %}
+<!-- ═══ ЧАСТЬ IV: НУМЕРОЛОГИЯ ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Часть четвёртая</div>
+  <div class="chap-title-big">Нумерология</div>
+  <div class="chap-num">IV</div>
 </div>
 
 <div class="page">
@@ -745,9 +745,9 @@ body.no-grain::before { display: none !important; }
 {%- if plan == 'demo' or _cur_level >= _plan_levels[_cm.min_plan] %}
 <!-- ═══ ЧАСТЬ IV: МАТРИЦА СУДЬБЫ ═══ -->
 <div class="chapter-divider chap-wrap">
-  <div class="chap-eyebrow">Часть четвёртая</div>
+  <div class="chap-eyebrow">Часть пятая</div>
   <div class="chap-title-big">Матрица судьбы</div>
-  <div class="chap-num">IV</div>
+  <div class="chap-num">V</div>
 </div>
 
 <div class="page">
@@ -784,9 +784,9 @@ body.no-grain::before { display: none !important; }
 {%- if plan == 'demo' or _cur_level >= _plan_levels[_cd.min_plan] %}
 <!-- ═══ ЧАСТЬ V: ГЛУБИННЫЙ АНАЛИЗ ═══ -->
 <div class="chapter-divider chap-wrap">
-  <div class="chap-eyebrow">Часть пятая</div>
+  <div class="chap-eyebrow">Часть шестая</div>
   <div class="chap-title-big">Глубинный анализ</div>
-  <div class="chap-num">V</div>
+  <div class="chap-num">VI</div>
 </div>
 
 <div class="page">
@@ -795,7 +795,7 @@ body.no-grain::before { display: none !important; }
 {%- if plan == 'demo' or _cur_level >= _plan_levels[_b1.min_plan] %}
   <!-- БЛОК 1: Портрет -->
   <div class="sec-hdr">
-    <div class="sec-n">5.1</div>
+    <div class="sec-n">6.1</div>
     <div class="sec-info">
       <div class="sec-eyebrow">Блок первый</div>
       <div class="sec-title">Полный портрет личности</div>
@@ -819,7 +819,7 @@ body.no-grain::before { display: none !important; }
   <hr>
   <!-- БЛОК 3: Периоды -->
   <div class="sec-hdr">
-    <div class="sec-n">5.3</div>
+    <div class="sec-n">6.2</div>
     <div class="sec-info">
       <div class="sec-eyebrow">Блок третий</div>
       <div class="sec-title">Ключевые периоды жизни</div>
@@ -850,7 +850,7 @@ body.no-grain::before { display: none !important; }
 
   <!-- БЛОК 4: Ошибка -->
   <div class="sec-hdr">
-    <div class="sec-n">5.4</div>
+    <div class="sec-n">6.3</div>
     <div class="sec-info">
       <div class="sec-eyebrow">Блок четвёртый</div>
       <div class="sec-title">Ошибка, которая тормозит жизнь</div>
@@ -875,7 +875,7 @@ body.no-grain::before { display: none !important; }
   <hr>
   <!-- БЛОК 5: Отношения -->
   <div class="sec-hdr">
-    <div class="sec-n">5.5</div>
+    <div class="sec-n">6.4</div>
     <div class="sec-info">
       <div class="sec-eyebrow">Блок пятый</div>
       <div class="sec-title">Сценарий в отношениях</div>
@@ -899,7 +899,7 @@ body.no-grain::before { display: none !important; }
   <hr>
   <!-- БЛОК 6: Сценарии -->
   <div class="sec-hdr">
-    <div class="sec-n">5.6</div>
+    <div class="sec-n">6.5</div>
     <div class="sec-info">
       <div class="sec-eyebrow">Блок шестой</div>
       <div class="sec-title">Жизненные сценарии</div>
@@ -925,7 +925,7 @@ body.no-grain::before { display: none !important; }
   <hr>
   <!-- БЛОК 7: Карма -->
   <div class="sec-hdr">
-    <div class="sec-n">5.7</div>
+    <div class="sec-n">6.6</div>
     <div class="sec-info">
       <div class="sec-eyebrow">Блок седьмой</div>
       <div class="sec-title">Кармический урок</div>
@@ -952,7 +952,7 @@ body.no-grain::before { display: none !important; }
   <hr>
   <!-- БЛОК 8: Талант -->
   <div class="sec-hdr">
-    <div class="sec-n">5.8</div>
+    <div class="sec-n">6.7</div>
     <div class="sec-info">
       <div class="sec-eyebrow">Блок восьмой</div>
       <div class="sec-title">Скрытый талант</div>
@@ -977,7 +977,7 @@ body.no-grain::before { display: none !important; }
   <hr>
   <!-- БЛОК 9: Правда -->
   <div class="sec-hdr">
-    <div class="sec-n">5.9</div>
+    <div class="sec-n">6.8</div>
     <div class="sec-info">
       <div class="sec-eyebrow">Блок девятый</div>
       <div class="sec-title">Скрытая правда</div>
