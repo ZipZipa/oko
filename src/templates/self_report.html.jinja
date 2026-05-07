@@ -290,8 +290,7 @@ body.no-grain::before { display: none !important; }
 {%- set locked_cfg = {
   'beauty':          {'min_plan': 'demo', 'title': 'Анализ внешности',              'pkg': ''},
   'beauty_verdict':  {'min_plan': 'demo', 'title': 'Оценка и тип привлекательности','pkg': ''},
-  'beauty_scores':   {'min_plan': 'demo', 'title': 'Детальные метрики',             'pkg': ''},
-  'beauty_sides':    {'min_plan': 'demo', 'title': 'Сильные и слабые стороны',      'pkg': ''},
+  'beauty_sides':    {'min_plan': 'demo', 'title': 'Сильные стороны и особенности', 'pkg': ''},
 
   'hand':            {'min_plan': 'full', 'title': 'Анализ ладони',                 'pkg': ''},
   'hand_overview':   {'min_plan': 'full', 'title': 'Общая оценка',                  'pkg': ''},
@@ -408,25 +407,8 @@ body.no-grain::before { display: none !important; }
 {%- call locked_card(_cbv.min_plan, _cbv.title, _cbv.pkg) %}
   <div class="card">
     <div class="card-lbl">Общая оценка</div>
-    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:0.5rem;">
-      <span class="score-big">{{ data.scores.overall }}</span>
-      <span class="score-d">/ 10</span>
-    </div>
-    <div class="sbar"><div class="sfill" style="width:{{ (data.scores.overall * 10) | round | int }}%;"></div></div>
     <p class="q">{{ blocks.beauty.verdict_quote }}</p>
     <div class="bt">Тип привлекательности: {{ blocks.beauty.attractiveness_type }}</div>
-  </div>
-{%- endcall %}
-
-{%- set _cbs = locked_cfg['beauty_scores'] -%}
-{%- call locked_card(_cbs.min_plan, _cbs.title, _cbs.pkg) %}
-  <div class="g3">
-    <div class="met"><div class="met-name">Симметрия</div><div class="met-row"><span class="met-s">{{ data.scores.symmetry }}</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:{{ (data.scores.symmetry * 10) | round | int }}%;"></div></div></div>
-    <div class="met"><div class="met-name">Костная структура</div><div class="met-row"><span class="met-s">{{ data.scores.bone_structure }}</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:{{ (data.scores.bone_structure * 10) | round | int }}%;"></div></div></div>
-    <div class="met"><div class="met-name">Пропорции</div><div class="met-row"><span class="met-s">{{ data.scores.proportions }}</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:{{ (data.scores.proportions * 10) | round | int }}%;"></div></div></div>
-    <div class="met"><div class="met-name">Глаза</div><div class="met-row"><span class="met-s">{{ data.scores.eyes }}</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:{{ (data.scores.eyes * 10) | round | int }}%;"></div></div></div>
-    <div class="met"><div class="met-name">Кожа</div><div class="met-row"><span class="met-s">{{ data.scores.skin }}</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:{{ (data.scores.skin * 10) | round | int }}%;"></div></div></div>
-    <div class="met"><div class="met-name">Ухоженность</div><div class="met-row"><span class="met-s">{{ data.scores.grooming }}</span><span class="met-max">/ 10</span></div><div class="mbar"><div class="mfill" style="width:{{ (data.scores.grooming * 10) | round | int }}%;"></div></div></div>
   </div>
 {%- endcall %}
 
@@ -442,10 +424,10 @@ body.no-grain::before { display: none !important; }
       </div>
     </div>
     <div class="card" style="margin-bottom:0;">
-      <div class="card-lbl">Области для работы</div>
+      <div class="card-lbl">Особенности</div>
       <div class="bt">
         {% for item in blocks.beauty.weaknesses %}
-        <div class="ri"><div class="dh"></div><span>{{ item }}</span></div>
+        <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
         {% endfor %}
       </div>
     </div>
@@ -538,8 +520,8 @@ body.no-grain::before { display: none !important; }
 {%- if blocks.grooming_and_style and (plan == 'demo' or _cur_level >= _plan_levels[_cg.min_plan]) %}
 <!-- ═══ ЧАСТЬ I.7: УХОЖЕННОСТЬ И СТИЛЬ ═══ -->
 <div class="chapter-divider chap-wrap">
-  <div class="chap-eyebrow">Часть первая · стиль</div>
-  <div class="chap-title-big">Ухоженность и стиль</div>
+  <div class="chap-eyebrow">Часть первая · состояние</div>
+  <div class="chap-title-big">Состояние и энергия</div>
   <div class="chap-num">Iˢ</div>
 </div>
 
@@ -565,10 +547,10 @@ body.no-grain::before { display: none !important; }
       </div>
     </div>
     <div class="card" style="margin-bottom:0;">
-      <div class="card-lbl">Что улучшить</div>
+      <div class="card-lbl">Что восстановить</div>
       <div class="bt">
         {% for item in blocks.grooming_and_style.improvements %}
-        <div class="ri"><div class="dh"></div><span>{{ item }}</span></div>
+        <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
         {% endfor %}
       </div>
     </div>
@@ -578,7 +560,7 @@ body.no-grain::before { display: none !important; }
 {%- set _cga = locked_cfg['grooming_archetype'] -%}
 {%- call locked_card(_cga.min_plan, _cga.title, _cga.pkg) %}
   <div class="card">
-    <div class="card-lbl">Архетип стиля</div>
+    <div class="card-lbl">Энергетический образ</div>
     <div class="mv" style="font-size:18px;">{{ blocks.grooming_and_style.style_archetype }}</div>
     <div class="tags" style="margin-top:0.5rem;">
       {% for tag in blocks.grooming_and_style.style_tags %}<span class="tag">{{ tag }}</span>{% endfor %}
