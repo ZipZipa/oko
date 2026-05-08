@@ -160,7 +160,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
   'karma':                {'min_plan': 'base',     'title': 'Карма в отношениях',    'pkg': 'Базовый'},
   'marriage_perspective': {'min_plan': 'extended', 'title': 'Перспектива брака',     'pkg': 'Расширенный'},
   'wealth':               {'min_plan': 'extended', 'title': 'Уровень богатства',     'pkg': 'Расширенный'},
-  'children':             {'min_plan': 'extended', 'title': 'Потенциал на детей',    'pkg': 'Расширенный'},
+  'family':               {'min_plan': 'extended', 'title': 'Семья и родительство', 'pkg': 'Расширенный'},
   'duration':             {'min_plan': 'full',     'title': 'Длительность союза',    'pkg': 'Премиум'},
   'breaking_point':       {'min_plan': 'full',     'title': 'Точка разрыва',         'pkg': 'Премиум'},
 } -%}
@@ -215,7 +215,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
       <span>IV · Перспектива брака</span>
       <span>V · Карма</span>
       <span>VI · Богатство</span>
-      <span>VII · Дети</span>
+      <span>VII · Семья</span>
       <span>VIII · Длительность</span>
       <span>IX · Точка разрыва</span>
     </div>
@@ -467,23 +467,23 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 </div>
 
 
-<!-- ═══ VII: ДЕТИ ═══ -->
+<!-- ═══ VII: СЕМЬЯ ═══ -->
 <div class="chapter-divider">
   <div class="chap-eyebrow">Часть седьмая</div>
-  <div class="chap-title-big">Потенциал на детей</div>
+  <div class="chap-title-big">Семья и родительство</div>
   <div class="chap-num">VII</div>
 </div>
 
 <div class="page">
-{% call locked_card(locked_cfg.children.min_plan, locked_cfg.children.title, locked_cfg.children.pkg) %}
+{% call locked_card(locked_cfg.family.min_plan, locked_cfg.family.title, locked_cfg.family.pkg) %}
   <div class="card">
-    <p class="q">{{ blocks.children.intro_quote }}</p>
+    <p class="q">{{ blocks.family.intro_quote }}</p>
     <div style="text-align:center;padding:1.5rem 0 1rem;margin-bottom:1rem;border-bottom:0.5px solid var(--border);">
       <div class="ml" style="margin-bottom:0.5rem;">Потенциал</div>
-      <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300;color:var(--black);">{{ blocks.children.potential_level | capitalize }}</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300;color:var(--black);">{{ blocks.family.potential_level | capitalize }}</div>
     </div>
     <div class="bt">
-      {% for item in blocks.children.points %}
+      {% for item in blocks.family.points %}
       <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
       {% endfor %}
     </div>
@@ -491,7 +491,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 
   <div class="card">
     <div class="card-lbl">Оптимальное время</div>
-    <div class="bt">{{ blocks.children.timing }}</div>
+    <div class="bt">{{ blocks.family.timing }}</div>
   </div>
 {% endcall %}
 </div>
@@ -568,7 +568,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 
 <div class="footer">
   Анализ пары · {{ data.person_a.user.name }} ({{ data.person_a.user.birthdate }}) и {{ data.person_b.user.name }} ({{ data.person_b.user.birthdate }})<br>
-  Совместимость · Хиромантия · Верность · Перспектива брака · Карма · Богатство · Дети · Длительность · Точка разрыва<br>
+  Совместимость · Хиромантия · Верность · Перспектива брака · Карма · Богатство · Семья · Длительность · Точка разрыва<br>
   Анализ носит интерпретационный характер. Эзотерика — язык символов, не детерминизм.
 </div>
 
