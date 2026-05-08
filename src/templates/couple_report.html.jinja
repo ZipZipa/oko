@@ -15,62 +15,99 @@
   --g300: #D3D1C7;
   --g100: #F1EFE8;
   --white: #FAFAF8;
-  --rose: #C9A89A;
   --border: rgba(0,0,0,0.09);
   --border-md: rgba(0,0,0,0.15);
   --r-sm: 8px;
   --r-md: 12px;
   --r-lg: 16px;
+  --accent: #C9A89A;
+  --accent-deep: #8a6055;
+  --accent-soft: #e0cdc5;
+  --accent-faint: rgba(201,168,154,0.10);
+  --accent-line: rgba(201,168,154,0.45);
 }
+/* Paper-grain noise overlay */
+body::before {
+  content: "";
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.45 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.55'/></svg>");
+  background-size: 220px 220px;
+  opacity: 0.035;
+  mix-blend-mode: multiply;
+}
+body > * { position: relative; z-index: 1; }
 html { font-size: 16px; scroll-behavior: smooth; }
 body { font-family: 'Jost', sans-serif; font-weight: 300; background: var(--white); color: var(--g900); line-height: 1.6; -webkit-font-smoothing: antialiased; }
 
 /* COVER */
-.cover { min-height: 100vh; padding: 4rem; display: flex; flex-direction: column; justify-content: space-between; border-bottom: 0.5px solid var(--border); }
-.cover-meta { display: flex; justify-content: space-between; font-size: 11px; letter-spacing: 0.12em; color: var(--g500); }
-.cover-center { text-align: center; padding: 4rem 0 3rem; }
-.cover-eyebrow { font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--g500); margin-bottom: 1.5rem; }
-.cover-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(48px, 8vw, 88px); font-weight: 300; line-height: 1.05; letter-spacing: -0.01em; color: var(--black); }
-.cover-amp { display: inline-block; margin: 0 0.4rem; font-style: italic; color: var(--g500); }
-.cover-sub { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--g500); margin-top: 1.5rem; }
-.cover-pair-info { display: flex; justify-content: center; gap: 4rem; margin-top: 3rem; padding-top: 3rem; border-top: 0.5px solid var(--border); }
+.cover { min-height: 100vh; padding: 1.5rem 1.25rem 1.75rem; display: flex; flex-direction: column; border-bottom: 0.5px solid var(--border); position: relative; overflow: hidden; background: var(--white); }
+.cover-meta { width: 100%; max-width: 760px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--g500); position: relative; z-index: 3; }
+.cover-meta .mark { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 18px; letter-spacing: 0.08em; color: var(--accent-deep); text-transform: none; }
+.cover-edition { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 12px; letter-spacing: 0.04em; color: var(--accent-deep); text-transform: none; }
+
+/* Cover stage */
+.cover-stage { position: relative; flex: 1; width: 100%; max-width: 760px; margin: 2rem auto 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.25rem; }
+.cover-stage::before { content: ""; position: absolute; left: 0; right: 0; top: 28%; height: 28%; background: linear-gradient(90deg, transparent 0%, #F1E5DF 20%, #F1E5DF 80%, transparent 100%); z-index: 0; pointer-events: none; }
+
+/* Title block */
+.cover-center { position: relative; z-index: 2; text-align: center; width: 100%; max-width: 560px; }
+.cover-eyebrow { font-size: 10px; letter-spacing: 0.32em; text-transform: uppercase; margin-bottom: 0.9rem; color: var(--accent-deep); font-variant: small-caps; letter-spacing: 0.28em; }
+.cover-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(44px, 9vw, 76px); font-weight: 300; line-height: 0.95; letter-spacing: -0.005em; margin-bottom: 1rem; background: linear-gradient(180deg, var(--black) 0%, var(--black) 70%, var(--accent-deep) 130%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.cover-amp { display: inline-block; margin: 0 0.4rem; font-style: italic; -webkit-text-fill-color: var(--g500); }
+.cover-sub { font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--g700); line-height: 1.8; }
+
+/* Pair info */
+.cover-pair-info { display: flex; justify-content: center; gap: 3rem; padding-top: 2rem; border-top: 0.5px solid var(--border); position: relative; z-index: 2; width: 100%; max-width: 640px; }
 .pair-person { text-align: center; }
-.pair-person .label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--g500); margin-bottom: 0.4rem; }
+.pair-person .label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--g500); margin-bottom: 0.4rem; font-variant: small-caps; letter-spacing: 0.18em; }
 .pair-person .name { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 300; color: var(--black); margin-bottom: 0.3rem; }
 .pair-person .meta { font-size: 11px; color: var(--g700); letter-spacing: 0.05em; }
-.cover-toc { display: flex; justify-content: space-between; align-items: flex-end; font-size: 10px; color: var(--g500); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 3rem; }
-.toc-items { display: flex; flex-wrap: wrap; gap: 1rem 1.75rem; }
 
-/* CHAPTER */
-.chapter-divider { padding: 3rem 4rem 1.5rem; border-top: 0.5px solid var(--border); position: relative; overflow: hidden; }
-.chap-eyebrow { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--g500); margin-bottom: 0.4rem; }
-.chap-title-big { font-family: 'Cormorant Garamond', serif; font-size: clamp(34px, 5vw, 52px); font-weight: 300; color: var(--black); letter-spacing: 0.01em; }
-.chap-num { font-family: 'Cormorant Garamond', serif; font-size: 120px; font-weight: 300; color: var(--g100); line-height: 1; position: absolute; right: 4rem; top: 50%; transform: translateY(-50%); pointer-events: none; }
+.cover-toc { width: 100%; max-width: 760px; margin: 1rem auto 0; display: flex; flex-direction: column; gap: 0.85rem; font-size: 9.5px; color: var(--g500); letter-spacing: 0.16em; text-transform: uppercase; position: relative; z-index: 3; }
+.toc-items { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem 1.25rem; }
+.toc-foot { display: flex; justify-content: space-between; padding-top: 0; }
+
+/* CHAPTER DIVIDER */
+.chapter-divider { border-top: none; padding: 4rem 4rem 1.5rem; max-width: 920px; margin: 0 auto; position: relative; }
+.chapter-divider::before { content: ""; position: absolute; top: 0; left: 4rem; right: 4rem; height: 1px; background: linear-gradient(to right, transparent 0%, var(--accent-line) 20%, var(--accent-line) 80%, transparent 100%); }
+.chap-eyebrow { font-size: 10px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.4rem; font-variant: small-caps; letter-spacing: 0.28em; }
+.chap-title-big { font-family: 'Cormorant Garamond', serif; font-size: clamp(36px, 5vw, 56px); font-weight: 300; color: var(--black); letter-spacing: 0.01em; position: relative; display: inline-block; padding-bottom: 0.75rem; }
+.chap-title-big::after { content: ""; position: absolute; left: 0; bottom: 0; width: 56px; height: 1px; background: var(--accent); }
+.chap-num { font-family: 'Cormorant Garamond', serif; font-size: 120px; font-weight: 300; line-height: 1; position: absolute; right: 4rem; top: 50%; transform: translateY(-50%); pointer-events: none; background: linear-gradient(180deg, var(--accent-soft) 0%, rgba(224,205,197,0.25) 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-style: italic; }
+.chap-wrap { position: relative; overflow: hidden; }
 
 /* PAGE */
 .page { max-width: 920px; margin: 0 auto; padding: 3rem 4rem 4rem; }
 
+/* SECTION HDR */
+.sec-hdr { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1.25rem; border-bottom: 0.5px solid var(--border); }
+.sec-n { font-family: 'Cormorant Garamond', serif; font-size: 40px; font-weight: 300; color: var(--accent-soft); line-height: 1; min-width: 48px; flex-shrink: 0; font-style: italic; }
+.sec-info { flex: 1; min-width: 0; }
+.sec-info .sec-eyebrow { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 0.15rem; font-variant: small-caps; letter-spacing: 0.28em; }
+.sec-info .sec-title { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300; color: var(--black); white-space: nowrap; }
+
 /* CARDS */
 .card { background: #fff; border: 0.5px solid var(--border); border-radius: var(--r-lg); padding: 1.4rem 1.75rem; margin-bottom: 1rem; }
-.card-lbl { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--g500); margin-bottom: 1rem; padding-bottom: 0.7rem; border-bottom: 0.5px solid var(--border); }
+.card-lbl { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--g500); margin-bottom: 1rem; padding-bottom: 0.7rem; border-bottom: 0.5px solid var(--border); font-variant: small-caps; letter-spacing: 0.18em; }
 .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-bottom: 0.9rem; }
 .g3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.75rem; margin-bottom: 0.9rem; }
-.mc { background: var(--g100); border-radius: var(--r-sm); padding: 0.95rem 1.05rem; }
-.ml { font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--g500); margin-bottom: 0.4rem; }
-.mv { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 400; color: var(--black); margin-bottom: 0.3rem; }
+.mc { background: var(--g100); border-radius: var(--r-sm); padding: 0.9rem 1rem; }
+.ml { font-size: 10px; letter-spacing: 0.13em; text-transform: uppercase; color: var(--g500); margin-bottom: 0.3rem; font-variant: small-caps; letter-spacing: 0.18em; }
+.mv { font-family: 'Cormorant Garamond', serif; font-size: 21px; font-weight: 400; color: var(--black); margin-bottom: 0.25rem; }
 .md { font-size: 12px; color: var(--g700); line-height: 1.55; }
 
 /* COMPATIBILITY HEADER */
 .compat-header { display: flex; align-items: center; gap: 2rem; margin-bottom: 1.5rem; padding: 1.5rem 0; border-bottom: 0.5px solid var(--border); }
 .compat-score-block { text-align: center; }
-.compat-score { font-family: 'Cormorant Garamond', serif; font-size: 64px; font-weight: 300; line-height: 1; color: var(--black); }
-.compat-denom { font-size: 18px; color: var(--g500); }
+.compat-score { font-family: 'Cormorant Garamond', serif; font-size: 68px; font-weight: 300; line-height: 1; background: linear-gradient(180deg, var(--black) 0%, var(--accent-deep) 110%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+.compat-denom { font-size: 22px; color: var(--g500); }
 .compat-info { flex: 1; }
 .compat-type { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 400; color: var(--black); margin-bottom: 0.4rem; }
 .compat-pair { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--g500); }
 
 /* TEXT */
-.q { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 17px; color: var(--g700); line-height: 1.65; margin-bottom: 1.1rem; padding-left: 1.1rem; border-left: 1px solid var(--g300); }
+.q { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 17px; color: var(--g700); line-height: 1.65; margin-bottom: 1.1rem; padding-left: 1.1rem; border-left: 1px solid var(--accent-line); }
 .bt { font-size: 13px; color: var(--g700); line-height: 1.7; }
 .ri { display: flex; gap: 0.65rem; margin-bottom: 0.6rem; align-items: flex-start; }
 .d { width: 4px; height: 4px; border-radius: 50%; background: var(--g500); margin-top: 7px; flex-shrink: 0; }
@@ -82,16 +119,16 @@ body { font-family: 'Jost', sans-serif; font-weight: 300; background: var(--whit
 .person-name-mini { font-family: 'Cormorant Garamond', serif; font-size: 18px; color: var(--black); margin-bottom: 0.4rem; font-weight: 400; }
 
 /* RISK LEVEL */
-.risk-pill { display: inline-block; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 11px; border-radius: 20px; margin-bottom: 0.5rem; font-weight: 400; }
+.risk-pill { display: inline-block; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 3px 11px; border-radius: 20px; margin-bottom: 0.5rem; font-weight: 400; font-variant: small-caps; }
 .risk-low { background: rgba(80,150,80,0.12); color: #4a7a4a; }
 .risk-medium { background: rgba(200,150,60,0.15); color: #8a6020; }
 .risk-high { background: rgba(180,80,80,0.15); color: #8a3030; }
 
 /* YEAR ROW */
-.yr { display: flex; gap: 1.25rem; align-items: flex-start; padding: 1rem 0; border-bottom: 0.5px solid var(--border); }
+.yr { display: flex; gap: 1rem; align-items: flex-start; padding: 1rem 0; border-bottom: 0.5px solid var(--border); }
 .yr:last-child { border-bottom: none; }
-.yr-period { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 400; color: var(--black); min-width: 120px; line-height: 1.2; }
-.yr-phase { font-size: 11px; color: var(--g500); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 4px; }
+.yr-n { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 300; color: var(--accent-deep); min-width: 70px; line-height: 1.1; }
+.yr-age { font-size: 10px; color: var(--g500); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 2px; font-variant: small-caps; letter-spacing: 0.18em; }
 .yr-title { font-size: 13px; font-weight: 400; color: var(--black); margin-bottom: 0.3rem; }
 .yr-desc { font-size: 12px; color: var(--g700); line-height: 1.55; }
 
@@ -102,45 +139,91 @@ body { font-family: 'Jost', sans-serif; font-weight: 300; background: var(--whit
 .dark-card .hl { color: #fff; }
 .dark-card .d { background: rgba(255,255,255,0.35); }
 .dark-card .card-lbl { color: rgba(255,255,255,0.4); border-color: rgba(255,255,255,0.12); }
+.dark-card .final-line { background: rgba(201,168,154,0.10); border-color: rgba(224,205,197,0.25); color: rgba(255,255,255,0.92); }
+.dark-card .tag { color: var(--accent-soft); border-color: rgba(224,205,197,0.35); }
 
 /* FINAL LINE */
-.final-line { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 300; font-style: italic; color: var(--black); line-height: 1.6; margin-top: 1rem; padding: 1rem 1.25rem; border: 0.5px solid var(--border-md); border-radius: var(--r-md); }
-.dark-card .final-line { border-color: rgba(255,255,255,0.14); color: rgba(255,255,255,0.85); }
+.final-line { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 300; font-style: italic; line-height: 1.6; margin-top: 1rem; padding: 1rem 1.25rem; border: 0.5px solid var(--accent-line); border-radius: var(--r-md); background: linear-gradient(180deg, #FBF8F0, #F5EFDF); color: var(--g900); }
 
-/* HR */
-hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
+/* TAGS */
+.tags { margin-top: 0.9rem; }
+.tag { display: inline-block; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; border: 0.5px solid var(--accent-line); border-radius: 20px; padding: 2px 11px; color: var(--accent-deep); margin-right: 5px; margin-bottom: 4px; font-variant: small-caps; }
+
+/* HR — diamond separator */
+hr { border: none; height: 1px; margin: 2rem 0; position: relative; background: linear-gradient(to right, transparent 0%, var(--border-md) 25%, var(--border-md) 75%, transparent 100%); overflow: visible; }
+hr::after { content: ""; position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; transform: translate(-50%,-50%) rotate(45deg); background: var(--accent); box-shadow: 0 0 0 4px var(--white); }
 
 /* FOOTER */
-.footer { text-align: center; padding: 3rem 4rem; border-top: 0.5px solid var(--border); font-size: 11px; color: var(--g500); letter-spacing: 0.07em; line-height: 2.2; }
+.footer { text-align: center; padding: 3rem 4rem; border-top: 0.5px solid var(--border); font-size: 11px; color: var(--g500); letter-spacing: 0.07em; line-height: 2.2; max-width: 920px; margin: 0 auto; }
 
 /* LOCKED */
 .locked-wrap { position: relative; margin-bottom: 1rem; border-radius: var(--r-lg); overflow: hidden; isolation: isolate; }
 .locked-content { filter: blur(2px) saturate(0.95); pointer-events: none; user-select: none; opacity: 0.95; }
 .locked-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.85rem; padding: 1.5rem; background: radial-gradient(ellipse at center, rgba(250,250,248,0.45) 0%, rgba(250,250,248,0.78) 70%, rgba(250,250,248,0.92) 100%); text-align: center; }
 .locked-icon { width: 46px; height: 46px; border-radius: 50%; background: var(--black); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(0,0,0,0.18), 0 0 0 6px rgba(201,168,154,0.15); }
-.locked-icon svg { width: 20px; height: 20px; stroke: var(--rose); fill: none; stroke-width: 1.6; }
-.locked-eyebrow { font-size: 9.5px; letter-spacing: 0.28em; text-transform: uppercase; color: #8a6055; font-variant: small-caps; }
+.locked-icon svg { width: 20px; height: 20px; stroke: var(--accent-soft); fill: none; stroke-width: 1.6; }
+.locked-eyebrow { font-size: 9.5px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--accent-deep); font-variant: small-caps; }
 .locked-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--black); line-height: 1.15; max-width: 26ch; }
-.locked-pkg-name { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; color: #8a6055; letter-spacing: 0.04em; margin-top: 2px; }
+.locked-pkg-name { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; color: var(--accent-deep); letter-spacing: 0.04em; margin-top: 2px; }
 
 @media print {
   .cover { page-break-after: always; min-height: auto; }
   .page { page-break-inside: avoid; }
 }
 
+/* TABLET */
+@media (max-width: 920px) {
+  .cover { padding: 3rem 2rem 2.5rem; }
+  .page { padding: 2.5rem 2rem 3rem; }
+  .chapter-divider { padding: 2.5rem 2rem 1.25rem; }
+  .chap-num { right: 2rem; font-size: 96px; }
+  .card { padding: 1.25rem 1.4rem; }
+  .cover-pair-info { gap: 2rem; }
+}
+
+/* PHONE */
 @media (max-width: 680px) {
-  .cover { padding: 2.5rem 1.5rem; }
-  .cover-pair-info { flex-direction: column; gap: 1.5rem; }
-  .page { padding: 2rem 1.5rem 3rem; }
-  .chapter-divider { padding: 2rem 1.5rem 1rem; }
-  .g2, .g3 { grid-template-columns: 1fr; }
-  .cover-toc { flex-direction: column; gap: 1rem; }
+  html { font-size: 15px; }
+  .cover { padding: 2rem 1.1rem 1.75rem; }
+  .cover-stage { gap: 1.5rem; margin-top: 1.25rem; }
+  .cover-pair-info { flex-direction: column; gap: 1.25rem; padding-top: 1.5rem; }
+  .pair-person .name { font-size: 22px; }
+  .page { padding: 1.75rem 1.1rem 2.25rem; max-width: 100%; }
+  .chapter-divider { padding: 1.75rem 1.1rem 0.9rem; }
+  .chap-eyebrow { font-size: 9px; letter-spacing: 0.22em; }
+  .chap-title-big { font-size: clamp(28px, 7vw, 36px); }
   .chap-num { display: none; }
+  .card { padding: 1.1rem 1.1rem; border-radius: var(--r-md); }
+  .card-lbl { font-size: 9px; letter-spacing: 0.18em; margin-bottom: 0.8rem; padding-bottom: 0.6rem; }
+  .g2 { grid-template-columns: 1fr; gap: 0.7rem; }
+  .g3 { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  .mc { padding: 0.85rem 0.9rem; }
+  .mv { font-size: 17px; }
+  .q { font-size: 15px; padding-left: 0.85rem; }
+  .bt { font-size: 12.5px; }
+  .sec-hdr { gap: 0.7rem; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+  .sec-n { font-size: 32px; min-width: 38px; }
+  .sec-info .sec-title { font-size: 21px; }
   .compat-header { flex-direction: column; gap: 1rem; align-items: flex-start; }
-  .yr { flex-direction: column; gap: 0.4rem; }
-  .yr-period { min-width: 0; }
+  .compat-score { font-size: 56px; }
+  .yr { flex-direction: column; gap: 0.35rem; }
+  .yr-n { font-size: 22px; min-width: 0; }
+  .yr > div:first-child { display: flex; align-items: baseline; gap: 0.6rem; }
+  .yr-age { margin-top: 0; }
+  .dark-card { padding: 1.4rem 1.25rem; border-radius: var(--r-md); }
+  .final-line { font-size: 16px; padding: 0.85rem 1rem; }
+  .footer { padding: 2rem 1.25rem; font-size: 10px; line-height: 2; max-width: 100%; }
   .locked-title { font-size: 18px; }
   .locked-icon { width: 40px; height: 40px; }
+}
+
+/* PHONE — very narrow */
+@media (max-width: 380px) {
+  .cover { padding: 1.5rem 1.1rem 1.5rem; }
+  .toc-items { grid-template-columns: 1fr; gap: 0.4rem; }
+  .g3 { grid-template-columns: 1fr; }
+  .cover-pair-info { gap: 1rem; }
+  .cover-stage { gap: 1.25rem; }
 }
 </style>
 </head>
@@ -173,7 +256,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
   <div class="locked-content" aria-hidden="true">{{ caller() }}</div>
   <div class="locked-overlay">
     <div class="locked-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V7.5a4 4 0 0 1 8 0V11"></path><circle cx="12" cy="15.5" r="1.1" fill="currentColor" stroke="none" style="fill: var(--rose);"></circle></svg>
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V7.5a4 4 0 0 1 8 0V11"></path><circle cx="12" cy="15.5" r="1.1" fill="currentColor" stroke="none" style="fill: var(--accent-soft);"></circle></svg>
     </div>
     <div class="locked-eyebrow">Доступно в пакете</div>
     <div class="locked-title">{{ title }}</div>
@@ -186,13 +269,16 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 <!-- COVER -->
 <div class="cover">
   <div class="cover-meta">
-    <span>Анализ совместимости пары</span>
-    <span>Конфиденциально</span>
+    <span class="mark">Oko</span>
+    <span class="cover-edition">Конфиденциально</span>
   </div>
-  <div class="cover-center">
-    <div class="cover-eyebrow">Глубинный портрет союза</div>
-    <div class="cover-title">{{ data.person_a.user.name }}<span class="cover-amp">&amp;</span>{{ data.person_b.user.name }}</div>
-    <div class="cover-sub">Совместимость · Хиромантия · Карма · Перспектива брака</div>
+
+  <div class="cover-stage">
+    <div class="cover-center">
+      <div class="cover-eyebrow">Глубинный портрет союза</div>
+      <div class="cover-title">{{ data.person_a.user.name }}<span class="cover-amp">&</span>{{ data.person_b.user.name }}</div>
+      <div class="cover-sub">Совместимость · Хиромантия · Карма · Перспектива брака</div>
+    </div>
 
     <div class="cover-pair-info">
       <div class="pair-person">
@@ -207,6 +293,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
       </div>
     </div>
   </div>
+
   <div class="cover-toc">
     <div class="toc-items">
       <span>I · Совместимость</span>
@@ -219,19 +306,23 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
       <span>VIII · Длительность</span>
       <span>IX · Точка разрыва</span>
     </div>
+    <div class="toc-foot">
+      <span>Анализ пары</span>
+      <span>{{ data.person_a.user.birthdate }} / {{ data.person_b.user.birthdate }}</span>
+    </div>
   </div>
 </div>
-
-
+{%- set _ci = locked_cfg['compatibility'] -%}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_ci.min_plan] %}
 <!-- ═══ I: СОВМЕСТИМОСТЬ ═══ -->
-<div class="chapter-divider">
+<div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть первая</div>
   <div class="chap-title-big">Полный анализ совместимости</div>
   <div class="chap-num">I</div>
 </div>
 
 <div class="page">
-{% call locked_card(locked_cfg.compatibility.min_plan, locked_cfg.compatibility.title, locked_cfg.compatibility.pkg) %}
+{% call locked_card(_ci.min_plan, _ci.title, _ci.pkg) %}
   <div class="card">
     <div class="compat-header">
       <div class="compat-score-block">
@@ -289,17 +380,20 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
   </div>
 {% endcall %}
 </div>
+{%- endif %}
 
 
+{%- set _cii = locked_cfg['palmistry_heart'] -%}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_cii.min_plan] %}
 <!-- ═══ II: ХИРОМАНТИЯ ═══ -->
-<div class="chapter-divider">
+<div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть вторая</div>
   <div class="chap-title-big">Хиромантия пары</div>
   <div class="chap-num">II</div>
 </div>
 
 <div class="page">
-{% call locked_card(locked_cfg.palmistry_heart.min_plan, locked_cfg.palmistry_heart.title, locked_cfg.palmistry_heart.pkg) %}
+{% call locked_card(_cii.min_plan, _cii.title, _cii.pkg) %}
   <div class="card">
     <div class="card-lbl">Линия сердца — как каждый любит</div>
     <p class="q">{{ blocks.palmistry_heart.intro_quote }}</p>
@@ -321,17 +415,20 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
   </div>
 {% endcall %}
 </div>
+{%- endif %}
 
 
+{%- set _ciii = locked_cfg['fidelity'] -%}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_ciii.min_plan] %}
 <!-- ═══ III: ВЕРНОСТЬ ═══ -->
-<div class="chapter-divider">
+<div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть третья</div>
   <div class="chap-title-big">Верность в паре</div>
   <div class="chap-num">III</div>
 </div>
 
 <div class="page">
-{% call locked_card(locked_cfg.fidelity.min_plan, locked_cfg.fidelity.title, locked_cfg.fidelity.pkg) %}
+{% call locked_card(_ciii.min_plan, _ciii.title, _ciii.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.fidelity.intro_quote }}</p>
     <div class="g2" style="margin-top:1rem;">
@@ -368,26 +465,26 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
   </div>
 {% endcall %}
 </div>
+{%- endif %}
 
 
+{%- set _civ = locked_cfg['marriage_perspective'] -%}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_civ.min_plan] %}
 <!-- ═══ IV: ПЕРСПЕКТИВА БРАКА ═══ -->
-<div class="chapter-divider">
+<div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть четвёртая</div>
   <div class="chap-title-big">Перспектива брака по годам</div>
   <div class="chap-num">IV</div>
 </div>
 
 <div class="page">
-{% call locked_card(locked_cfg.marriage_perspective.min_plan, locked_cfg.marriage_perspective.title, locked_cfg.marriage_perspective.pkg) %}
+{% call locked_card(_civ.min_plan, _civ.title, _civ.pkg) %}
   <p class="q" style="margin-bottom:1.5rem;">{{ blocks.marriage_perspective.intro_quote }}</p>
 
   <div class="card">
     {% for y in blocks.marriage_perspective.years %}
     <div class="yr">
-      <div>
-        <div class="yr-period">{{ y.year_range }}</div>
-        <div class="yr-phase">{{ y.phase }}</div>
-      </div>
+      <div><div class="yr-n">{{ y.year_range }}</div><div class="yr-age">{{ y.phase }}</div></div>
       <div style="flex:1;">
         <div class="yr-desc">{{ y.desc }}</div>
       </div>
@@ -396,17 +493,20 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
   </div>
 {% endcall %}
 </div>
+{%- endif %}
 
 
+{%- set _cv = locked_cfg['karma'] -%}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_cv.min_plan] %}
 <!-- ═══ V: КАРМА ═══ -->
-<div class="chapter-divider">
+<div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть пятая</div>
   <div class="chap-title-big">Карма в отношениях</div>
   <div class="chap-num">V</div>
 </div>
 
 <div class="page">
-{% call locked_card(locked_cfg.karma.min_plan, locked_cfg.karma.title, locked_cfg.karma.pkg) %}
+{% call locked_card(_cv.min_plan, _cv.title, _cv.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.karma.intro_quote }}</p>
     <div class="card-lbl" style="margin-top:1rem;">Урок для пары</div>
@@ -429,22 +529,25 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
   <div class="final-line">{{ blocks.karma.final_line }}</div>
 {% endcall %}
 </div>
+{%- endif %}
 
 
+{%- set _cvi = locked_cfg['wealth'] -%}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_cvi.min_plan] %}
 <!-- ═══ VI: БОГАТСТВО ═══ -->
-<div class="chapter-divider">
+<div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть шестая</div>
   <div class="chap-title-big">Уровень богатства в семье</div>
   <div class="chap-num">VI</div>
 </div>
 
 <div class="page">
-{% call locked_card(locked_cfg.wealth.min_plan, locked_cfg.wealth.title, locked_cfg.wealth.pkg) %}
+{% call locked_card(_cvi.min_plan, _cvi.title, _cvi.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.wealth.intro_quote }}</p>
-    <div style="text-align:center;padding:1.5rem 0 1rem;margin-bottom:1rem;border-bottom:0.5px solid var(--border);">
-      <div class="ml" style="margin-bottom:0.5rem;">Уровень потенциала</div>
-      <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300;color:var(--black);">{{ blocks.wealth.level | capitalize }}</div>
+    <div style="text-align:center;padding:1.25rem 0 1rem;margin-bottom:1rem;border-bottom:0.5px solid var(--border);">
+      <div class="ml" style="margin-bottom:0.4rem;">Уровень потенциала</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:300;color:var(--black);">{{ blocks.wealth.level | capitalize }}</div>
     </div>
     <div class="card-lbl">Денежный паттерн</div>
     <div class="bt" style="margin-bottom:1rem;">{{ blocks.wealth.money_pattern }}</div>
@@ -465,22 +568,25 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
   </div>
 {% endcall %}
 </div>
+{%- endif %}
 
 
+{%- set _cvii = locked_cfg['family'] -%}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_cvii.min_plan] %}
 <!-- ═══ VII: СЕМЬЯ ═══ -->
-<div class="chapter-divider">
+<div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть седьмая</div>
   <div class="chap-title-big">Семья и родительство</div>
   <div class="chap-num">VII</div>
 </div>
 
 <div class="page">
-{% call locked_card(locked_cfg.family.min_plan, locked_cfg.family.title, locked_cfg.family.pkg) %}
+{% call locked_card(_cvii.min_plan, _cvii.title, _cvii.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.family.intro_quote }}</p>
-    <div style="text-align:center;padding:1.5rem 0 1rem;margin-bottom:1rem;border-bottom:0.5px solid var(--border);">
-      <div class="ml" style="margin-bottom:0.5rem;">Потенциал</div>
-      <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300;color:var(--black);">{{ blocks.family.potential_level | capitalize }}</div>
+    <div style="text-align:center;padding:1.25rem 0 1rem;margin-bottom:1rem;border-bottom:0.5px solid var(--border);">
+      <div class="ml" style="margin-bottom:0.4rem;">Потенциал</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:300;color:var(--black);">{{ blocks.family.potential_level | capitalize }}</div>
     </div>
     <div class="bt">
       {% for item in blocks.family.points %}
@@ -495,22 +601,25 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
   </div>
 {% endcall %}
 </div>
+{%- endif %}
 
 
+{%- set _cviii = locked_cfg['duration'] -%}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_cviii.min_plan] %}
 <!-- ═══ VIII: ДЛИТЕЛЬНОСТЬ ═══ -->
-<div class="chapter-divider">
+<div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть восьмая</div>
   <div class="chap-title-big">Краткосрочная история или долгий союз</div>
   <div class="chap-num">VIII</div>
 </div>
 
 <div class="page">
-{% call locked_card(locked_cfg.duration.min_plan, locked_cfg.duration.title, locked_cfg.duration.pkg) %}
+{% call locked_card(_cviii.min_plan, _cviii.title, _cviii.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.duration.intro_quote }}</p>
-    <div style="text-align:center;padding:1.5rem 0 1rem;margin-bottom:1rem;border-bottom:0.5px solid var(--border);">
-      <div class="ml" style="margin-bottom:0.5rem;">Тип союза</div>
-      <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;color:var(--black);line-height:1.3;">{{ blocks.duration.type | capitalize }}</div>
+    <div style="text-align:center;padding:1.25rem 0 1rem;margin-bottom:1rem;border-bottom:0.5px solid var(--border);">
+      <div class="ml" style="margin-bottom:0.4rem;">Тип союза</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:300;color:var(--black);line-height:1.3;">{{ blocks.duration.type | capitalize }}</div>
     </div>
     <div class="bt">{{ blocks.duration.summary }}</div>
   </div>
@@ -535,17 +644,20 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
   </div>
 {% endcall %}
 </div>
+{%- endif %}
 
 
+{%- set _cix = locked_cfg['breaking_point'] -%}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_cix.min_plan] %}
 <!-- ═══ IX: ТОЧКА РАЗРЫВА ═══ -->
-<div class="chapter-divider">
+<div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть девятая</div>
   <div class="chap-title-big">Точка разрыва</div>
   <div class="chap-num">IX</div>
 </div>
 
 <div class="page">
-{% call locked_card(locked_cfg.breaking_point.min_plan, locked_cfg.breaking_point.title, locked_cfg.breaking_point.pkg) %}
+{% call locked_card(_cix.min_plan, _cix.title, _cix.pkg) %}
   <div class="dark-card">
     <div class="card-lbl">Если разрыв случится</div>
     <p class="q">{{ blocks.breaking_point.intro_quote }}</p>
@@ -564,6 +676,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
   </div>
 {% endcall %}
 </div>
+{%- endif %}
 
 
 <div class="footer">
