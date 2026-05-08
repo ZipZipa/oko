@@ -29,6 +29,19 @@ def _main_menu() -> InlineKeyboardMarkup:
     ])
 
 
+def _cancel_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
+    ])
+
+
+def _skip_palms_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Пропустить →", callback_data="skip_palms")],
+        [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
+    ])
+
+
 _PLAN_LEVEL = {"demo": 0, "base": 1, "extended": 2, "full": 3}
 
 # ── Пакеты для self ──────────────────────────────────────────────────────────────
@@ -423,6 +436,24 @@ async def cb_back_to_main(callback: CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
+@router.callback_query(F.data == "skip_palms")
+async def cb_skip_palms(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await state.clear()
+
+    user = await get_user(callback.from_user.id)
+    pending_plan = data.get("pending_plan", "full")
+    report_type = data.get("pending_report_type", "self")
+
+    await callback.message.edit_text("Запускаю анализ... Это займёт минуту ⏳")
+    await callback.answer()
+
+    if report_type == "money":
+        asyncio.create_task(_run_money_report(callback.message, user, pending_plan))
+    else:
+        asyncio.create_task(_run_self_report(callback.message, user, pending_plan))
+
+
 @router.callback_query(F.data.in_({"show_packages_self", "show_packages_money", "show_packages_couple"}))
 async def cb_show_packages(callback: CallbackQuery):
     prefix = callback.data.removeprefix("show_packages_")
@@ -454,7 +485,7 @@ async def cb_package_detail(callback: CallbackQuery):
 async def process_partner_name(message: Message, state: FSMContext):
     name = message.text.strip()
     if not name:
-        await message.answer("Имя не может быть пустым ✏️")
+        await message.answer("Имя не может быть пустым ✏️", reply_markup=_cancel_keyboard())
         return
 
     async with async_session() as session:
@@ -477,7 +508,7 @@ async def process_partner_name(message: Message, state: FSMContext):
 
 @router.message(PartnerStates.waiting_for_partner_name)
 async def process_partner_name_invalid(message: Message):
-    await message.answer("Пожалуйста, напиши имя текстом ✏️")
+    await message.answer("Пожалуйста, напиши имя текстом ✏️", reply_markup=_cancel_keyboard())
 
 
 @router.message(PartnerStates.waiting_for_partner_birthdate, F.text)
@@ -486,7 +517,8 @@ async def process_partner_birthdate(message: Message, state: FSMContext):
         birth_date = datetime.strptime(message.text.strip(), "%d.%m.%Y").date()
     except ValueError:
         await message.answer(
-            "Неверный формат. Напиши дату в формате ДД.ММ.ГГГГ, например 14.06.1997 🗓"
+            "Неверный формат. Напиши дату в формате ДД.ММ.ГГГГ, например 14.06.1997 🗓",
+            reply_markup=_cancel_keyboard(),
         )
         return
 
@@ -512,7 +544,7 @@ async def process_partner_birthdate(message: Message, state: FSMContext):
 
 @router.message(PartnerStates.waiting_for_partner_birthdate)
 async def process_partner_birthdate_invalid(message: Message):
-    await message.answer("Пожалуйста, напиши дату текстом в формате ДД.ММ.ГГГГ 🗓")
+    await message.answer("Пожалуйста, напиши дату текстом в формате ДД.ММ.ГГГГ 🗓", reply_markup=_cancel_keyboard())
 
 
 @router.message(PartnerStates.waiting_for_partner_photo, F.photo)
@@ -542,7 +574,13 @@ async def process_partner_photo(message: Message, state: FSMContext):
 
 @router.message(PartnerStates.waiting_for_partner_photo)
 async def process_partner_photo_invalid(message: Message):
-    await message.answer("Пожалуйста, пришли именно фото 📷 или нажми «Пропустить»")
+    await message.answer(
+        "Пожалуйста, пришли именно фото 📷 или нажми «Пропустить»",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="Пропустить →", callback_data="skip_partner_photo")],
+            [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
+        ]),
+    )
 
 
 @router.callback_query(F.data == "skip_partner_photo")
@@ -595,6 +633,19 @@ async def cb_buy(callback: CallbackQuery, state: FSMContext):
     if report_prefix == "self":
         await _start_self_report(callback, plan=plan_key, state=state)
     elif report_prefix == "money":
+        if plan_key == "full":
+            has_both_palms = bool(user.palm_left_json and user.palm_right_json)
+            if not has_both_palms:
+                await state.set_state(PalmStates.waiting_for_palm_left)
+                await state.update_data(pending_plan=plan_key, pending_report_type="money")
+                await callback.message.edit_text(
+                    "Для Премиум-анализа нужны фото обеих ладоней — по ним определяются денежные линии и потоки ресурсов.\n\n"
+                    "Пришли фото левой ладони (ладонью вверх, линии хорошо видны) 🤚\n"
+                    "Нет фото? Нажми «Пропустить» — анализ ладоней будет пропущен.",
+                    reply_markup=_skip_palms_keyboard(),
+                )
+                await callback.answer()
+                return
         await callback.message.edit_text("Запускаю анализ... Это займёт минуту ⏳")
         await callback.answer()
         asyncio.create_task(_run_money_report(callback.message, user, plan_key))
@@ -618,13 +669,12 @@ async def _start_self_report(callback: CallbackQuery, plan: str, state: FSMConte
         has_both_palms = bool(user.palm_left_json and user.palm_right_json)
         if not has_both_palms:
             await state.set_state(PalmStates.waiting_for_palm_left)
-            await state.update_data(pending_plan=plan)
+            await state.update_data(pending_plan=plan, pending_report_type="self")
             await callback.message.edit_text(
                 "Для Премиум-анализа нужны фото обеих ладоней — это основа хиромантии.\n\n"
-                "Пришли фото левой ладони (ладонью вверх, линии хорошо видны) 🤚",
-                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                    [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
-                ]),
+                "Пришли фото левой ладони (ладонью вверх, линии хорошо видны) 🤚\n"
+                "Нет фото? Нажми «Пропустить» — анализ ладоней будет пропущен.",
+                reply_markup=_skip_palms_keyboard(),
             )
             await callback.answer()
             return
@@ -667,7 +717,10 @@ async def process_palm_left(message: Message, state: FSMContext):
 
     if not palm_data:
         await processing_msg.delete()
-        await message.answer("Не удалось распознать ладонь. Попробуй другое фото — ладонь вверх, хорошее освещение.")
+        await message.answer(
+            "Не удалось распознать ладонь. Попробуй другое фото — ладонь вверх, хорошее освещение.",
+            reply_markup=_skip_palms_keyboard(),
+        )
         return
 
     async with async_session() as session:
@@ -683,16 +736,15 @@ async def process_palm_left(message: Message, state: FSMContext):
     await state.set_state(PalmStates.waiting_for_palm_right)
     await message.answer(
         "Левая ладонь принята.\n\n"
-        "Теперь пришли фото правой ладони (ладонью вверх) 🤚",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
-        ]),
+        "Теперь пришли фото правой ладони (ладонью вверх) 🤚\n"
+        "Нет фото? Нажми «Пропустить».",
+        reply_markup=_skip_palms_keyboard(),
     )
 
 
 @router.message(PalmStates.waiting_for_palm_left)
 async def process_palm_left_invalid(message: Message):
-    await message.answer("Пожалуйста, пришли именно фото ладони 📷")
+    await message.answer("Пожалуйста, пришли именно фото ладони 📷", reply_markup=_skip_palms_keyboard())
 
 
 @router.message(PalmStates.waiting_for_palm_right, F.photo)
@@ -704,7 +756,10 @@ async def process_palm_right(message: Message, state: FSMContext):
 
     if not palm_data:
         await processing_msg.delete()
-        await message.answer("Не удалось распознать ладонь. Попробуй другое фото — ладонь вверх, хорошее освещение.")
+        await message.answer(
+            "Не удалось распознать ладонь. Попробуй другое фото — ладонь вверх, хорошее освещение.",
+            reply_markup=_skip_palms_keyboard(),
+        )
         return
 
     async with async_session() as session:
@@ -723,12 +778,16 @@ async def process_palm_right(message: Message, state: FSMContext):
 
     await processing_msg.delete()
     status_msg = await message.answer("Обе ладони приняты. Запускаю полный анализ... Это займёт минуту ⏳")
-    asyncio.create_task(_run_self_report(status_msg, user, data.get("pending_plan", "full")))
+    pending_plan = data.get("pending_plan", "full")
+    if data.get("pending_report_type") == "money":
+        asyncio.create_task(_run_money_report(status_msg, user, pending_plan))
+    else:
+        asyncio.create_task(_run_self_report(status_msg, user, pending_plan))
 
 
 @router.message(PalmStates.waiting_for_palm_right)
 async def process_palm_right_invalid(message: Message):
-    await message.answer("Пожалуйста, пришли именно фото ладони 📷")
+    await message.answer("Пожалуйста, пришли именно фото ладони 📷", reply_markup=_skip_palms_keyboard())
 
 
 # ─── Вспомогательные ────────────────────────────────────────────────────────────
@@ -906,6 +965,35 @@ async def _run_money_report(message: Message, user: User, plan: str):
                     if db_user:
                         db_user.money_blocks_json = json.dumps(out_blocks[0], ensure_ascii=False)
                         await session.commit()
+
+        elif plan == "full":
+            palm_left = json.loads(user.palm_left_json) if user.palm_left_json else None
+            palm_right = json.loads(user.palm_right_json) if user.palm_right_json else None
+            out_blocks: list = []
+            html = await loop.run_in_executor(
+                None,
+                lambda: generate_report(
+                    report_type="money",
+                    face_data=face_data,
+                    name=user.name,
+                    birthdate=birthdate,
+                    plan="full",
+                    palm_data_left=palm_left,
+                    palm_data_right=palm_right,
+                    reference=user.money_blocks_json or None,
+                    _out_blocks=out_blocks,
+                ),
+            )
+            if out_blocks:
+                async with async_session() as session:
+                    result = await session.execute(
+                        select(User).where(User.telegram_id == user.telegram_id)
+                    )
+                    db_user = result.scalar_one_or_none()
+                    if db_user:
+                        db_user.money_blocks_json = json.dumps(out_blocks[0], ensure_ascii=False)
+                        await session.commit()
+
         else:
             reference = user.money_blocks_json or None
             html = await loop.run_in_executor(

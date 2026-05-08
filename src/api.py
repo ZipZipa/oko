@@ -75,6 +75,8 @@ def generate_report(
             face_data=face_data, name=name, birthdate=birthdate,
             examples_dir=EXAMPLES_DIR, templates_dir=TEMPLATES_DIR,
             ref_year=ref_year, model=model,
+            palm_data_left=palm_data_left,
+            palm_data_right=palm_data_right,
             plan=plan, reference=reference, _out_blocks=_out_blocks,
         )
 
@@ -108,6 +110,8 @@ def build_input_only(report_type: str, **kwargs) -> dict:
         return money_report.build_target_input(
             kwargs["face_data"], kwargs["name"], kwargs["birthdate"],
             kwargs.get("ref_year"),
+            kwargs.get("palm_data_left"),
+            kwargs.get("palm_data_right"),
         )
     elif report_type == "couple":
         return couple_report.build_target_input(

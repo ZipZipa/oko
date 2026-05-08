@@ -31,9 +31,8 @@ SYSTEM_PROMPT = """Ты — автор персональных финансов
 4. В блоках с финальной строкой — одно жёсткое предложение-вывод.
 
 СТРОГО ДЛЯ БЛОКА «ДЕНЬГИ ПО ЛАДОНИ»:
-- Реальной хиромантии нет (нет фото ладоней)
-- Анализируй через черты лица как косвенные индикаторы
-- Не выдумывай конкретные линии («линия Меркурия», «холм Юпитера» — НЕЛЬЗЯ)
+- Источник: hand_signals.left, hand_signals.right — анализируй линии применительно к деньгам и потокам ресурсов
+- Левая рука = врождённый денежный потенциал, правая = реализованный
 
 СТРОГО ПРО ПРОГНОЗ:
 - Используй ТОЛЬКО годы из forecast в JSON
@@ -55,12 +54,14 @@ def _strip_photo_url(data: dict) -> dict:
     return d
 
 
-def build_user_prompt(reference_blocks: dict, target_input: dict) -> str:
+def build_user_prompt(reference_blocks: dict, target_input: dict,
+                      has_palm: bool = False) -> str:
     target_input = prepare_for_llm(_strip_photo_url(target_input))
+    palm_note = "" if has_palm else "\nВНИМАНИЕ: ладони НЕ переданы — НЕ генерируй блок palmistry_money, оставь ключ null.\n"
     source_map = """
 ИСТОЧНИКИ БЛОКОВ (используй ТОЛЬКО указанные данные):
 - overview → numerology.life_path, money.archetype, face_signals
-- palmistry_money → features, face_signals (косвенные индикаторы — реальных ладоней нет)
+- palmistry_money → hand_signals.left, hand_signals.right (линии применительно к деньгам и ресурсам)
 - main_problem → money.archetype.typical_block, numerology, matrix
 - money_code → money.code (number, formula, meaning)
 - ceiling → money.ceiling_indicator, money.archetype, numerology.pinnacles
@@ -73,7 +74,7 @@ def build_user_prompt(reference_blocks: dict, target_input: dict) -> str:
     return f"""ЭТАЛОННЫЙ ПРИМЕР:
 {json.dumps(reference_blocks, ensure_ascii=False, indent=2)}
 
-{source_map}
+{source_map}{palm_note}
 ═══════════════════════════════════════
 
 ТВОЯ ЗАДАЧА
@@ -104,9 +105,12 @@ REQUIRED_STRUCTURE = {
 }
 
 
-def validate_blocks(blocks: dict) -> list[str]:
+def validate_blocks(blocks: dict, has_palm: bool = True) -> list[str]:
+    structure = dict(REQUIRED_STRUCTURE)
+    if not has_palm:
+        structure.pop("palmistry_money", None)
     errors = []
-    for top, fields in REQUIRED_STRUCTURE.items():
+    for top, fields in structure.items():
         if top not in blocks:
             errors.append(f"Missing top-level: {top}")
             continue
@@ -120,9 +124,12 @@ def validate_blocks(blocks: dict) -> list[str]:
 
 
 def build_target_input(face_data: dict, name: str, birthdate: str,
-                       ref_year: int = None) -> dict:
+                       ref_year: int = None,
+                       palm_data_left: dict = None,
+                       palm_data_right: dict = None) -> dict:
     profile = build_person_profile(
         face_data, name, birthdate, ref_year=ref_year, include_scores=False,
+        palm_data_left=palm_data_left, palm_data_right=palm_data_right,
     )
     profile["money"] = full_money_profile(
         birthdate, profile["numerology"]["life_path"], ref_year,
@@ -137,9 +144,43 @@ def _load_reference_blocks(reference: str) -> dict:
         return json.load(f)
 
 
+def _generate_palmistry_block(target: dict, ref_palmistry: dict,
+                              model: str = None) -> dict:
+    """Точечный LLM-вызов: только palmistry_money на основе реальных ладоней."""
+    pm_fields = REQUIRED_STRUCTURE["palmistry_money"]
+
+    def validate_fn(blocks):
+        if "palmistry_money" not in blocks:
+            return ["Missing top-level: palmistry_money"]
+        return [f"Missing: palmistry_money.{f}" for f in pm_fields if f not in blocks["palmistry_money"]]
+
+    user_msg = f"""Эталонный пример блока palmistry_money:
+{json.dumps({"palmistry_money": ref_palmistry}, ensure_ascii=False, indent=2)}
+
+ЗАДАЧА: сгенерируй блок "palmistry_money" для нового пользователя.
+- Источник: hand_signals.left, hand_signals.right, hand_signals.comparison.insights
+- Левая рука = врождённый денежный потенциал, правая = реализованный
+- Анализируй линии применительно к деньгам и потокам ресурсов
+- Свяжи с numerology.life_path и money.archetype из входных данных
+
+Данные пользователя:
+{json.dumps(prepare_for_llm(target), ensure_ascii=False, indent=2)}
+
+Верни ТОЛЬКО JSON вида:
+{{"palmistry_money": {{...}}}}
+Без обёрток, без комментариев."""
+
+    kwargs = {}
+    if model:
+        kwargs["model"] = model
+    return generate_blocks(SYSTEM_PROMPT, [{"role": "user", "content": user_msg}], validate_fn, **kwargs)
+
+
 def generate(face_data: dict, name: str, birthdate: str,
              examples_dir: Path, templates_dir: Path,
              ref_year: int = None, model: str = None,
+             palm_data_left: dict = None,
+             palm_data_right: dict = None,
              plan: str = "full",
              reference: str = None,
              _out_blocks: list = None) -> str:
@@ -149,9 +190,31 @@ def generate(face_data: dict, name: str, birthdate: str,
                Если указан — LLM не вызывается.
     _out_blocks: если передан пустой список, в него будет добавлен dict blocks.
     """
-    target = build_target_input(face_data, name, birthdate, ref_year)
+    target = build_target_input(face_data, name, birthdate, ref_year,
+                                palm_data_left=palm_data_left,
+                                palm_data_right=palm_data_right)
+    has_palm = palm_data_left is not None and palm_data_right is not None
     examples_subdir = examples_dir / EXAMPLES_SUBDIR
 
+    # ── Референс + ладони: перегенерируем только palmistry_money ──
+    if reference and has_palm:
+        blocks = _load_reference_blocks(reference)
+        with open(examples_subdir / "reference_blocks.json", encoding="utf-8") as f:
+            ref_ex = json.load(f)
+        palm_block = _generate_palmistry_block(
+            target, ref_ex.get("palmistry_money", {}), model=model,
+        )
+        blocks["palmistry_money"] = palm_block["palmistry_money"]
+        errors = validate_blocks(blocks)
+        if errors:
+            print("Предупреждения валидации (reference + palm):", file=sys.stderr)
+            for e in errors:
+                print(f"  • {e}", file=sys.stderr)
+        if _out_blocks is not None:
+            _out_blocks.append(blocks)
+        return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)
+
+    # ── Референс без ладоней: только рендеринг ──
     if reference:
         blocks = _load_reference_blocks(reference)
         errors = validate_blocks(blocks)
@@ -164,13 +227,20 @@ def generate(face_data: dict, name: str, birthdate: str,
     with open(examples_subdir / "reference_blocks.json", encoding="utf-8") as f:
         ref_blocks = json.load(f)
 
-    user_msg = build_user_prompt(ref_blocks, target)
+    user_msg = build_user_prompt(ref_blocks, target, has_palm=has_palm)
     messages = [{"role": "user", "content": user_msg}]
 
     kwargs = {}
     if model:
         kwargs["model"] = model
-    blocks = generate_blocks(SYSTEM_PROMPT, messages, validate_blocks, **kwargs)
+    blocks = generate_blocks(
+        SYSTEM_PROMPT, messages,
+        lambda b: validate_blocks(b, has_palm=has_palm),
+        **kwargs,
+    )
+
+    if not has_palm:
+        blocks.setdefault("palmistry_money", ref_blocks.get("palmistry_money"))
 
     if _out_blocks is not None:
         _out_blocks.append(blocks)
