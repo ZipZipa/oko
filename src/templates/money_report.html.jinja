@@ -100,6 +100,16 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 /* FOOTER */
 .footer { text-align: center; padding: 3rem 4rem; border-top: 0.5px solid var(--border); font-size: 11px; color: var(--g500); letter-spacing: 0.07em; line-height: 2.2; }
 
+/* LOCKED */
+.locked-wrap { position: relative; margin-bottom: 1rem; border-radius: var(--r-lg); overflow: hidden; isolation: isolate; }
+.locked-content { filter: blur(2px) saturate(0.95); pointer-events: none; user-select: none; opacity: 0.95; }
+.locked-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.85rem; padding: 1.5rem; background: radial-gradient(ellipse at center, rgba(250,250,248,0.45) 0%, rgba(250,250,248,0.78) 70%, rgba(250,250,248,0.92) 100%); text-align: center; }
+.locked-icon { width: 46px; height: 46px; border-radius: 50%; background: var(--black); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(0,0,0,0.18), 0 0 0 6px rgba(184,153,104,0.12); }
+.locked-icon svg { width: 20px; height: 20px; stroke: #E8DAB8; fill: none; stroke-width: 1.6; }
+.locked-eyebrow { font-size: 9.5px; letter-spacing: 0.28em; text-transform: uppercase; color: #8C6E3F; font-variant: small-caps; }
+.locked-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--black); line-height: 1.15; max-width: 26ch; }
+.locked-pkg-name { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; color: #8C6E3F; letter-spacing: 0.04em; margin-top: 2px; }
+
 @media print {
   .cover { page-break-after: always; min-height: auto; }
   .page { page-break-inside: avoid; }
@@ -116,10 +126,50 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
   .year-row { flex-direction: column; gap: 0.4rem; }
   .year-num-block { min-width: 0; }
   .big-num { font-size: 64px; }
+  .locked-title { font-size: 18px; }
+  .locked-icon { width: 40px; height: 40px; }
 }
 </style>
 </head>
 <body>
+{#- ══ ПЛАН ДОСТУПА ══════════════════════════════════════════════════════
+    demo     — I, II (обзор + ладонь)
+    base     — + III, IV (проблема + код)
+    extended — + V, VI (потолок + стратегия)
+    full     — + VII, VIII, IX, X (прогноз, сфера, якорь, смена)
+══════════════════════════════════════════════════════════════════════ -#}
+{%- set _plan_levels = {'demo': 0, 'base': 1, 'extended': 2, 'full': 3} -%}
+{%- set _cur_level   = _plan_levels.get(plan | default('full'), 3) -%}
+{%- set locked_cfg = {
+  'overview':         {'min_plan': 'demo', 'title': 'Денежный разбор',              'pkg': ''},
+  'palmistry_money':  {'min_plan': 'demo', 'title': 'Деньги по ладони',             'pkg': ''},
+  'main_problem':     {'min_plan': 'base',     'title': 'Главная причина проблем',  'pkg': 'Базовый'},
+  'money_code':       {'min_plan': 'base',     'title': 'Денежный код',             'pkg': 'Базовый'},
+  'ceiling':          {'min_plan': 'extended', 'title': 'Денежный потолок',         'pkg': 'Расширенный'},
+  'earning_strategy': {'min_plan': 'extended', 'title': 'Стратегия заработка',      'pkg': 'Расширенный'},
+  'forecast':         {'min_plan': 'full',     'title': 'Финансовый прогноз',       'pkg': 'Премиум'},
+  'money_sphere':     {'min_plan': 'full',     'title': 'Денежная сфера',           'pkg': 'Премиум'},
+  'anchor':           {'min_plan': 'full',     'title': 'Финансовый якорь',         'pkg': 'Премиум'},
+  'career_change':    {'min_plan': 'full',     'title': 'Момент смены работы',      'pkg': 'Премиум'},
+} -%}
+{%- macro locked_card(min_plan, title, pkg) -%}
+  {%- set min_level = _plan_levels.get(min_plan, 1) -%}
+  {%- if _cur_level >= min_level -%}
+{{ caller() }}
+  {%- elif plan == 'demo' -%}
+<div class="locked-wrap" aria-label="Заблокированный раздел">
+  <div class="locked-content" aria-hidden="true">{{ caller() }}</div>
+  <div class="locked-overlay">
+    <div class="locked-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V7.5a4 4 0 0 1 8 0V11"></path><circle cx="12" cy="15.5" r="1.1" fill="currentColor" stroke="none" style="fill: #E8DAB8;"></circle></svg>
+    </div>
+    <div class="locked-eyebrow">Доступно в пакете</div>
+    <div class="locked-title">{{ title }}</div>
+    <div class="locked-pkg-name">{{ pkg }}</div>
+  </div>
+</div>
+  {%- endif -%}
+{%- endmacro -%}
 
 <!-- COVER -->
 <div class="cover">
@@ -175,6 +225,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 </div>
 
 <div class="page">
+{% call locked_card(locked_cfg.overview.min_plan, locked_cfg.overview.title, locked_cfg.overview.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.overview.verdict_quote }}</p>
     <div class="bt">{{ blocks.overview.summary }}</div>
@@ -205,6 +256,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
       </div>
     </div>
   </div>
+{% endcall %}
 </div>
 
 
@@ -216,6 +268,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 </div>
 
 <div class="page">
+{% call locked_card(locked_cfg.palmistry_money.min_plan, locked_cfg.palmistry_money.title, locked_cfg.palmistry_money.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.palmistry_money.intro_quote }}</p>
     <div class="card-lbl">Тип руки</div>
@@ -232,6 +285,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
       {% endfor %}
     </div>
   </div>
+{% endcall %}
 </div>
 
 
@@ -243,6 +297,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 </div>
 
 <div class="page">
+{% call locked_card(locked_cfg.main_problem.min_plan, locked_cfg.main_problem.title, locked_cfg.main_problem.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.main_problem.intro_quote }}</p>
     <div style="text-align:center;padding:1.5rem 0 1rem;margin-bottom:1rem;border-bottom:0.5px solid var(--border);">
@@ -268,6 +323,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
   </div>
 
   <div class="final-line">{{ blocks.main_problem.final_line }}</div>
+{% endcall %}
 </div>
 
 
@@ -279,6 +335,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 </div>
 
 <div class="page">
+{% call locked_card(locked_cfg.money_code.min_plan, locked_cfg.money_code.title, locked_cfg.money_code.pkg) %}
   <div class="big-num-card">
     <div class="big-num-label">Твой денежный код</div>
     <div class="big-num">{{ data.money.code.number }}</div>
@@ -301,6 +358,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
       {% endfor %}
     </div>
   </div>
+{% endcall %}
 </div>
 
 
@@ -312,6 +370,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 </div>
 
 <div class="page">
+{% call locked_card(locked_cfg.ceiling.min_plan, locked_cfg.ceiling.title, locked_cfg.ceiling.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.ceiling.intro_quote }}</p>
     <div class="card-lbl">Текущий уровень</div>
@@ -340,6 +399,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
   </div>
 
   <div class="final-line">{{ blocks.ceiling.final_line }}</div>
+{% endcall %}
 </div>
 
 
@@ -351,6 +411,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 </div>
 
 <div class="page">
+{% call locked_card(locked_cfg.earning_strategy.min_plan, locked_cfg.earning_strategy.title, locked_cfg.earning_strategy.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.earning_strategy.intro_quote }}</p>
     <div class="card-lbl">Природный путь</div>
@@ -384,6 +445,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
       {% endfor %}
     </div>
   </div>
+{% endcall %}
 </div>
 
 
@@ -395,6 +457,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 </div>
 
 <div class="page">
+{% call locked_card(locked_cfg.forecast.min_plan, locked_cfg.forecast.title, locked_cfg.forecast.pkg) %}
   <p class="q" style="margin-bottom:1.5rem;">{{ blocks.forecast.intro_quote }}</p>
 
   <div class="card">
@@ -411,6 +474,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
     </div>
     {% endfor %}
   </div>
+{% endcall %}
 </div>
 
 
@@ -422,6 +486,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 </div>
 
 <div class="page">
+{% call locked_card(locked_cfg.money_sphere.min_plan, locked_cfg.money_sphere.title, locked_cfg.money_sphere.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.money_sphere.intro_quote }}</p>
     <div style="text-align:center;padding:1.5rem 0 1rem;margin-bottom:1rem;border-bottom:0.5px solid var(--border);">
@@ -453,6 +518,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
     <div class="card-lbl">Ритм денежных приходов</div>
     <div class="bt">{{ blocks.money_sphere.ritual_pattern }}</div>
   </div>
+{% endcall %}
 </div>
 
 
@@ -464,6 +530,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 </div>
 
 <div class="page">
+{% call locked_card(locked_cfg.anchor.min_plan, locked_cfg.anchor.title, locked_cfg.anchor.pkg) %}
   <div class="dark-card">
     <div class="card-lbl">Что удерживает от заработка</div>
     <p class="q">{{ blocks.anchor.intro_quote }}</p>
@@ -487,6 +554,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
   </div>
 
   <div class="final-line">{{ blocks.anchor.final_line }}</div>
+{% endcall %}
 </div>
 
 
@@ -498,6 +566,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
 </div>
 
 <div class="page">
+{% call locked_card(locked_cfg.career_change.min_plan, locked_cfg.career_change.title, locked_cfg.career_change.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.career_change.intro_quote }}</p>
     <div class="card-lbl">Текущая фаза</div>
@@ -524,6 +593,7 @@ hr { border: none; border-top: 0.5px solid var(--border); margin: 1.75rem 0; }
       </div>
     </div>
   </div>
+{% endcall %}
 </div>
 
 

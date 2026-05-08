@@ -3,9 +3,10 @@ Couple report: парный отчёт совместимости.
 9 блоков от компатибилити до точки разрыва.
 """
 import json
+import sys
 from pathlib import Path
 
-from ..core.profile import build_person_profile
+from ..core.profile import build_person_profile, prepare_for_llm
 from ..core.couple_dynamics import couple_full_dynamics
 from ..core.face_dynamics import face_contrast, matrix_overlap
 from ..core.llm_client import generate_blocks
@@ -54,10 +55,23 @@ def _strip_photo_url(data: dict) -> dict:
 
 
 def build_user_prompt(reference_blocks: dict, target_input: dict) -> str:
-    target_input = _strip_photo_url(target_input)
+    target_input = prepare_for_llm(_strip_photo_url(target_input))
+    source_map = """
+ИСТОЧНИКИ БЛОКОВ (используй ТОЛЬКО указанные данные):
+- compatibility → couple.compatibility (score, type), couple.matrix_overlap, couple.union_number, couple.year_sync
+- palmistry_heart → person_a.features, person_b.features (косвенные индикаторы — реальных ладоней нет)
+- fidelity → person_a.numerology, person_b.numerology, person_a.matrix, person_b.matrix, couple.face_contrast
+- marriage_perspective → couple.compatibility, couple.union_number, person_a.numerology.personal_year, person_b.numerology.personal_year
+- karma → couple.matrix_overlap, person_a.matrix, person_b.matrix, couple.union_number
+- wealth → person_a.numerology.life_path, person_b.numerology.life_path, couple.compatibility
+- children → person_a.numerology, person_b.numerology, couple.age
+- duration → couple.compatibility, couple.age, couple.year_sync, couple.matrix_overlap
+- breaking_point → couple.face_contrast, couple.year_sync, couple.compatibility
+"""
     return f"""ЭТАЛОННЫЙ ПРИМЕР ВЫХОДА:
 {json.dumps(reference_blocks, ensure_ascii=False, indent=2)}
 
+{source_map}
 ═══════════════════════════════════════
 
 ТВОЯ ЗАДАЧА
@@ -65,6 +79,7 @@ def build_user_prompt(reference_blocks: dict, target_input: dict) -> str:
 Сгенерируй JSON для НОВОЙ пары. Те же ключи, та же структура.
 Учти: числа жизненного пути и совместимость, арканы матриц, разницу возрастов,
 контраст лиц, синхронность личных годов, число союза.
+В каждом блоке — минимум одна перекрёстная ссылка на другую систему.
 
 Не копируй эталон дословно.
 
@@ -159,16 +174,41 @@ def build_target_input(face_a: dict, name_a: str, birthdate_a: str,
     return {"person_a": person_a, "person_b": person_b, "couple": couple}
 
 
+def _load_reference_blocks(reference: str) -> dict:
+    if reference.strip().startswith("{"):
+        return json.loads(reference)
+    with open(reference, encoding="utf-8") as f:
+        return json.load(f)
+
+
 def generate(face_a: dict, name_a: str, birthdate_a: str,
              face_b: dict, name_b: str, birthdate_b: str,
              examples_dir: Path, templates_dir: Path,
-             ref_year: int = None, model: str = None) -> str:
+             ref_year: int = None, model: str = None,
+             plan: str = "full",
+             reference: str = None,
+             _out_blocks: list = None) -> str:
+    """Генерирует couple отчёт и возвращает HTML.
+
+    reference: путь к JSON-файлу с блоками ИЛИ сырая JSON-строка.
+               Если указан — LLM не вызывается.
+    _out_blocks: если передан пустой список, в него будет добавлен dict blocks.
+    """
     target = build_target_input(
         face_a, name_a, birthdate_a,
         face_b, name_b, birthdate_b, ref_year,
     )
-
     examples_subdir = examples_dir / EXAMPLES_SUBDIR
+
+    if reference:
+        blocks = _load_reference_blocks(reference)
+        errors = validate_blocks(blocks)
+        if errors:
+            print("Предупреждения валидации (reference):", file=sys.stderr)
+            for e in errors:
+                print(f"  • {e}", file=sys.stderr)
+        return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)
+
     with open(examples_subdir / "reference_blocks.json", encoding="utf-8") as f:
         ref_blocks = json.load(f)
 
@@ -180,4 +220,7 @@ def generate(face_a: dict, name_a: str, birthdate_a: str,
         kwargs["model"] = model
     blocks = generate_blocks(SYSTEM_PROMPT, messages, validate_blocks, **kwargs)
 
-    return render_template(templates_dir, TEMPLATE_NAME, target, blocks)
+    if _out_blocks is not None:
+        _out_blocks.append(blocks)
+
+    return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)

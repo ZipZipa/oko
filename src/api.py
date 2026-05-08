@@ -75,6 +75,7 @@ def generate_report(
             face_data=face_data, name=name, birthdate=birthdate,
             examples_dir=EXAMPLES_DIR, templates_dir=TEMPLATES_DIR,
             ref_year=ref_year, model=model,
+            plan=plan, reference=reference, _out_blocks=_out_blocks,
         )
 
     elif report_type == "couple":
@@ -85,6 +86,7 @@ def generate_report(
             face_b=face_data_b, name_b=name_b, birthdate_b=birthdate_b,
             examples_dir=EXAMPLES_DIR, templates_dir=TEMPLATES_DIR,
             ref_year=ref_year, model=model,
+            plan=plan, reference=reference, _out_blocks=_out_blocks,
         )
 
     else:

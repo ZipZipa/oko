@@ -3,9 +3,10 @@ Money report: денежный портрет одного человека.
 10 блоков от обзора до момента смены работы.
 """
 import json
+import sys
 from pathlib import Path
 
-from ..core.profile import build_person_profile
+from ..core.profile import build_person_profile, prepare_for_llm
 from ..core.money_dynamics import full_money_profile
 from ..core.llm_client import generate_blocks
 from ..core.renderer import render_template
@@ -55,16 +56,31 @@ def _strip_photo_url(data: dict) -> dict:
 
 
 def build_user_prompt(reference_blocks: dict, target_input: dict) -> str:
-    target_input = _strip_photo_url(target_input)
+    target_input = prepare_for_llm(_strip_photo_url(target_input))
+    source_map = """
+ИСТОЧНИКИ БЛОКОВ (используй ТОЛЬКО указанные данные):
+- overview → numerology.life_path, money.archetype, face_signals
+- palmistry_money → features, face_signals (косвенные индикаторы — реальных ладоней нет)
+- main_problem → money.archetype.typical_block, numerology, matrix
+- money_code → money.code (number, formula, meaning)
+- ceiling → money.ceiling_indicator, money.archetype, numerology.pinnacles
+- earning_strategy → money.archetype (best_fields, earning_style), numerology.life_path
+- forecast → money.forecast (каждый год: personal_year, tone)
+- money_sphere → money.archetype, numerology.life_path, matrix
+- anchor → money.archetype.typical_block, matrix, numerology
+- career_change → money.forecast, numerology.personal_year, numerology.pinnacles
+"""
     return f"""ЭТАЛОННЫЙ ПРИМЕР:
 {json.dumps(reference_blocks, ensure_ascii=False, indent=2)}
 
+{source_map}
 ═══════════════════════════════════════
 
 ТВОЯ ЗАДАЧА
 
 Сгенерируй JSON для нового пользователя. Те же ключи, та же глубина.
-Учти его число пути, денежный код, текущий пинакл, прогноз по годам, черты лица.
+Учти его число пути, денежный код, текущий пиннакл, прогноз по годам, черты лица.
+В каждом блоке минимум одна перекрёстная ссылка на другую систему.
 
 Не копируй дословно.
 
@@ -114,12 +130,37 @@ def build_target_input(face_data: dict, name: str, birthdate: str,
     return profile
 
 
+def _load_reference_blocks(reference: str) -> dict:
+    if reference.strip().startswith("{"):
+        return json.loads(reference)
+    with open(reference, encoding="utf-8") as f:
+        return json.load(f)
+
+
 def generate(face_data: dict, name: str, birthdate: str,
              examples_dir: Path, templates_dir: Path,
-             ref_year: int = None, model: str = None) -> str:
-    target = build_target_input(face_data, name, birthdate, ref_year)
+             ref_year: int = None, model: str = None,
+             plan: str = "full",
+             reference: str = None,
+             _out_blocks: list = None) -> str:
+    """Генерирует money отчёт и возвращает HTML.
 
+    reference: путь к JSON-файлу с блоками ИЛИ сырая JSON-строка.
+               Если указан — LLM не вызывается.
+    _out_blocks: если передан пустой список, в него будет добавлен dict blocks.
+    """
+    target = build_target_input(face_data, name, birthdate, ref_year)
     examples_subdir = examples_dir / EXAMPLES_SUBDIR
+
+    if reference:
+        blocks = _load_reference_blocks(reference)
+        errors = validate_blocks(blocks)
+        if errors:
+            print("Предупреждения валидации (reference):", file=sys.stderr)
+            for e in errors:
+                print(f"  • {e}", file=sys.stderr)
+        return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)
+
     with open(examples_subdir / "reference_blocks.json", encoding="utf-8") as f:
         ref_blocks = json.load(f)
 
@@ -131,4 +172,7 @@ def generate(face_data: dict, name: str, birthdate: str,
         kwargs["model"] = model
     blocks = generate_blocks(SYSTEM_PROMPT, messages, validate_blocks, **kwargs)
 
-    return render_template(templates_dir, TEMPLATE_NAME, target, blocks)
+    if _out_blocks is not None:
+        _out_blocks.append(blocks)
+
+    return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)

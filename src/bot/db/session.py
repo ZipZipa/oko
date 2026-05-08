@@ -11,7 +11,21 @@ async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit
 async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        for col in ("blocks_json TEXT", "purchased_plan VARCHAR(20)", "report_html TEXT"):
+        new_cols = [
+            "blocks_json TEXT",
+            "purchased_plan VARCHAR(20)",
+            "report_html TEXT",
+            "money_blocks_json TEXT",
+            "money_plan VARCHAR(20)",
+            "money_html TEXT",
+            "partner_name VARCHAR(255)",
+            "partner_birth_date DATE",
+            "partner_face_json TEXT",
+            "couple_blocks_json TEXT",
+            "couple_plan VARCHAR(20)",
+            "couple_html TEXT",
+        ]
+        for col in new_cols:
             try:
                 await conn.execute(text(f"ALTER TABLE users ADD COLUMN {col}"))
             except Exception:

@@ -14,7 +14,7 @@ from aiogram.fsm.context import FSMContext
 from sqlalchemy import select
 
 from src.bot.db import async_session, User
-from src.bot.states import RegistrationStates, PalmStates
+from src.bot.states import RegistrationStates, PalmStates, PartnerStates
 
 router = Router()
 
@@ -31,7 +31,8 @@ def _main_menu() -> InlineKeyboardMarkup:
 
 _PLAN_LEVEL = {"demo": 0, "base": 1, "extended": 2, "full": 3}
 
-_PACKAGES = {
+# ── Пакеты для self ──────────────────────────────────────────────────────────────
+_PACKAGES_SELF = {
     "base": {
         "label": "Базовый",
         "text": (
@@ -62,22 +63,88 @@ _PACKAGES = {
     },
 }
 
+# ── Пакеты для money ─────────────────────────────────────────────────────────────
+_PACKAGES_MONEY = {
+    "base": {
+        "label": "Базовый",
+        "text": (
+            "Базовый пакет — Денежная карта\n\n"
+            "Включает всё из демо, плюс:\n"
+            "• Главная причина финансовых проблем — паттерн, который держит тебя в минусе\n"
+            "• Денежный код — как именно деньги приходят к тебе по природе"
+        ),
+    },
+    "extended": {
+        "label": "Расширенный",
+        "text": (
+            "Расширенный пакет — Денежная карта\n\n"
+            "Всё из Базового, плюс:\n"
+            "• Денежный потолок — твоя естественная зона и что её поднимает\n"
+            "• Стратегия заработка — природный путь и лучшие сферы"
+        ),
+    },
+    "full": {
+        "label": "Премиум",
+        "text": (
+            "Премиум пакет — Денежная карта\n\n"
+            "Полный отчёт — все блоки:\n"
+            "• Финансовый прогноз на 5 лет по личным годам\n"
+            "• Денежная сфера — что притягивает и отталкивает деньги\n"
+            "• Финансовый якорь — блокирующее убеждение и как его растворить\n"
+            "• Лучший момент для смены работы"
+        ),
+    },
+}
 
-def _packages_menu(above_plan: str = "demo") -> InlineKeyboardMarkup:
+# ── Пакеты для couple ────────────────────────────────────────────────────────────
+_PACKAGES_COUPLE = {
+    "base": {
+        "label": "Базовый",
+        "text": (
+            "Базовый пакет — Совместимость\n\n"
+            "Включает всё из демо, плюс:\n"
+            "• Верность в паре — риски и стабилизирующие факторы\n"
+            "• Карма в отношениях — урок, который несёт пара вместе"
+        ),
+    },
+    "extended": {
+        "label": "Расширенный",
+        "text": (
+            "Расширенный пакет — Совместимость\n\n"
+            "Всё из Базового, плюс:\n"
+            "• Перспектива брака по годам\n"
+            "• Уровень богатства в семье — денежный паттерн пары\n"
+            "• Потенциал на детей — оптимальное время"
+        ),
+    },
+    "full": {
+        "label": "Премиум",
+        "text": (
+            "Премиум пакет — Совместимость\n\n"
+            "Полный отчёт — все блоки:\n"
+            "• Длительность союза — краткосрочная история или долгий путь\n"
+            "• Точка разрыва — вероятность, триггер и что предотвратит"
+        ),
+    },
+}
+
+
+def _packages_menu(above_plan: str = "demo", report_prefix: str = "self") -> InlineKeyboardMarkup:
+    packages = {"self": _PACKAGES_SELF, "money": _PACKAGES_MONEY, "couple": _PACKAGES_COUPLE}[report_prefix]
     current_level = _PLAN_LEVEL.get(above_plan, 0)
     rows = [
-        [InlineKeyboardButton(text=pkg["label"], callback_data=f"pkg_{key}")]
-        for key, pkg in _PACKAGES.items()
+        [InlineKeyboardButton(text=pkg["label"], callback_data=f"pkg_{report_prefix}_{key}")]
+        for key, pkg in packages.items()
         if _PLAN_LEVEL[key] > current_level
     ]
     rows.append([InlineKeyboardButton(text="← В меню", callback_data="back_to_main")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def _package_detail_menu(plan_key: str) -> InlineKeyboardMarkup:
+def _package_detail_menu(report_prefix: str, plan_key: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Купить", callback_data=f"buy_{plan_key}")],
-        [InlineKeyboardButton(text="← Назад к пакетам", callback_data="show_packages")],
+        [InlineKeyboardButton(text="Купить", callback_data=f"buy_{report_prefix}_{plan_key}")],
+        [InlineKeyboardButton(text="← Назад к пакетам", callback_data=f"show_packages_{report_prefix}")],
     ])
 
 
@@ -126,6 +193,28 @@ async def _analyze_and_save_face(bot, file_id: str, telegram_id: int):
                     await session.commit()
     except Exception:
         pass
+
+
+async def _analyze_face_return(bot, file_id: str) -> dict | None:
+    """Скачивает и анализирует лицо, возвращает dict или None."""
+    from src.core.face_analyzer import analyze_face
+    import os
+
+    try:
+        file = await bot.get_file(file_id)
+        if not file.file_path:
+            return None
+        with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
+            await bot.download_file(file.file_path, tmp.name)
+            tmp_path = tmp.name
+        try:
+            loop = asyncio.get_running_loop()
+            face_data = await loop.run_in_executor(None, lambda: analyze_face(tmp_path))
+        finally:
+            os.unlink(tmp_path)
+        return face_data
+    except Exception:
+        return None
 
 
 # ─── /start ────────────────────────────────────────────────────────────────────
@@ -239,10 +328,11 @@ async def process_birth_date_invalid(message: Message):
 
 # ─── Главное меню ───────────────────────────────────────────────────────────────
 
-async def _edit_to_packages(message, user: User):
-    purchased = (user.purchased_plan if user else None) or "demo"
-    menu = _packages_menu(above_plan=purchased)
-    if menu.inline_keyboard[:-1]:  # есть хоть один пакет помимо кнопки "← В меню"
+async def _edit_to_packages(message, user: User, report_prefix: str):
+    plan_field = {"self": "purchased_plan", "money": "money_plan", "couple": "couple_plan"}[report_prefix]
+    purchased = getattr(user, plan_field, None) or "demo"
+    menu = _packages_menu(above_plan=purchased, report_prefix=report_prefix)
+    if menu.inline_keyboard[:-1]:
         await message.edit_text("Выбери пакет:", reply_markup=menu)
     else:
         await message.edit_text(
@@ -258,34 +348,74 @@ async def cb_menu_self(callback: CallbackQuery):
     user = await get_user(callback.from_user.id)
 
     if user and user.blocks_json:
-        await _edit_to_packages(callback.message, user)
+        await _edit_to_packages(callback.message, user, "self")
     else:
         await callback.message.edit_text(
             "Портрет личности — анализ твоей внешности, нумерологии и психологических паттернов.\n\n"
             "Запустим тестовый анализ?",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(text="Запустить анализ", callback_data="run_self_demo")],
+                [InlineKeyboardButton(text="← В меню", callback_data="back_to_main")],
+            ]),
+        )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "menu_money")
+async def cb_menu_money(callback: CallbackQuery):
+    user = await get_user(callback.from_user.id)
+
+    if not user or not _is_complete(user):
+        await callback.message.edit_text(
+            "Для анализа нужны фото, имя и дата рождения. Пройди регистрацию: /start"
+        )
+        await callback.answer()
+        return
+
+    if user and user.money_blocks_json:
+        await _edit_to_packages(callback.message, user, "money")
+    else:
+        await callback.message.edit_text(
+            "Денежная карта — анализ твоего финансового архетипа, денежного кода и стратегии заработка.\n\n"
+            "Запустим тестовый анализ?",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="Запустить анализ", callback_data="run_money_demo")],
+                [InlineKeyboardButton(text="← В меню", callback_data="back_to_main")],
             ]),
         )
     await callback.answer()
 
 
 @router.callback_query(F.data == "menu_couple")
-async def cb_menu_couple(callback: CallbackQuery):
-    await callback.message.edit_text("Раздел «Совместимость пары» скоро будет доступен.")
-    await callback.answer()
+async def cb_menu_couple(callback: CallbackQuery, state: FSMContext):
+    user = await get_user(callback.from_user.id)
 
+    if not user or not _is_complete(user):
+        await callback.message.edit_text(
+            "Для анализа нужны фото, имя и дата рождения. Пройди регистрацию: /start"
+        )
+        await callback.answer()
+        return
 
-@router.callback_query(F.data == "menu_money")
-async def cb_menu_money(callback: CallbackQuery):
-    await callback.message.edit_text("Раздел «Денежная карта» скоро будет доступен.")
+    if user and user.couple_blocks_json:
+        await _edit_to_packages(callback.message, user, "couple")
+    else:
+        await callback.message.edit_text(
+            "Совместимость пары — анализ вашей нумерологии, матриц, верности, кармы и перспективы союза.\n\n"
+            "Введи имя партнёра ✏️",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
+            ]),
+        )
+        await state.set_state(PartnerStates.waiting_for_partner_name)
     await callback.answer()
 
 
 # ─── Пакеты ─────────────────────────────────────────────────────────────────────
 
 @router.callback_query(F.data == "back_to_main")
-async def cb_back_to_main(callback: CallbackQuery):
+async def cb_back_to_main(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
     await callback.message.edit_text(
         "Выбери раздел:",
         reply_markup=_main_menu(),
@@ -293,38 +423,188 @@ async def cb_back_to_main(callback: CallbackQuery):
     await callback.answer()
 
 
-@router.callback_query(F.data == "show_packages")
+@router.callback_query(F.data.in_({"show_packages_self", "show_packages_money", "show_packages_couple"}))
 async def cb_show_packages(callback: CallbackQuery):
+    prefix = callback.data.removeprefix("show_packages_")
     user = await get_user(callback.from_user.id)
-    await _edit_to_packages(callback.message, user)
+    await _edit_to_packages(callback.message, user, prefix)
     await callback.answer()
 
 
-@router.callback_query(F.data.in_({"pkg_base", "pkg_extended", "pkg_full"}))
+@router.callback_query(F.data.startswith("pkg_"))
 async def cb_package_detail(callback: CallbackQuery):
-    plan_key = callback.data.removeprefix("pkg_")
-    pkg = _PACKAGES[plan_key]
+    # pkg_self_base | pkg_money_extended | pkg_couple_full
+    parts = callback.data.split("_", 2)
+    if len(parts) != 3:
+        await callback.answer()
+        return
+    _, report_prefix, plan_key = parts
+    packages = {"self": _PACKAGES_SELF, "money": _PACKAGES_MONEY, "couple": _PACKAGES_COUPLE}[report_prefix]
+    pkg = packages[plan_key]
     await callback.message.edit_text(
         pkg["text"],
-        reply_markup=_package_detail_menu(plan_key),
+        reply_markup=_package_detail_menu(report_prefix, plan_key),
     )
     await callback.answer()
 
 
-# ─── Запуск отчёта ──────────────────────────────────────────────────────────────
+# ─── Сбор данных партнёра (FSM для couple) ──────────────────────────────────────
+
+@router.message(PartnerStates.waiting_for_partner_name, F.text)
+async def process_partner_name(message: Message, state: FSMContext):
+    name = message.text.strip()
+    if not name:
+        await message.answer("Имя не может быть пустым ✏️")
+        return
+
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.telegram_id == message.from_user.id)
+        )
+        user = result.scalar_one_or_none()
+        if user:
+            user.partner_name = name
+            await session.commit()
+
+    await state.set_state(PartnerStates.waiting_for_partner_birthdate)
+    await message.answer(
+        f"Имя партнёра — {name}.\n\nТеперь напиши дату рождения партнёра в формате ДД.ММ.ГГГГ 🗓",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
+        ]),
+    )
+
+
+@router.message(PartnerStates.waiting_for_partner_name)
+async def process_partner_name_invalid(message: Message):
+    await message.answer("Пожалуйста, напиши имя текстом ✏️")
+
+
+@router.message(PartnerStates.waiting_for_partner_birthdate, F.text)
+async def process_partner_birthdate(message: Message, state: FSMContext):
+    try:
+        birth_date = datetime.strptime(message.text.strip(), "%d.%m.%Y").date()
+    except ValueError:
+        await message.answer(
+            "Неверный формат. Напиши дату в формате ДД.ММ.ГГГГ, например 14.06.1997 🗓"
+        )
+        return
+
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.telegram_id == message.from_user.id)
+        )
+        user = result.scalar_one_or_none()
+        if user:
+            user.partner_birth_date = birth_date
+            await session.commit()
+
+    await state.set_state(PartnerStates.waiting_for_partner_photo)
+    await message.answer(
+        "Отлично! Теперь пришли фото партнёра 📷\n\n"
+        "Это улучшит точность анализа. Если фото нет — нажми «Пропустить».",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="Пропустить →", callback_data="skip_partner_photo")],
+            [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
+        ]),
+    )
+
+
+@router.message(PartnerStates.waiting_for_partner_birthdate)
+async def process_partner_birthdate_invalid(message: Message):
+    await message.answer("Пожалуйста, напиши дату текстом в формате ДД.ММ.ГГГГ 🗓")
+
+
+@router.message(PartnerStates.waiting_for_partner_photo, F.photo)
+async def process_partner_photo(message: Message, state: FSMContext):
+    photo: PhotoSize = message.photo[-1]
+    processing_msg = await message.answer("Анализирую фото партнёра... ⏳")
+
+    face_data = await _analyze_face_return(message.bot, photo.file_id)
+
+    if face_data:
+        async with async_session() as session:
+            result = await session.execute(
+                select(User).where(User.telegram_id == message.from_user.id)
+            )
+            user = result.scalar_one_or_none()
+            if user:
+                user.partner_face_json = json.dumps(face_data, ensure_ascii=False)
+                await session.commit()
+
+    await processing_msg.delete()
+    await state.clear()
+
+    user = await get_user(message.from_user.id)
+    status_msg = await message.answer("Данные партнёра получены. Запускаю анализ совместимости... ⏳")
+    asyncio.create_task(_run_couple_report(status_msg, user, "demo"))
+
+
+@router.message(PartnerStates.waiting_for_partner_photo)
+async def process_partner_photo_invalid(message: Message):
+    await message.answer("Пожалуйста, пришли именно фото 📷 или нажми «Пропустить»")
+
+
+@router.callback_query(F.data == "skip_partner_photo")
+async def cb_skip_partner_photo(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
+    user = await get_user(callback.from_user.id)
+    await callback.message.edit_text("Запускаю анализ совместимости... ⏳")
+    asyncio.create_task(_run_couple_report(callback.message, user, "demo"))
+    await callback.answer()
+
+
+# ─── Запуск отчётов ──────────────────────────────────────────────────────────────
 
 @router.callback_query(F.data == "run_self_demo")
 async def cb_run_self_demo(callback: CallbackQuery, state: FSMContext):
-    await _start_report(callback, plan="demo", state=state)
+    await _start_self_report(callback, plan="demo", state=state)
 
 
-@router.callback_query(F.data.in_({"buy_base", "buy_extended", "buy_full"}))
+@router.callback_query(F.data == "run_money_demo")
+async def cb_run_money_demo(callback: CallbackQuery):
+    user = await get_user(callback.from_user.id)
+    if not user or not _is_complete(user):
+        await callback.message.edit_text(
+            "Для анализа нужны фото, имя и дата рождения. Пройди регистрацию: /start"
+        )
+        await callback.answer()
+        return
+    await callback.message.edit_text("Запускаю анализ... Это займёт минуту ⏳")
+    await callback.answer()
+    asyncio.create_task(_run_money_report(callback.message, user, "demo"))
+
+
+@router.callback_query(F.data.startswith("buy_"))
 async def cb_buy(callback: CallbackQuery, state: FSMContext):
-    plan_key = callback.data.removeprefix("buy_")
-    await _start_report(callback, plan=plan_key, state=state)
+    # buy_self_base | buy_money_extended | buy_couple_full
+    parts = callback.data.split("_", 2)
+    if len(parts) != 3:
+        await callback.answer()
+        return
+    _, report_prefix, plan_key = parts
+
+    user = await get_user(callback.from_user.id)
+    if not user or not _is_complete(user):
+        await callback.message.edit_text(
+            "Для анализа нужны фото, имя и дата рождения. Пройди регистрацию: /start"
+        )
+        await callback.answer()
+        return
+
+    if report_prefix == "self":
+        await _start_self_report(callback, plan=plan_key, state=state)
+    elif report_prefix == "money":
+        await callback.message.edit_text("Запускаю анализ... Это займёт минуту ⏳")
+        await callback.answer()
+        asyncio.create_task(_run_money_report(callback.message, user, plan_key))
+    elif report_prefix == "couple":
+        await callback.message.edit_text("Запускаю анализ совместимости... Это займёт минуту ⏳")
+        await callback.answer()
+        asyncio.create_task(_run_couple_report(callback.message, user, plan_key))
 
 
-async def _start_report(callback: CallbackQuery, plan: str, state: FSMContext):
+async def _start_self_report(callback: CallbackQuery, plan: str, state: FSMContext):
     user = await get_user(callback.from_user.id)
 
     if not user or not _is_complete(user):
@@ -355,10 +635,9 @@ async def _start_report(callback: CallbackQuery, plan: str, state: FSMContext):
     asyncio.create_task(_run_self_report(callback.message, user, plan))
 
 
-# ─── Сбор ладоней (FSM для Премиум) ─────────────────────────────────────────
+# ─── Сбор ладоней (FSM для Премиум self) ────────────────────────────────────────
 
 async def _download_and_analyze_palm(bot, file_id: str) -> dict | None:
-    """Скачивает фото ладони и запускает analyze_palm. Возвращает dict или None."""
     from src.core.palm_analyzer import analyze_palm
     import os
 
@@ -452,7 +731,7 @@ async def process_palm_right_invalid(message: Message):
     await message.answer("Пожалуйста, пришли именно фото ладони 📷")
 
 
-# ─── Генерация отчёта ────────────────────────────────────────────────────────
+# ─── Вспомогательные ────────────────────────────────────────────────────────────
 
 async def _download_photo_data_uri(bot, file_id: str) -> str | None:
     try:
@@ -463,6 +742,32 @@ async def _download_photo_data_uri(bot, file_id: str) -> str | None:
     except Exception:
         return None
 
+
+async def _send_report(message: Message, html: str, caption: str, plan: str,
+                       report_prefix: str, filename: str):
+    """Отправляет HTML как документ, пинует, показывает пакеты выше."""
+    plan_field = {"self": "purchased_plan", "money": "money_plan", "couple": "couple_plan"}[report_prefix]
+    user = await get_user(message.chat.id)
+    current_plan = getattr(user, plan_field, None) or plan
+
+    await message.delete()
+    file = BufferedInputFile(html.encode("utf-8"), filename=filename)
+    sent = await message.answer_document(file, caption=caption)
+    await message.bot.pin_chat_message(chat_id=sent.chat.id, message_id=sent.message_id, disable_notification=True)
+
+    menu = _packages_menu(above_plan=current_plan, report_prefix=report_prefix)
+    if menu.inline_keyboard[:-1]:
+        await message.answer("Выбери пакет:", reply_markup=menu)
+    else:
+        await message.answer(
+            "Это максимальный пакет.",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="← В меню", callback_data="back_to_main")],
+            ]),
+        )
+
+
+# ─── Генерация self отчёта ───────────────────────────────────────────────────────
 
 async def _run_self_report(message: Message, user: User, plan: str):
     from src.api import generate_report
@@ -556,22 +861,165 @@ async def _run_self_report(message: Message, user: User, plan: str):
 
         _plan_label = {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
         caption = f"Портрет личности · {_plan_label.get(plan, plan)} готов!"
+        filename = f"Портрет личности {_plan_label.get(plan, plan)}.html"
+        await _send_report(message, html, caption, plan, "self", filename)
 
-        await message.delete()
-        file = BufferedInputFile(html.encode("utf-8"), filename=f"Портрет личности {_plan_label.get(plan, plan)}.html")
-        sent = await message.answer_document(file, caption=caption)
-        await message.bot.pin_chat_message(chat_id=sent.chat.id, message_id=sent.message_id, disable_notification=True)
+    except Exception as e:
+        await message.edit_text(f"Ошибка при генерации отчёта: {e}")
 
-        menu = _packages_menu(above_plan=plan)
-        if menu.inline_keyboard[:-1]:  # есть пакеты выше текущего плана
-            await message.answer("Выбери пакет:", reply_markup=menu)
-        else:
-            await message.answer(
-                "Это максимальный пакет.",
-                reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                    [InlineKeyboardButton(text="← В меню", callback_data="back_to_main")],
-                ]),
+
+# ─── Генерация money отчёта ──────────────────────────────────────────────────────
+
+async def _run_money_report(message: Message, user: User, plan: str):
+    from src.api import generate_report
+
+    try:
+        face_data = json.loads(user.face_json)
+        birthdate = user.birth_date.strftime("%d.%m.%Y")
+
+        if user.photo_file_id and "photo_url" not in face_data:
+            photo_uri = await _download_photo_data_uri(message.bot, user.photo_file_id)
+            if photo_uri:
+                face_data["photo_url"] = photo_uri
+
+        loop = asyncio.get_running_loop()
+
+        if plan == "demo":
+            out_blocks: list = []
+            html = await loop.run_in_executor(
+                None,
+                lambda: generate_report(
+                    report_type="money",
+                    face_data=face_data,
+                    name=user.name,
+                    birthdate=birthdate,
+                    plan="demo",
+                    _out_blocks=out_blocks,
+                ),
             )
+            if out_blocks:
+                async with async_session() as session:
+                    result = await session.execute(
+                        select(User).where(User.telegram_id == user.telegram_id)
+                    )
+                    db_user = result.scalar_one_or_none()
+                    if db_user:
+                        db_user.money_blocks_json = json.dumps(out_blocks[0], ensure_ascii=False)
+                        await session.commit()
+        else:
+            reference = user.money_blocks_json or None
+            html = await loop.run_in_executor(
+                None,
+                lambda: generate_report(
+                    report_type="money",
+                    face_data=face_data,
+                    name=user.name,
+                    birthdate=birthdate,
+                    plan=plan,
+                    reference=reference,
+                ),
+            )
+
+        if plan != "demo":
+            async with async_session() as session:
+                result = await session.execute(
+                    select(User).where(User.telegram_id == user.telegram_id)
+                )
+                db_user = result.scalar_one_or_none()
+                if db_user and _PLAN_LEVEL.get(plan, 0) > _PLAN_LEVEL.get(db_user.money_plan or "demo", 0):
+                    db_user.money_plan = plan
+                    db_user.money_html = html
+                    await session.commit()
+
+        _plan_label = {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
+        caption = f"Денежная карта · {_plan_label.get(plan, plan)} готова!"
+        filename = f"Денежная карта {_plan_label.get(plan, plan)}.html"
+        await _send_report(message, html, caption, plan, "money", filename)
+
+    except Exception as e:
+        await message.edit_text(f"Ошибка при генерации отчёта: {e}")
+
+
+# ─── Генерация couple отчёта ─────────────────────────────────────────────────────
+
+async def _run_couple_report(message: Message, user: User, plan: str):
+    from src.api import generate_report
+
+    try:
+        if not user.partner_name or not user.partner_birth_date:
+            await message.edit_text("Данные партнёра не найдены. Начни заново через меню.")
+            return
+
+        face_a = json.loads(user.face_json)
+        birthdate_a = user.birth_date.strftime("%d.%m.%Y")
+        birthdate_b = user.partner_birth_date.strftime("%d.%m.%Y")
+
+        face_b = json.loads(user.partner_face_json) if user.partner_face_json else {}
+
+        if user.photo_file_id and "photo_url" not in face_a:
+            photo_uri = await _download_photo_data_uri(message.bot, user.photo_file_id)
+            if photo_uri:
+                face_a["photo_url"] = photo_uri
+
+        loop = asyncio.get_running_loop()
+
+        if plan == "demo":
+            out_blocks: list = []
+            html = await loop.run_in_executor(
+                None,
+                lambda: generate_report(
+                    report_type="couple",
+                    face_data=face_a,
+                    name=user.name,
+                    birthdate=birthdate_a,
+                    face_data_b=face_b,
+                    name_b=user.partner_name,
+                    birthdate_b=birthdate_b,
+                    plan="demo",
+                    _out_blocks=out_blocks,
+                ),
+            )
+            if out_blocks:
+                async with async_session() as session:
+                    result = await session.execute(
+                        select(User).where(User.telegram_id == user.telegram_id)
+                    )
+                    db_user = result.scalar_one_or_none()
+                    if db_user:
+                        db_user.couple_blocks_json = json.dumps(out_blocks[0], ensure_ascii=False)
+                        await session.commit()
+        else:
+            reference = user.couple_blocks_json or None
+            html = await loop.run_in_executor(
+                None,
+                lambda: generate_report(
+                    report_type="couple",
+                    face_data=face_a,
+                    name=user.name,
+                    birthdate=birthdate_a,
+                    face_data_b=face_b,
+                    name_b=user.partner_name,
+                    birthdate_b=birthdate_b,
+                    plan=plan,
+                    reference=reference,
+                ),
+            )
+
+        if plan != "demo":
+            async with async_session() as session:
+                result = await session.execute(
+                    select(User).where(User.telegram_id == user.telegram_id)
+                )
+                db_user = result.scalar_one_or_none()
+                if db_user and _PLAN_LEVEL.get(plan, 0) > _PLAN_LEVEL.get(db_user.couple_plan or "demo", 0):
+                    db_user.couple_plan = plan
+                    db_user.couple_html = html
+                    await session.commit()
+
+        _plan_label = {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
+        caption = f"Совместимость пары · {_plan_label.get(plan, plan)} готова!"
+        filename = f"Совместимость {user.name} и {user.partner_name} {_plan_label.get(plan, plan)}.html"
+        await _send_report(message, html, caption, plan, "couple", filename)
 
     except Exception as e:
         await message.edit_text(f"Ошибка при генерации отчёта: {e}")

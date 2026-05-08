@@ -17,6 +17,21 @@ class User(Base):
     face_json = Column(Text, nullable=True)
     palm_left_json = Column(Text, nullable=True)
     palm_right_json = Column(Text, nullable=True)
+
+    # self report
     blocks_json = Column(Text, nullable=True)
     purchased_plan = Column(String(20), nullable=True)
     report_html = Column(Text, nullable=True)
+
+    # money report
+    money_blocks_json = Column(Text, nullable=True)
+    money_plan = Column(String(20), nullable=True)
+    money_html = Column(Text, nullable=True)
+
+    # couple report
+    partner_name = Column(String(255), nullable=True)
+    partner_birth_date = Column(Date, nullable=True)
+    partner_face_json = Column(Text, nullable=True)
+    couple_blocks_json = Column(Text, nullable=True)
+    couple_plan = Column(String(20), nullable=True)
+    couple_html = Column(Text, nullable=True)
