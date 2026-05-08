@@ -61,9 +61,17 @@ def calculate_pinnacles(birthdate: str) -> list[dict]:
 
 
 def calculate_age(birthdate: str, ref_year: int = None) -> int:
-    """Возраст на конец указанного года (по умолчанию — текущий)."""
+    """Возраст на указанную дату.
+
+    Без ref_year — точный возраст на текущую дату (с учётом месяца и дня).
+    С ref_year — возраст на конец указанного года (для нумерологических расчётов).
+    """
     if ref_year is None:
-        ref_year = datetime.now().year
+        today = datetime.now()
+        bday = datetime.strptime(birthdate, "%d.%m.%Y")
+        return today.year - bday.year - (
+            (today.month, today.day) < (bday.month, bday.day)
+        )
     _, _, year = parse_birthdate(birthdate)
     return ref_year - year
 
@@ -81,7 +89,7 @@ def full_numerology_profile(birthdate: str, ref_year: int = None) -> dict:
             "number": personal_year(birthdate, ref_year),
         },
         "pinnacles": calculate_pinnacles(birthdate),
-        "age": calculate_age(birthdate, ref_year),
+        "age": calculate_age(birthdate),
         "formula": _build_formula(birthdate),
     }
 
