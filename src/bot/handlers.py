@@ -694,7 +694,7 @@ async def _send_report(message: Message, html: str, caption: str, plan: str,
 
     await message.delete()
     file = BufferedInputFile(html.encode("utf-8"), filename=filename)
-    sent = await message.answer_document(file, caption=caption)
+    sent = await message.answer_document(file, caption=caption, parse_mode="HTML")
     await message.bot.pin_chat_message(chat_id=sent.chat.id, message_id=sent.message_id, disable_notification=True)
 
     menu = _packages_menu(above_plan=current_plan, report_prefix=report_prefix)
@@ -799,7 +799,7 @@ async def _run_self_report(message: Message, user: User, plan: str):
                     await session.commit()
 
         _plan_label = {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
-        caption = f"Портрет личности · {_plan_label.get(plan, plan)} готов!"
+        caption = f"<b>Портрет личности</b> · {_plan_label.get(plan, plan)} готов! ✅"
         filename = f"Портрет личности {_plan_label.get(plan, plan)}.html"
         await _send_report(message, html, caption, plan, "self", filename)
 
@@ -900,7 +900,7 @@ async def _run_money_report(message: Message, user: User, plan: str):
                     await session.commit()
 
         _plan_label = {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
-        caption = f"Денежная карта · {_plan_label.get(plan, plan)} готова!"
+        caption = f"<b>Денежная карта</b> · {_plan_label.get(plan, plan)} готова! ✅"
         filename = f"Денежная карта {_plan_label.get(plan, plan)}.html"
         await _send_report(message, html, caption, plan, "money", filename)
 
@@ -985,7 +985,7 @@ async def _run_couple_report(message: Message, user: User, plan: str):
                     await session.commit()
 
         _plan_label = {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
-        caption = f"Совместимость пары · {_plan_label.get(plan, plan)} готова!"
+        caption = f"<b>Совместимость пары</b> · {_plan_label.get(plan, plan)} готова! ✅"
         filename = f"Совместимость {user.name} и {user.partner_name} {_plan_label.get(plan, plan)}.html"
         await _send_report(message, html, caption, plan, "couple", filename)
 

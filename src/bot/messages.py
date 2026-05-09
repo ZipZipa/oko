@@ -13,6 +13,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+from html import escape as _html_escape
+
 from aiogram.types import Message, FSInputFile, InputMediaPhoto
 from aiogram.exceptions import TelegramBadRequest
 
@@ -51,19 +53,19 @@ MESSAGES: dict[str, MessageConfig] = {
     # ── Регистрация ───────────────────────────────────────────────────────────
     "start_new": MessageConfig(
         key="start_new",
-        text="Привет! Давай познакомимся. Пришли своё фото 📷",
+        text="Привет! 👋 Давай познакомимся.\n\nПришли своё фото 📷",
     ),
     "start_returning_incomplete": MessageConfig(
         key="start_returning_incomplete",
-        text="С возвращением, {name}! 👋",
+        text="С возвращением, <b>{name}</b>! 👋",
     ),
     "photo_received": MessageConfig(
         key="photo_received",
-        text="Фото получено! 📷 Напиши своё имя ✏️",
+        text="Фото получено! 📷\n\nНапиши своё имя ✏️",
     ),
     "photo_invalid": MessageConfig(
         key="photo_invalid",
-        text="Пожалуйста, пришли именно фото 📷",
+        text="Пожалуйста, пришли именно <b>фото</b> 📷",
     ),
     "name_empty": MessageConfig(
         key="name_empty",
@@ -71,7 +73,7 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
     "name_saved": MessageConfig(
         key="name_saved",
-        text="Запомнил! Теперь напиши дату рождения в формате ДД.ММ.ГГГГ 🗓",
+        text="Запомнил! ✅\n\nТеперь напиши дату рождения в формате <b>ДД.ММ.ГГГГ</b> 🗓",
     ),
     "name_invalid": MessageConfig(
         key="name_invalid",
@@ -79,7 +81,7 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
     "birthdate_invalid": MessageConfig(
         key="birthdate_invalid",
-        text="Неверный формат. Напиши дату в формате ДД.ММ.ГГГГ, например 15.06.1990 🗓",
+        text="Неверный формат. Напиши дату в формате <b>ДД.ММ.ГГГГ</b>, например <code>15.06.1990</code> 🗓",
     ),
     "registration_complete": MessageConfig(
         key="registration_complete",
@@ -87,7 +89,7 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
     "birthdate_invalid_type": MessageConfig(
         key="birthdate_invalid_type",
-        text="Пожалуйста, напиши дату текстом в формате ДД.ММ.ГГГГ 🗓",
+        text="Пожалуйста, напиши дату текстом в формате <b>ДД.ММ.ГГГГ</b> 🗓",
     ),
 
     # ── Главное меню ──────────────────────────────────────────────────────────
@@ -98,13 +100,13 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
     "incomplete_profile": MessageConfig(
         key="incomplete_profile",
-        text="Для анализа нужны фото, имя и дата рождения. Пройди регистрацию: /start",
+        text="Для анализа нужны <b>фото</b>, <b>имя</b> и <b>дата рождения</b>.\n\nПройди регистрацию: /start",
     ),
 
     # ── Self ──────────────────────────────────────────────────────────────────
     "self_intro": MessageConfig(
         key="self_intro",
-        text="Портрет личности — анализ твоей внешности, нумерологии и психологических паттернов.\n\n"
+        text="<b>Портрет личности</b> — анализ твоей внешности, нумерологии и психологических паттернов.\n\n"
              "Запустим тестовый анализ?",
         photo="self_main.jpeg"
     ),
@@ -112,14 +114,14 @@ MESSAGES: dict[str, MessageConfig] = {
     # ── Money ─────────────────────────────────────────────────────────────────
     "money_intro": MessageConfig(
         key="money_intro",
-        text="Денежная карта — анализ твоего финансового архетипа, денежного кода и стратегии заработка.\n\n"
+        text="<b>Денежная карта</b> — анализ твоего финансового архетипа, денежного кода и стратегии заработка.\n\n"
              "Запустим тестовый анализ?",
     ),
 
     # ── Couple ────────────────────────────────────────────────────────────────
     "couple_intro": MessageConfig(
         key="couple_intro",
-        text="Совместимость пары — анализ вашей нумерологии, матриц, верности, кармы и перспективы союза.\n\n"
+        text="<b>Совместимость пары</b> — анализ вашей нумерологии, матриц, верности, кармы и перспективы союза.\n\n"
              "Введи имя партнёра ✏️",
     ),
 
@@ -130,36 +132,36 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
     "max_package": MessageConfig(
         key="max_package",
-        text="Это максимальный пакет.",
+        text="У тебя уже <b>максимальный пакет</b> 🏆",
     ),
 
     # ── Пакеты: Self ──────────────────────────────────────────────────────────
     "pkg_self_base": MessageConfig(
         key="pkg_self_base",
         text=(
-            "Базовый пакет\n\n"
+            "<b>Базовый пакет</b>\n\n"
             "Включает всё из демо, плюс два закрытых раздела:\n"
-            "• Ошибка, которая тормозит жизнь — паттерн, который мешает двигаться вперёд\n"
-            "• Сценарий в отношениях — как ты строишь близкие связи и где ломаешься"
+            "• <b>Ошибка, которая тормозит жизнь</b> — паттерн, который мешает двигаться вперёд\n"
+            "• <b>Сценарий в отношениях</b> — как ты строишь близкие связи и где ломаешься"
         ),
     ),
     "pkg_self_extended": MessageConfig(
         key="pkg_self_extended",
         text=(
-            "Расширенный пакет\n\n"
+            "<b>Расширенный пакет</b>\n\n"
             "Всё из Базового, плюс:\n"
-            "• Жизненные сценарии — глубокие программы, которые управляют твоими решениями\n"
-            "• Кармический урок — то, что повторяется до тех пор, пока не осознано"
+            "• <b>Жизненные сценарии</b> — глубокие программы, которые управляют твоими решениями\n"
+            "• <b>Кармический урок</b> — то, что повторяется до тех пор, пока не осознано"
         ),
     ),
     "pkg_self_full": MessageConfig(
         key="pkg_self_full",
         text=(
-            "Премиум пакет\n\n"
+            "<b>Премиум пакет</b>\n\n"
             "Полный отчёт — все блоки без ограничений:\n"
-            "• Скрытый талант — ресурс, который ты скорее всего недооцениваешь\n"
-            "• Скрытая правда — то, что проявляется, когда уходит контроль\n"
-            "• Сводный портрет — итоговый психологический профиль"
+            "• <b>Скрытый талант</b> — ресурс, который ты скорее всего недооцениваешь\n"
+            "• <b>Скрытая правда</b> — то, что проявляется, когда уходит контроль\n"
+            "• <b>Сводный портрет</b> — итоговый психологический профиль"
         ),
     ),
 
@@ -167,30 +169,30 @@ MESSAGES: dict[str, MessageConfig] = {
     "pkg_money_base": MessageConfig(
         key="pkg_money_base",
         text=(
-            "Базовый пакет — Денежная карта\n\n"
+            "<b>Базовый пакет</b> — Денежная карта\n\n"
             "Включает всё из демо, плюс:\n"
-            "• Главная причина финансовых проблем — паттерн, который держит тебя в минусе\n"
-            "• Денежный код — как именно деньги приходят к тебе по природе"
+            "• <b>Главная причина финансовых проблем</b> — паттерн, который держит тебя в минусе\n"
+            "• <b>Денежный код</b> — как именно деньги приходят к тебе по природе"
         ),
     ),
     "pkg_money_extended": MessageConfig(
         key="pkg_money_extended",
         text=(
-            "Расширенный пакет — Денежная карта\n\n"
+            "<b>Расширенный пакет</b> — Денежная карта\n\n"
             "Всё из Базового, плюс:\n"
-            "• Денежный потолок — твоя естественная зона и что её поднимает\n"
-            "• Стратегия заработка — природный путь и лучшие сферы"
+            "• <b>Денежный потолок</b> — твоя естественная зона и что её поднимает\n"
+            "• <b>Стратегия заработка</b> — природный путь и лучшие сферы"
         ),
     ),
     "pkg_money_full": MessageConfig(
         key="pkg_money_full",
         text=(
-            "Премиум пакет — Денежная карта\n\n"
+            "<b>Премиум пакет</b> — Денежная карта\n\n"
             "Полный отчёт — все блоки:\n"
-            "• Финансовый прогноз на 5 лет по личным годам\n"
-            "• Денежная сфера — что притягивает и отталкивает деньги\n"
-            "• Финансовый якорь — блокирующее убеждение и как его растворить\n"
-            "• Лучший момент для смены работы"
+            "• <b>Финансовый прогноз на 5 лет</b> по личным годам\n"
+            "• <b>Денежная сфера</b> — что притягивает и отталкивает деньги\n"
+            "• <b>Финансовый якорь</b> — блокирующее убеждение и как его растворить\n"
+            "• <b>Лучший момент для смены работы</b>"
         ),
     ),
 
@@ -198,29 +200,29 @@ MESSAGES: dict[str, MessageConfig] = {
     "pkg_couple_base": MessageConfig(
         key="pkg_couple_base",
         text=(
-            "Базовый пакет — Совместимость\n\n"
+            "<b>Базовый пакет</b> — Совместимость\n\n"
             "Включает всё из демо, плюс:\n"
-            "• Верность в паре — риски и стабилизирующие факторы\n"
-            "• Карма в отношениях — урок, который несёт пара вместе"
+            "• <b>Верность в паре</b> — риски и стабилизирующие факторы\n"
+            "• <b>Карма в отношениях</b> — урок, который несёт пара вместе"
         ),
     ),
     "pkg_couple_extended": MessageConfig(
         key="pkg_couple_extended",
         text=(
-            "Расширенный пакет — Совместимость\n\n"
+            "<b>Расширенный пакет</b> — Совместимость\n\n"
             "Всё из Базового, плюс:\n"
-            "• Перспектива брака по годам\n"
-            "• Уровень богатства в семье — денежный паттерн пары\n"
-            "• Потенциал на детей — оптимальное время"
+            "• <b>Перспектива брака</b> по годам\n"
+            "• <b>Уровень богатства в семье</b> — денежный паттерн пары\n"
+            "• <b>Потенциал на детей</b> — оптимальное время"
         ),
     ),
     "pkg_couple_full": MessageConfig(
         key="pkg_couple_full",
         text=(
-            "Премиум пакет — Совместимость\n\n"
+            "<b>Премиум пакет</b> — Совместимость\n\n"
             "Полный отчёт — все блоки:\n"
-            "• Длительность союза — краткосрочная история или долгий путь\n"
-            "• Точка разрыва — вероятность, триггер и что предотвратит"
+            "• <b>Длительность союза</b> — краткосрочная история или долгий путь\n"
+            "• <b>Точка разрыва</b> — вероятность, триггер и что предотвратит"
         ),
     ),
 
@@ -231,7 +233,7 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
     "partner_name_saved": MessageConfig(
         key="partner_name_saved",
-        text="Имя партнёра — {name}.\n\nТеперь напиши дату рождения партнёра в формате ДД.ММ.ГГГГ 🗓",
+        text="Имя партнёра — <b>{name}</b>.\n\nТеперь напиши дату рождения партнёра в формате <b>ДД.ММ.ГГГГ</b> 🗓",
     ),
     "partner_name_invalid": MessageConfig(
         key="partner_name_invalid",
@@ -239,11 +241,11 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
     "partner_birthdate_invalid": MessageConfig(
         key="partner_birthdate_invalid",
-        text="Неверный формат. Напиши дату в формате ДД.ММ.ГГГГ, например 14.06.1997 🗓",
+        text="Неверный формат. Напиши дату в формате <b>ДД.ММ.ГГГГ</b>, например <code>14.06.1997</code> 🗓",
     ),
     "partner_birthdate_invalid_type": MessageConfig(
         key="partner_birthdate_invalid_type",
-        text="Пожалуйста, напиши дату текстом в формате ДД.ММ.ГГГГ 🗓",
+        text="Пожалуйста, напиши дату текстом в формате <b>ДД.ММ.ГГГГ</b> 🗓",
     ),
     "partner_photo_request": MessageConfig(
         key="partner_photo_request",
@@ -252,11 +254,11 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
     "partner_photo_invalid": MessageConfig(
         key="partner_photo_invalid",
-        text="Пожалуйста, пришли именно фото 📷 или нажми «Пропустить»",
+        text="Пожалуйста, пришли именно <b>фото</b> 📷 или нажми «Пропустить»",
     ),
     "partner_data_received": MessageConfig(
         key="partner_data_received",
-        text="Данные партнёра получены. Запускаю анализ совместимости... ⏳",
+        text="Данные партнёра получены ✅\n\nЗапускаю анализ совместимости... ⏳",
     ),
 
     # ── Анализ (статусы) ──────────────────────────────────────────────────────
@@ -280,14 +282,14 @@ MESSAGES: dict[str, MessageConfig] = {
     # ── Ладони ────────────────────────────────────────────────────────────────
     "palm_needed_self": MessageConfig(
         key="palm_needed_self",
-        text="Для Премиум-анализа нужны фото обеих ладоней — это основа хиромантии.\n\n"
-             "Пришли фото левой ладони (ладонью вверх, линии хорошо видны) 🤚\n"
+        text="Для <b>Премиум-анализа</b> нужны фото обеих ладоней — это основа хиромантии.\n\n"
+             "Пришли фото <b>левой ладони</b> (ладонью вверх, линии хорошо видны) 🤚\n"
              "Нет фото? Нажми «Пропустить» — анализ ладоней будет пропущен.",
     ),
     "palm_needed_money": MessageConfig(
         key="palm_needed_money",
-        text="Для Премиум-анализа нужны фото обеих ладоней — по ним определяются денежные линии и потоки ресурсов.\n\n"
-             "Пришли фото левой ладони (ладонью вверх, линии хорошо видны) 🤚\n"
+        text="Для <b>Премиум-анализа</b> нужны фото обеих ладоней — по ним определяются денежные линии и потоки ресурсов.\n\n"
+             "Пришли фото <b>левой ладони</b> (ладонью вверх, линии хорошо видны) 🤚\n"
              "Нет фото? Нажми «Пропустить» — анализ ладоней будет пропущен.",
     ),
     "palm_left_analyzing": MessageConfig(
@@ -300,31 +302,31 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
     "palm_not_detected": MessageConfig(
         key="palm_not_detected",
-        text="Не удалось распознать ладонь. Попробуй другое фото — ладонь вверх, хорошее освещение.",
+        text="Не удалось распознать ладонь ❌\n\nПопробуй другое фото — ладонь вверх, хорошее освещение.",
     ),
     "palm_left_accepted": MessageConfig(
         key="palm_left_accepted",
-        text="Левая ладонь принята.\n\n"
-             "Теперь пришли фото правой ладони (ладонью вверх) 🤚\n"
+        text="Левая ладонь принята ✅\n\n"
+             "Теперь пришли фото <b>правой ладони</b> (ладонью вверх) 🤚\n"
              "Нет фото? Нажми «Пропустить».",
     ),
     "palm_both_accepted": MessageConfig(
         key="palm_both_accepted",
-        text="Обе ладони приняты. Запускаю полный анализ... Это займёт минуту ⏳",
+        text="Обе ладони приняты ✅\n\nЗапускаю полный анализ... Это займёт минуту ⏳",
     ),
     "palm_photo_invalid": MessageConfig(
         key="palm_photo_invalid",
-        text="Пожалуйста, пришли именно фото ладони 📷",
+        text="Пожалуйста, пришли именно <b>фото ладони</b> 📷",
     ),
 
     # ── Ошибки ────────────────────────────────────────────────────────────────
     "partner_data_missing": MessageConfig(
         key="partner_data_missing",
-        text="Данные партнёра не найдены. Начни заново через меню.",
+        text="Данные партнёра не найдены ❌\n\nНачни заново через меню.",
     ),
     "report_error": MessageConfig(
         key="report_error",
-        text="Ошибка при генерации отчёта: {error}",
+        text="❌ Ошибка при генерации отчёта: <code>{error}</code>",
     ),
 }
 
@@ -332,9 +334,15 @@ MESSAGES: dict[str, MessageConfig] = {
 # ─── Хелперы отправки/редактирования ──────────────────────────────────────────
 
 def _get_text(msg_key: str, **fmt) -> str:
-    """Получить форматированный текст сообщения."""
+    """Получить форматированный текст сообщения.
+
+    Пользовательские значения автоматически экранируются для HTML.
+    """
     config = MESSAGES[msg_key]
-    return config.text.format(**fmt) if fmt else config.text
+    if fmt:
+        safe_fmt = {k: _html_escape(str(v)) for k, v in fmt.items()}
+        return config.text.format(**safe_fmt)
+    return config.text
 
 
 async def send_msg(
@@ -361,11 +369,13 @@ async def send_msg(
             photo=photo,
             caption=text,
             reply_markup=reply_markup,
+            parse_mode="HTML",
         )
     else:
         return await message.answer(
             text=text,
             reply_markup=reply_markup,
+            parse_mode="HTML",
         )
 
 
@@ -397,6 +407,7 @@ async def edit_msg(
         media = InputMediaPhoto(
             media=FSInputFile(str(photo_path)),
             caption=text,
+            parse_mode="HTML",
         )
         try:
             return await message.edit_media(media=media, reply_markup=reply_markup)
@@ -408,7 +419,7 @@ async def edit_msg(
     elif not has_photo_config and not message_has_photo:
         # Оба без фото — edit_text
         try:
-            return await message.edit_text(text=text, reply_markup=reply_markup)
+            return await message.edit_text(text=text, reply_markup=reply_markup, parse_mode="HTML")
         except TelegramBadRequest as e:
             if "message is not modified" in str(e):
                 return message
@@ -430,10 +441,12 @@ async def edit_msg(
                 photo=photo,
                 caption=text,
                 reply_markup=reply_markup,
+                parse_mode="HTML",
             )
         else:
             return await bot.send_message(
                 chat_id=chat_id,
                 text=text,
                 reply_markup=reply_markup,
+                parse_mode="HTML",
             )
