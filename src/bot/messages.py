@@ -53,43 +53,60 @@ MESSAGES: dict[str, MessageConfig] = {
     # ── Регистрация ───────────────────────────────────────────────────────────
     "start_new": MessageConfig(
         key="start_new",
-        text="Привет! 👋 Давай познакомимся.\n\nПришли своё фото 📷",
+        text="<b>Я могу проанализировать:</b>
+
+<tg-emoji emoji-id="5359794223887443699">◀️</tg-emoji> твою личность
+<tg-emoji emoji-id="5359794223887443699">◀️</tg-emoji> совместимость с партнером
+<tg-emoji emoji-id="5359794223887443699">◀️</tg-emoji> денежный потенциал 
+
+<b>Для начала, напиши свое имя</b> <tg-emoji emoji-id="5348460861755262251">✍️</tg-emoji>",
     ),
     "start_returning_incomplete": MessageConfig(
         key="start_returning_incomplete",
-        text="С возвращением, <b>{name}</b>! 👋",
+        text="С возвращением, <b>{name}</b>! <tg-emoji emoji-id="5237948187838262194">👁️</tg-emoji>",
     ),
     "photo_received": MessageConfig(
         key="photo_received",
-        text="Фото получено! 📷\n\nНапиши своё имя ✏️",
+        text="Фото получено! 📷\n\nНапиши своё имя ✏️",  
+
+
+ПОСЛЕ ТОГО КАК ЮЗЕР ОТПРАВЛЯЕТ ФОТО У НАС ИДЁТ РЕГИСТРАЦИЯ ОКОНЧЕНА ТАК ЧТО ХЗ НУЖНА ЛИ ЭТА КОМАНДА 
+
+
+        
     ),
     "photo_invalid": MessageConfig(
         key="photo_invalid",
-        text="Пожалуйста, пришли именно <b>фото</b> 📷",
+        text="Пожалуйста, пришли именно <b>фото</b> <tg-emoji emoji-id="5395698544164233115">🤩</tg-emoji>",
     ),
     "name_empty": MessageConfig(
         key="name_empty",
-        text="Имя не может быть пустым. Попробуй ещё раз ✏️",
+        text="Имя не может быть пустым. Попробуй ещё раз <tg-emoji emoji-id="5348460861755262251">✍️</tg-emoji> ",
     ),
     "name_saved": MessageConfig(
         key="name_saved",
-        text="Запомнил! ✅\n\nТеперь напиши дату рождения в формате <b>ДД.ММ.ГГГГ</b> 🗓",
+        text="<b>Запомнил!</b> <tg-emoji emoji-id="5348460861755262251">✍️</tg-emoji>
+Отправь дату рождения в формате <b>ДД.ММ.ГГГГ</b> <tg-emoji emoji-id="5203934104143294160">🔏</tg-emoji>  
+Она нужна для глубокого анализа личности",
     ),
     "name_invalid": MessageConfig(
         key="name_invalid",
-        text="Пожалуйста, напиши имя текстом ✏️",
+        text="Пожалуйста, напиши имя текстом <tg-emoji emoji-id="5348460861755262251">✍️</tg-emoji>",
     ),
     "birthdate_invalid": MessageConfig(
         key="birthdate_invalid",
-        text="Неверный формат. Напиши дату в формате <b>ДД.ММ.ГГГГ</b>, например <code>15.06.1990</code> 🗓",
+        text="Неверный формат. Напиши дату в формате <b>ДД.ММ.ГГГГ</b>, например <code>15.06.1990</code> </b> <tg-emoji emoji-id="5203934104143294160">🔏</tg-emoji>",
     ),
     "registration_complete": MessageConfig(
         key="registration_complete",
-        text="Рад знакомству! 🎉 Данные сохранены.\n\nВыбери раздел:",
+        text="<b>Рад знакомству!</b>
+Твои данные сохранены, можем переходить к анализу <tg-emoji emoji-id="5237948187838262194">👁️</tg-emoji>
+
+Выбери, что хочешь посмотреть:",
     ),
     "birthdate_invalid_type": MessageConfig(
         key="birthdate_invalid_type",
-        text="Пожалуйста, напиши дату текстом в формате <b>ДД.ММ.ГГГГ</b> 🗓",
+        text="Пожалуйста, напиши дату текстом в формате <b>ДД.ММ.ГГГГ</b><tg-emoji emoji-id="5203934104143294160">🔏</tg-emoji>",
     ),
 
     # ── Главное меню ──────────────────────────────────────────────────────────
