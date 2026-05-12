@@ -170,6 +170,8 @@ def validate_blocks(blocks: dict, has_palm: bool = False) -> list[str]:
         if top not in blocks:
             errors.append(f"Missing top-level: {top}")
             continue
+        if blocks[top] is None:
+            continue
         for f in fields:
             if f not in blocks[top]:
                 errors.append(f"Missing: {top}.{f}")

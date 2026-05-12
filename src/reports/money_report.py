@@ -114,6 +114,8 @@ def validate_blocks(blocks: dict, has_palm: bool = True) -> list[str]:
         if top not in blocks:
             errors.append(f"Missing top-level: {top}")
             continue
+        if blocks[top] is None:
+            continue
         for f in fields:
             if f not in blocks[top]:
                 errors.append(f"Missing: {top}.{f}")
@@ -217,7 +219,7 @@ def generate(face_data: dict, name: str, birthdate: str,
     # ── Референс без ладоней: только рендеринг ──
     if reference:
         blocks = _load_reference_blocks(reference)
-        errors = validate_blocks(blocks)
+        errors = validate_blocks(blocks, has_palm=has_palm)
         if errors:
             print("Предупреждения валидации (reference):", file=sys.stderr)
             for e in errors:

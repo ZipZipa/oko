@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import html as html_mod
 import json
 import tempfile
 from datetime import datetime
@@ -10,6 +11,7 @@ from aiogram.types import (
     Message, PhotoSize, CallbackQuery,
     InlineKeyboardMarkup, InlineKeyboardButton, BufferedInputFile,
 )
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from sqlalchemy import select
 
@@ -46,11 +48,25 @@ def _skip_palms_keyboard() -> InlineKeyboardMarkup:
 _PLAN_LEVEL = {"demo": 0, "base": 1, "extended": 2, "full": 3}
 
 # ── Лейблы пакетов (текст берётся из MESSAGES) ──────────────────────────────────
-_PACKAGE_LABELS = {
-    "self": {"base": "Базовый", "extended": "Расширенный", "full": "Премиум"},
-    "money": {"base": "Базовый", "extended": "Расширенный", "full": "Премиум"},
-    "couple": {"base": "Базовый", "extended": "Расширенный", "full": "Премиум"},
+_PACKAGE_NAMES = {"base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
+
+_BASE_PRICES = {"base": 249, "extended": 449, "full": 649}
+
+# Скидки при апгрейде: (текущий_пакет, целевой_пакет) → процент скидки
+_UPGRADE_DISCOUNTS = {
+    ("base", "extended"): 25,
+    ("base", "full"): 50,
+    ("extended", "full"): 25,
 }
+
+
+def _get_discounted_price(current_plan: str, target_plan: str) -> int:
+    """Цена с учётом скидки за уже купленный пакет."""
+    base_price = _BASE_PRICES.get(target_plan, 0)
+    discount_pct = _UPGRADE_DISCOUNTS.get((current_plan, target_plan), 0)
+    if discount_pct:
+        return round(base_price * (100 - discount_pct) / 100)
+    return base_price
 
 # Маппинг: (report_prefix, plan_key) → ключ в MESSAGES
 _PACKAGE_MSG_KEYS = {
@@ -67,20 +83,27 @@ _PACKAGE_MSG_KEYS = {
 
 
 def _packages_menu(above_plan: str = "demo", report_prefix: str = "self") -> InlineKeyboardMarkup:
-    labels = _PACKAGE_LABELS[report_prefix]
     current_level = _PLAN_LEVEL.get(above_plan, 0)
-    rows = [
-        [InlineKeyboardButton(text=label, callback_data=f"pkg_{report_prefix}_{key}")]
-        for key, label in labels.items()
-        if _PLAN_LEVEL[key] > current_level
-    ]
+    rows = []
+    for key in ("base", "extended", "full"):
+        if _PLAN_LEVEL[key] > current_level:
+            name = _PACKAGE_NAMES[key]
+            price = _get_discounted_price(above_plan, key)
+            discount_pct = _UPGRADE_DISCOUNTS.get((above_plan, key), 0)
+            if discount_pct:
+                label = f"{name} · {price} ₽ 🎁"
+            else:
+                label = f"{name} · {price} ₽"
+            rows.append([InlineKeyboardButton(text=label, callback_data=f"pkg_{report_prefix}_{key}")])
     rows.append([InlineKeyboardButton(text="← В меню", callback_data="back_to_main")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def _package_detail_menu(report_prefix: str, plan_key: str) -> InlineKeyboardMarkup:
+def _package_detail_menu(report_prefix: str, plan_key: str, current_plan: str = "demo") -> InlineKeyboardMarkup:
+    price = _get_discounted_price(current_plan, plan_key)
+    buy_text = f"Купить · {price} ₽"
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Купить", callback_data=f"buy_{report_prefix}_{plan_key}")],
+        [InlineKeyboardButton(text=buy_text, callback_data=f"buy_{report_prefix}_{plan_key}")],
         [InlineKeyboardButton(text="← Назад к пакетам", callback_data=f"show_packages_{report_prefix}")],
     ])
 
@@ -348,13 +371,13 @@ async def cb_skip_palms(callback: CallbackQuery, state: FSMContext):
     pending_plan = data.get("pending_plan", "full")
     report_type = data.get("pending_report_type", "self")
 
-    await edit_msg(callback.message, "analyzing")
+    status_msg = await edit_msg(callback.message, "analyzing")
     await callback.answer()
 
     if report_type == "money":
-        asyncio.create_task(_run_money_report(callback.message, user, pending_plan))
+        asyncio.create_task(_run_money_report(status_msg, user, pending_plan))
     else:
-        asyncio.create_task(_run_self_report(callback.message, user, pending_plan))
+        asyncio.create_task(_run_self_report(status_msg, user, pending_plan))
 
 
 @router.callback_query(F.data.in_({"show_packages_self", "show_packages_money", "show_packages_couple"}))
@@ -377,10 +400,26 @@ async def cb_package_detail(callback: CallbackQuery):
     if not msg_key:
         await callback.answer()
         return
-    await edit_msg(
-        callback.message, msg_key,
-        reply_markup=_package_detail_menu(report_prefix, plan_key),
-    )
+
+    user = await get_user(callback.from_user.id)
+    plan_field = {"self": "purchased_plan", "money": "money_plan", "couple": "couple_plan"}[report_prefix]
+    current_plan = getattr(user, plan_field, None) or "demo" if user else "demo"
+
+    discount_pct = _UPGRADE_DISCOUNTS.get((current_plan, plan_key), 0)
+    markup = _package_detail_menu(report_prefix, plan_key, current_plan)
+
+    if discount_pct:
+        price = _get_discounted_price(current_plan, plan_key)
+        base_price = _BASE_PRICES[plan_key]
+        text = MESSAGES[msg_key].text
+        text = text.replace(f"— {base_price} ₽", f"— <s>{base_price} ₽</s> {price} ₽", 1)
+        try:
+            await callback.message.edit_text(text=text, reply_markup=markup, parse_mode="HTML")
+        except TelegramBadRequest as e:
+            if "message is not modified" not in str(e):
+                raise
+    else:
+        await edit_msg(callback.message, msg_key, reply_markup=markup)
     await callback.answer()
 
 
@@ -468,7 +507,10 @@ async def process_partner_photo(message: Message, state: FSMContext):
                 user.partner_face_json = json.dumps(face_data, ensure_ascii=False)
                 await session.commit()
 
-    await processing_msg.delete()
+    try:
+        await processing_msg.delete()
+    except TelegramBadRequest:
+        pass
     await state.clear()
 
     user = await get_user(message.from_user.id)
@@ -491,8 +533,8 @@ async def process_partner_photo_invalid(message: Message):
 async def cb_skip_partner_photo(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     user = await get_user(callback.from_user.id)
-    await edit_msg(callback.message, "analyzing_couple_short")
-    asyncio.create_task(_run_couple_report(callback.message, user, "demo"))
+    status_msg = await edit_msg(callback.message, "analyzing_couple_short")
+    asyncio.create_task(_run_couple_report(status_msg, user, "demo"))
     await callback.answer()
 
 
@@ -510,9 +552,9 @@ async def cb_run_money_demo(callback: CallbackQuery):
         await edit_msg(callback.message, "incomplete_profile")
         await callback.answer()
         return
-    await edit_msg(callback.message, "analyzing")
+    status_msg = await edit_msg(callback.message, "analyzing")
     await callback.answer()
-    asyncio.create_task(_run_money_report(callback.message, user, "demo"))
+    asyncio.create_task(_run_money_report(status_msg, user, "demo"))
 
 
 @router.callback_query(F.data.startswith("buy_"))
@@ -544,13 +586,13 @@ async def cb_buy(callback: CallbackQuery, state: FSMContext):
                 )
                 await callback.answer()
                 return
-        await edit_msg(callback.message, "analyzing")
+        status_msg = await edit_msg(callback.message, "analyzing")
         await callback.answer()
-        asyncio.create_task(_run_money_report(callback.message, user, plan_key))
+        asyncio.create_task(_run_money_report(status_msg, user, plan_key))
     elif report_prefix == "couple":
-        await edit_msg(callback.message, "analyzing_couple")
+        status_msg = await edit_msg(callback.message, "analyzing_couple")
         await callback.answer()
-        asyncio.create_task(_run_couple_report(callback.message, user, plan_key))
+        asyncio.create_task(_run_couple_report(status_msg, user, plan_key))
 
 
 async def _start_self_report(callback: CallbackQuery, plan: str, state: FSMContext):
@@ -573,10 +615,10 @@ async def _start_self_report(callback: CallbackQuery, plan: str, state: FSMConte
             await callback.answer()
             return
 
-    await edit_msg(callback.message, "analyzing")
+    status_msg = await edit_msg(callback.message, "analyzing")
     await callback.answer()
 
-    asyncio.create_task(_run_self_report(callback.message, user, plan))
+    asyncio.create_task(_run_self_report(status_msg, user, plan))
 
 
 # ─── Сбор ладоней (FSM для Премиум self) ────────────────────────────────────────
@@ -610,7 +652,10 @@ async def process_palm_left(message: Message, state: FSMContext):
     palm_data = await _download_and_analyze_palm(message.bot, photo.file_id)
 
     if not palm_data:
-        await processing_msg.delete()
+        try:
+            await processing_msg.delete()
+        except TelegramBadRequest:
+            pass
         await send_msg(message, "palm_not_detected", reply_markup=_skip_palms_keyboard())
         return
 
@@ -623,7 +668,10 @@ async def process_palm_left(message: Message, state: FSMContext):
             user.palm_left_json = json.dumps(palm_data, ensure_ascii=False)
             await session.commit()
 
-    await processing_msg.delete()
+    try:
+        await processing_msg.delete()
+    except TelegramBadRequest:
+        pass
     await state.set_state(PalmStates.waiting_for_palm_right)
     await send_msg(message, "palm_left_accepted", reply_markup=_skip_palms_keyboard())
 
@@ -641,7 +689,10 @@ async def process_palm_right(message: Message, state: FSMContext):
     palm_data = await _download_and_analyze_palm(message.bot, photo.file_id)
 
     if not palm_data:
-        await processing_msg.delete()
+        try:
+            await processing_msg.delete()
+        except TelegramBadRequest:
+            pass
         await send_msg(message, "palm_not_detected", reply_markup=_skip_palms_keyboard())
         return
 
@@ -659,7 +710,10 @@ async def process_palm_right(message: Message, state: FSMContext):
 
     user = await get_user(message.from_user.id)
 
-    await processing_msg.delete()
+    try:
+        await processing_msg.delete()
+    except TelegramBadRequest:
+        pass
     status_msg = await send_msg(message, "palm_both_accepted")
     pending_plan = data.get("pending_plan", "full")
     if data.get("pending_report_type") == "money":
@@ -692,7 +746,10 @@ async def _send_report(message: Message, html: str, caption: str, plan: str,
     user = await get_user(message.chat.id)
     current_plan = getattr(user, plan_field, None) or plan
 
-    await message.delete()
+    try:
+        await message.delete()
+    except TelegramBadRequest:
+        pass  # сообщение уже удалено (например, при переходе фото→текст через edit_msg)
     file = BufferedInputFile(html.encode("utf-8"), filename=filename)
     sent = await message.answer_document(file, caption=caption, parse_mode="HTML")
     await message.bot.pin_chat_message(chat_id=sent.chat.id, message_id=sent.message_id, disable_notification=True)
@@ -804,7 +861,8 @@ async def _run_self_report(message: Message, user: User, plan: str):
         await _send_report(message, html, caption, plan, "self", filename)
 
     except Exception as e:
-        await edit_msg(message, "report_error", error=e)
+        err_text = MESSAGES["report_error"].text.format(error=html_mod.escape(str(e)))
+        await message.answer(err_text, parse_mode="HTML")
 
 
 # ─── Генерация money отчёта ──────────────────────────────────────────────────────
@@ -905,7 +963,8 @@ async def _run_money_report(message: Message, user: User, plan: str):
         await _send_report(message, html, caption, plan, "money", filename)
 
     except Exception as e:
-        await edit_msg(message, "report_error", error=e)
+        err_text = MESSAGES["report_error"].text.format(error=html_mod.escape(str(e)))
+        await message.answer(err_text, parse_mode="HTML")
 
 
 # ─── Генерация couple отчёта ─────────────────────────────────────────────────────
@@ -990,4 +1049,5 @@ async def _run_couple_report(message: Message, user: User, plan: str):
         await _send_report(message, html, caption, plan, "couple", filename)
 
     except Exception as e:
-        await edit_msg(message, "report_error", error=e)
+        err_text = MESSAGES["report_error"].text.format(error=html_mod.escape(str(e)))
+        await message.answer(err_text, parse_mode="HTML")
