@@ -101,14 +101,6 @@ MESSAGES: dict[str, MessageConfig] = {
         key="birthdate_invalid",
         text="Неверный формат. Напиши дату в формате <b>ДД.ММ.ГГГГ</b>, например <code>15.06.1990</code> <tg-emoji emoji-id=\"5203934104143294160\">🔏</tg-emoji>",
     ),
-    "registration_complete": MessageConfig(
-        key="registration_complete",
-        text=(
-            "<b>Рад знакомству!</b>\n"
-            "Твои данные сохранены, можем переходить к анализу <tg-emoji emoji-id=\"5237948187838262194\">👁️</tg-emoji>\n\n"
-            "Выбери, что хочешь посмотреть:"
-        ),
-    ),
     "birthdate_invalid_type": MessageConfig(
         key="birthdate_invalid_type",
         text="Пожалуйста, напиши дату текстом в формате <b>ДД.ММ.ГГГГ</b> <tg-emoji emoji-id=\"5203934104143294160\">🔏</tg-emoji>",
@@ -117,7 +109,10 @@ MESSAGES: dict[str, MessageConfig] = {
     # ── Главное меню ──────────────────────────────────────────────────────────
     "choose_section": MessageConfig(
         key="choose_section",
-        text="Выбери раздел:",
+                text=(
+            "Можем переходить к анализу <tg-emoji emoji-id=\"5237948187838262194\">👁️</tg-emoji>\n\n"
+            "Выбери, что хочешь посмотреть:"
+        ),
         photo="menu.jpeg"
     ),
     "incomplete_profile": MessageConfig(

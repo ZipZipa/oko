@@ -196,10 +196,35 @@ async def cmd_start(message: Message, state: FSMContext):
         await session.commit()
 
     await send_msg(message, "start_new")
-    await state.set_state(RegistrationStates.waiting_for_photo)
+    await state.set_state(RegistrationStates.waiting_for_name)
 
 
 # ─── Регистрация ────────────────────────────────────────────────────────────────
+
+@router.message(RegistrationStates.waiting_for_name, F.text)
+async def process_name(message: Message, state: FSMContext):
+    name = message.text.strip()
+    if not name:
+        await send_msg(message, "name_empty")
+        return
+
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.telegram_id == message.from_user.id)
+        )
+        user = result.scalar_one_or_none()
+        if user:
+            user.name = name
+            await session.commit()
+
+    await send_msg(message, "photo_received")
+    await state.set_state(RegistrationStates.waiting_for_photo)
+
+
+@router.message(RegistrationStates.waiting_for_name)
+async def process_name_invalid(message: Message):
+    await send_msg(message, "name_invalid")
+
 
 @router.message(RegistrationStates.waiting_for_photo, F.photo)
 async def process_photo(message: Message, state: FSMContext):
@@ -218,38 +243,13 @@ async def process_photo(message: Message, state: FSMContext):
         _analyze_and_save_face(message.bot, photo.file_id, message.from_user.id)
     )
 
-    await send_msg(message, "photo_received")
-    await state.set_state(RegistrationStates.waiting_for_name)
+    await send_msg(message, "name_saved")
+    await state.set_state(RegistrationStates.waiting_for_birth_date)
 
 
 @router.message(RegistrationStates.waiting_for_photo)
 async def process_photo_invalid(message: Message):
     await send_msg(message, "photo_invalid")
-
-
-@router.message(RegistrationStates.waiting_for_name, F.text)
-async def process_name(message: Message, state: FSMContext):
-    name = message.text.strip()
-    if not name:
-        await send_msg(message, "name_empty")
-        return
-
-    async with async_session() as session:
-        result = await session.execute(
-            select(User).where(User.telegram_id == message.from_user.id)
-        )
-        user = result.scalar_one_or_none()
-        if user:
-            user.name = name
-            await session.commit()
-
-    await send_msg(message, "name_saved")
-    await state.set_state(RegistrationStates.waiting_for_birth_date)
-
-
-@router.message(RegistrationStates.waiting_for_name)
-async def process_name_invalid(message: Message):
-    await send_msg(message, "name_invalid")
 
 
 @router.message(RegistrationStates.waiting_for_birth_date, F.text)
@@ -270,7 +270,7 @@ async def process_birth_date(message: Message, state: FSMContext):
             await session.commit()
 
     await state.clear()
-    await send_msg(message, "registration_complete", reply_markup=_main_menu())
+    await send_msg(message, "choose_section", reply_markup=_main_menu())
 
 
 @router.message(RegistrationStates.waiting_for_birth_date)
