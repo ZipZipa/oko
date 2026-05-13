@@ -37,6 +37,10 @@ class User(Base):
     couple_plan = Column(String(20), nullable=True)
     couple_html = Column(Text, nullable=True)
 
+    # referral
+    referral_code = Column(String(20), unique=True, nullable=True, index=True)
+    referred_by = Column(String(20), nullable=True, index=True)
+
 
 class Payment(Base):
     __tablename__ = "payments"

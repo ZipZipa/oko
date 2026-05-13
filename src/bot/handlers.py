@@ -3,13 +3,15 @@ import base64
 import html as html_mod
 import json
 import logging
+import secrets
 import tempfile
+from collections import defaultdict
 from datetime import datetime
 
 log = logging.getLogger(__name__)
 
 from aiogram import Router, F
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.types import (
     Message, PhotoSize, CallbackQuery,
     InlineKeyboardMarkup, InlineKeyboardButton, BufferedInputFile,
@@ -18,6 +20,7 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from sqlalchemy import select
 
+from src.bot.config import BOT_USERNAME, ADMIN_IDS
 from src.bot.db import async_session, User, Payment
 from src.bot.states import RegistrationStates, PalmStates, PartnerStates
 from src.bot.messages import send_msg, edit_msg, MESSAGES
@@ -184,7 +187,7 @@ async def _analyze_face_return(bot, file_id: str) -> dict | None:
 # ─── /start ────────────────────────────────────────────────────────────────────
 
 @router.message(CommandStart())
-async def cmd_start(message: Message, state: FSMContext):
+async def cmd_start(message: Message, state: FSMContext, command: CommandObject):
     user = await get_user(message.from_user.id)
     if user:
         await state.clear()
@@ -194,8 +197,22 @@ async def cmd_start(message: Message, state: FSMContext):
             await send_msg(message, "start_returning_incomplete", name=user.name)
         return
 
+    ref_arg = command.args  # deep link payload, e.g. /start REF_CODE
+    ref_code = secrets.token_urlsafe(6)  # unique code for this new user
+
     async with async_session() as session:
-        new_user = User(telegram_id=message.from_user.id)
+        referred_by = None
+        if ref_arg:
+            res = await session.execute(select(User).where(User.referral_code == ref_arg))
+            referrer = res.scalar_one_or_none()
+            if referrer and referrer.telegram_id != message.from_user.id:
+                referred_by = ref_arg
+
+        new_user = User(
+            telegram_id=message.from_user.id,
+            referral_code=ref_code,
+            referred_by=referred_by,
+        )
         session.add(new_user)
         await session.commit()
 
@@ -1251,3 +1268,110 @@ async def _run_couple_report(message: Message, user: User, plan: str):
     except Exception as e:
         err_text = MESSAGES["report_error"].text.format(error=html_mod.escape(str(e)))
         await message.answer(err_text, parse_mode="HTML")
+
+
+# ─── Реферальные команды ─────────────────────────────────────────────────────────
+
+@router.message(Command("reflink"))
+async def cmd_reflink(message: Message):
+    """Выдаёт пользователю его реферальную ссылку."""
+    if not BOT_USERNAME:
+        await message.answer(
+            "⚠️ Реферальная система не настроена — добавьте <code>BOT_USERNAME</code> в .env",
+            parse_mode="HTML",
+        )
+        return
+
+    user = await get_user(message.from_user.id)
+    if not user:
+        await send_msg(message, "start_new")
+        return
+
+    ref_code = user.referral_code
+    if not ref_code:
+        ref_code = secrets.token_urlsafe(6)
+        async with async_session() as session:
+            res = await session.execute(select(User).where(User.telegram_id == message.from_user.id))
+            u = res.scalar_one_or_none()
+            if u:
+                u.referral_code = ref_code
+                await session.commit()
+
+    link = f"https://t.me/{BOT_USERNAME}?start={ref_code}"
+    await message.answer(
+        f"<b>Ваша реферальная ссылка:</b>\n\n"
+        f"<code>{link}</code>\n\n"
+        f"Поделитесь ею с друзьями — бот покажет, сколько человек зарегистрировалось по вашей ссылке.",
+        parse_mode="HTML",
+    )
+
+
+@router.message(Command("refstats"))
+async def cmd_refstats(message: Message):
+    """Статистика реферальных ссылок (только для администраторов)."""
+    if ADMIN_IDS and message.from_user.id not in ADMIN_IDS:
+        return
+
+    async with async_session() as session:
+        res_users = await session.execute(
+            select(User).where(User.referral_code.isnot(None))
+        )
+        all_users = res_users.scalars().all()
+
+        res_referred = await session.execute(
+            select(User).where(User.referred_by.isnot(None))
+        )
+        referred_users = res_referred.scalars().all()
+
+        code_to_tids: dict[str, list[int]] = defaultdict(list)
+        for ru in referred_users:
+            code_to_tids[ru.referred_by].append(ru.telegram_id)
+
+        referred_tids = [ru.telegram_id for ru in referred_users]
+        if referred_tids:
+            res_pay = await session.execute(
+                select(Payment).where(
+                    Payment.telegram_id.in_(referred_tids),
+                    Payment.status == "succeeded",
+                )
+            )
+            all_payments = res_pay.scalars().all()
+        else:
+            all_payments = []
+
+    tid_to_payments: dict[int, list] = defaultdict(list)
+    for p in all_payments:
+        tid_to_payments[p.telegram_id].append(p)
+
+    active: list[tuple] = [
+        (u, code_to_tids[u.referral_code])
+        for u in all_users
+        if code_to_tids.get(u.referral_code)
+    ]
+
+    if not active:
+        await message.answer(
+            "<b>Реферальная статистика</b>\n\nПока никто не пришёл по реферальным ссылкам.",
+            parse_mode="HTML",
+        )
+        return
+
+    active.sort(key=lambda x: -len(x[1]))
+
+    lines = ["<b>Реферальная статистика</b>\n"]
+    for user, tids in active:
+        payments = [p for tid in tids for p in tid_to_payments.get(tid, [])]
+        total_amount = sum(float(p.amount) for p in payments)
+        name = user.name or "—"
+        lines.append(
+            f"👤 <b>{name}</b> (id: <code>{user.telegram_id}</code>)\n"
+            f"   Код: <code>{user.referral_code}</code>\n"
+            f"   Приглашено: {len(tids)} чел.\n"
+            f"   Платежей: {len(payments)} · {total_amount:.0f} ₽\n"
+        )
+
+    total_referred = len(referred_users)
+    total_paid = sum(float(p.amount) for p in all_payments)
+    lines.append(f"\n<b>Итого:</b> {total_referred} реф. пользователей · {total_paid:.0f} ₽")
+
+    await message.answer("\n".join(lines), parse_mode="HTML")
