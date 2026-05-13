@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, BigInteger, String, Date, Text
+from sqlalchemy import Column, Integer, BigInteger, String, Date, Text, DateTime, Boolean
 from sqlalchemy.orm import DeclarativeBase
+from datetime import datetime
 
 
 class Base(DeclarativeBase):
@@ -35,3 +36,18 @@ class User(Base):
     couple_blocks_json = Column(Text, nullable=True)
     couple_plan = Column(String(20), nullable=True)
     couple_html = Column(Text, nullable=True)
+
+
+class Payment(Base):
+    __tablename__ = "payments"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    yookassa_id = Column(String(255), unique=True, nullable=False, index=True)
+    telegram_id = Column(BigInteger, nullable=False, index=True)
+    report_type = Column(String(20), nullable=False)
+    plan = Column(String(20), nullable=False, default="base")
+    amount = Column(String(20), nullable=False)
+    status = Column(String(20), nullable=False, default="pending")
+    confirmation_url = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    paid_at = Column(DateTime, nullable=True)

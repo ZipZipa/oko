@@ -24,6 +24,8 @@ async def init_db() -> None:
             "couple_blocks_json TEXT",
             "couple_plan VARCHAR(20)",
             "couple_html TEXT",
+            "palm_left_json TEXT",
+            "palm_right_json TEXT",
         ]
         for col in new_cols:
             try:

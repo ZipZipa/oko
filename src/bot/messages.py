@@ -361,6 +361,38 @@ MESSAGES: dict[str, MessageConfig] = {
         text="Пожалуйста, пришли именно <b>фото ладони</b> <tg-emoji emoji-id=\"5395698544164233115\">🤩</tg-emoji>",
     ),
 
+    # ── Оплата ────────────────────────────────────────────────────────────────
+    "payment_created": MessageConfig(
+        key="payment_created",
+        text=(
+            "💳 <b>Оплата</b>\n\n"
+            "{report} · {plan}\n\n"
+            "Сумма: <b>{price} ₽</b>\n\n"
+            "Нажми кнопку ниже, чтобы перейти к оплате.\n"
+            "После оплаты нажми «✅ Я оплатил»."
+        ),
+    ),
+    "payment_success": MessageConfig(
+        key="payment_success",
+        text="<tg-emoji emoji-id=\"5222154218701352505\">✔️</tg-emoji> Оплата прошла успешно! Запускаю генерацию отчёта <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>",
+    ),
+    "payment_pending": MessageConfig(
+        key="payment_pending",
+        text="⏳ Платёж ещё не подтверждён. Попробуй проверить через несколько секунд.",
+    ),
+    "payment_cancelled": MessageConfig(
+        key="payment_cancelled",
+        text="❌ Платёж отменён. Попробуй оплатить заново.",
+    ),
+    "payment_error": MessageConfig(
+        key="payment_error",
+        text="⚠️ Ошибка оплаты: {error}",
+    ),
+    "payment_create_error": MessageConfig(
+        key="payment_create_error",
+        text="⚠️ Не удалось создать платёж: {error}",
+    ),
+
     # ── Ошибки ────────────────────────────────────────────────────────────────
     "partner_data_missing": MessageConfig(
         key="partner_data_missing",

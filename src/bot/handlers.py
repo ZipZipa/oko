@@ -2,8 +2,11 @@ import asyncio
 import base64
 import html as html_mod
 import json
+import logging
 import tempfile
 from datetime import datetime
+
+log = logging.getLogger(__name__)
 
 from aiogram import Router, F
 from aiogram.filters import CommandStart
@@ -15,9 +18,10 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from sqlalchemy import select
 
-from src.bot.db import async_session, User
+from src.bot.db import async_session, User, Payment
 from src.bot.states import RegistrationStates, PalmStates, PartnerStates
 from src.bot.messages import send_msg, edit_msg, MESSAGES
+from src.bot.services.payment import create_payment, check_payment
 
 router = Router()
 
@@ -55,7 +59,7 @@ _BASE_PRICES = {"base": 249, "extended": 449, "full": 649}
 # Скидки при апгрейде: (текущий_пакет, целевой_пакет) → процент скидки
 _UPGRADE_DISCOUNTS = {
     ("base", "extended"): 25,
-    ("base", "full"): 50,
+    ("base", "full"): 25,
     ("extended", "full"): 25,
 }
 
@@ -371,13 +375,9 @@ async def cb_skip_palms(callback: CallbackQuery, state: FSMContext):
     pending_plan = data.get("pending_plan", "full")
     report_type = data.get("pending_report_type", "self")
 
-    status_msg = await edit_msg(callback.message, "analyzing")
+    # После сбора/пропуска ладоней — создаём платёж
+    await _create_payment_and_show(callback, user, report_type, pending_plan)
     await callback.answer()
-
-    if report_type == "money":
-        asyncio.create_task(_run_money_report(status_msg, user, pending_plan))
-    else:
-        asyncio.create_task(_run_self_report(status_msg, user, pending_plan))
 
 
 @router.callback_query(F.data.in_({"show_packages_self", "show_packages_money", "show_packages_couple"}))
@@ -572,27 +572,167 @@ async def cb_buy(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
         return
 
-    if report_prefix == "self":
-        await _start_self_report(callback, plan=plan_key, state=state)
-    elif report_prefix == "money":
-        if plan_key == "full":
-            has_both_palms = bool(user.palm_left_json and user.palm_right_json)
-            if not has_both_palms:
-                await state.set_state(PalmStates.waiting_for_palm_left)
-                await state.update_data(pending_plan=plan_key, pending_report_type="money")
-                await edit_msg(
-                    callback.message, "palm_needed_money",
-                    reply_markup=_skip_palms_keyboard(),
-                )
-                await callback.answer()
-                return
+    # Для full-пакетов нужна проверка ладоней — спрашиваем до оплаты
+    if plan_key == "full" and report_prefix in ("self", "money"):
+        has_both_palms = bool(user.palm_left_json and user.palm_right_json)
+        if not has_both_palms:
+            await state.set_state(PalmStates.waiting_for_palm_left)
+            await state.update_data(pending_plan=plan_key, pending_report_type=report_prefix)
+            await edit_msg(
+                callback.message, "palm_needed_self" if report_prefix == "self" else "palm_needed_money",
+                reply_markup=_skip_palms_keyboard(),
+            )
+            await callback.answer()
+            return
+
+    # Создаём платёж в YooKassa
+    try:
+        plan_field = {"self": "purchased_plan", "money": "money_plan", "couple": "couple_plan"}[report_prefix]
+        current_plan = getattr(user, plan_field, None) or "demo"
+        price = _get_discounted_price(current_plan, plan_key)
+        amount_str = f"{price}.00"
+
+        yoo_payment = await asyncio.get_running_loop().run_in_executor(
+            None,
+            lambda: create_payment(report_prefix, plan_key, user.telegram_id, amount=amount_str),
+        )
+
+        # Сохраняем платёж в БД
+        async with async_session() as session:
+            payment_record = Payment(
+                yookassa_id=yoo_payment.id,
+                telegram_id=user.telegram_id,
+                report_type=report_prefix,
+                plan=plan_key,
+                amount=amount_str,
+                status=yoo_payment.status,
+                confirmation_url=yoo_payment.confirmation.confirmation_url,
+            )
+            session.add(payment_record)
+            await session.commit()
+
+        confirmation_url = yoo_payment.confirmation.confirmation_url
+
+        _plan_label = {"base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
+        _report_label = {"self": "Портрет личности", "money": "Денежная карта", "couple": "Совместимость пары"}
+
+        text = MESSAGES["payment_created"].text.format(
+            report=_report_label.get(report_prefix, ""),
+            plan=_plan_label.get(plan_key, ""),
+            price=price,
+        )
+
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="💳 Перейти к оплате", url=confirmation_url)],
+            [InlineKeyboardButton(text="✅ Я оплатил", callback_data=f"check_{yoo_payment.id}")],
+            [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
+        ])
+        await callback.message.edit_text(text=text, reply_markup=markup, parse_mode="HTML")
+
+    except Exception as e:
+        log.error("Ошибка создания платежа: %s", e, exc_info=True)
+        err_text = MESSAGES["payment_create_error"].text.format(error=str(e))
+        await callback.message.edit_text(text=err_text, parse_mode="HTML")
+
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("check_"))
+async def cb_check_payment(callback: CallbackQuery, state: FSMContext):
+    """Проверка статуса оплаты и запуск отчёта при успехе."""
+    payment_id = callback.data.removeprefix("check_")
+
+    async with async_session() as session:
+        result = await session.execute(
+            select(Payment).where(Payment.yookassa_id == payment_id)
+        )
+        payment_record = result.scalar_one_or_none()
+
+    if not payment_record:
+        await callback.answer("Платёж не найден", show_alert=True)
+        return
+
+    if payment_record.status == "succeeded":
+        await callback.answer("Оплата подтверждена! ✅", show_alert=False)
+        # Обновляем сообщение — убираем кнопки оплаты
+        try:
+            await callback.message.edit_reply_markup(reply_markup=None)
+        except TelegramBadRequest:
+            pass
+
+        user = await get_user(callback.from_user.id)
+        if not user:
+            await callback.answer()
+            return
+
+        report_prefix = payment_record.report_type
+        plan_key = payment_record.plan
         status_msg = await edit_msg(callback.message, "analyzing")
-        await callback.answer()
-        asyncio.create_task(_run_money_report(status_msg, user, plan_key))
-    elif report_prefix == "couple":
-        status_msg = await edit_msg(callback.message, "analyzing_couple")
-        await callback.answer()
-        asyncio.create_task(_run_couple_report(status_msg, user, plan_key))
+
+        if report_prefix == "self":
+            asyncio.create_task(_run_self_report(status_msg, user, plan_key))
+        elif report_prefix == "money":
+            asyncio.create_task(_run_money_report(status_msg, user, plan_key))
+        elif report_prefix == "couple":
+            asyncio.create_task(_run_couple_report(status_msg, user, plan_key))
+        return
+
+    # Проверяем актуальный статус через YooKassa API
+    try:
+        yoo_payment = await asyncio.get_running_loop().run_in_executor(
+            None,
+            lambda: check_payment(payment_id),
+        )
+    except Exception as exc:
+        log.error("Ошибка проверки платежа %s: %s", payment_id, exc, exc_info=True)
+        await callback.answer(f"Ошибка проверки: {exc}", show_alert=True)
+        return
+
+    new_status = yoo_payment.status
+
+    # Обновляем статус в БД
+    async with async_session() as session:
+        result = await session.execute(
+            select(Payment).where(Payment.yookassa_id == payment_id)
+        )
+        payment_record = result.scalar_one_or_none()
+        if payment_record:
+            payment_record.status = new_status
+            await session.commit()
+
+    if new_status == "succeeded":
+        await callback.answer("Оплата подтверждена! ✅", show_alert=False)
+        try:
+            await callback.message.edit_reply_markup(reply_markup=None)
+        except TelegramBadRequest:
+            pass
+
+        user = await get_user(callback.from_user.id)
+        if not user:
+            await callback.answer()
+            return
+
+        report_prefix = payment_record.report_type
+        plan_key = payment_record.plan
+        status_msg = await edit_msg(callback.message, "analyzing")
+
+        if report_prefix == "self":
+            asyncio.create_task(_run_self_report(status_msg, user, plan_key))
+        elif report_prefix == "money":
+            asyncio.create_task(_run_money_report(status_msg, user, plan_key))
+        elif report_prefix == "couple":
+            asyncio.create_task(_run_couple_report(status_msg, user, plan_key))
+    elif new_status == "canceled":
+        await callback.answer("Платёж отменён ❌", show_alert=True)
+        try:
+            await callback.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="← В меню", callback_data="back_to_main")],
+            ]))
+        except TelegramBadRequest:
+            pass
+    else:
+        # pending_waiting_for_capture / pending и др.
+        await callback.answer("Платёж ещё не завершён, попробуйте чуть позже", show_alert=True)
 
 
 async def _start_self_report(callback: CallbackQuery, plan: str, state: FSMContext):
@@ -714,17 +854,77 @@ async def process_palm_right(message: Message, state: FSMContext):
         await processing_msg.delete()
     except TelegramBadRequest:
         pass
-    status_msg = await send_msg(message, "palm_both_accepted")
+    await send_msg(message, "palm_both_accepted")
+
     pending_plan = data.get("pending_plan", "full")
-    if data.get("pending_report_type") == "money":
-        asyncio.create_task(_run_money_report(status_msg, user, pending_plan))
-    else:
-        asyncio.create_task(_run_self_report(status_msg, user, pending_plan))
+    report_type = data.get("pending_report_type", "self")
+
+    # Ладони собраны — создаём платёж
+    await _create_payment_and_show(message, user, report_type, pending_plan)
 
 
 @router.message(PalmStates.waiting_for_palm_right)
 async def process_palm_right_invalid(message: Message):
     await send_msg(message, "palm_photo_invalid", reply_markup=_skip_palms_keyboard())
+
+
+# ─── Хелпер создания платежа ────────────────────────────────────────────────────
+
+async def _create_payment_and_show(callback_or_msg, user: User, report_type: str, plan_key: str):
+    """Создаёт платёж YooKassa и показывает кнопку оплаты."""
+    try:
+        plan_field = {"self": "purchased_plan", "money": "money_plan", "couple": "couple_plan"}[report_type]
+        current_plan = getattr(user, plan_field, None) or "demo"
+        price = _get_discounted_price(current_plan, plan_key)
+        amount_str = f"{price}.00"
+
+        yoo_payment = await asyncio.get_running_loop().run_in_executor(
+            None,
+            lambda: create_payment(report_type, plan_key, user.telegram_id, amount=amount_str),
+        )
+
+        async with async_session() as session:
+            payment_record = Payment(
+                yookassa_id=yoo_payment.id,
+                telegram_id=user.telegram_id,
+                report_type=report_type,
+                plan=plan_key,
+                amount=amount_str,
+                status=yoo_payment.status,
+                confirmation_url=yoo_payment.confirmation.confirmation_url,
+            )
+            session.add(payment_record)
+            await session.commit()
+
+        confirmation_url = yoo_payment.confirmation.confirmation_url
+
+        _plan_label = {"base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
+        _report_label = {"self": "Портрет личности", "money": "Денежная карта", "couple": "Совместимость пары"}
+
+        text = MESSAGES["payment_created"].text.format(
+            report=_report_label.get(report_type, ""),
+            plan=_plan_label.get(plan_key, ""),
+            price=price,
+        )
+
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="💳 Перейти к оплате", url=confirmation_url)],
+            [InlineKeyboardButton(text="✅ Я оплатил", callback_data=f"check_{yoo_payment.id}")],
+            [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
+        ])
+
+        if isinstance(callback_or_msg, CallbackQuery):
+            await callback_or_msg.message.edit_text(text=text, reply_markup=markup, parse_mode="HTML")
+        else:
+            await callback_or_msg.answer(text=text, reply_markup=markup, parse_mode="HTML")
+
+    except Exception as e:
+        log.error("Ошибка создания платежа (_create_payment_and_show): %s", e, exc_info=True)
+        err_text = MESSAGES["payment_create_error"].text.format(error=str(e))
+        if isinstance(callback_or_msg, CallbackQuery):
+            await callback_or_msg.message.edit_text(text=err_text, parse_mode="HTML")
+        else:
+            await callback_or_msg.answer(text=err_text, parse_mode="HTML")
 
 
 # ─── Вспомогательные ────────────────────────────────────────────────────────────
