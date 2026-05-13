@@ -21,9 +21,10 @@ def parse_birthdate(birthdate: str) -> tuple[int, int, int]:
 
 
 def life_path_number(birthdate: str) -> int:
-    """Число жизненного пути = сумма всех цифр даты."""
-    digits = [int(d) for d in birthdate if d.isdigit()]
-    return reduce_number(sum(digits))
+    day, month, year = parse_birthdate(birthdate)
+    return reduce_number(
+        reduce_number(day) + reduce_number(month) + reduce_number(year)
+    )
 
 
 def day_number(birthdate: str) -> dict:
@@ -33,9 +34,10 @@ def day_number(birthdate: str) -> dict:
 
 
 def personal_year(birthdate: str, year: int) -> int:
-    """Личный год = день + месяц + год_расчёта, сведённый."""
     day, month, _ = parse_birthdate(birthdate)
-    return reduce_number(sum(int(d) for d in f"{day}{month}{year}"))
+    return reduce_number(
+        reduce_number(day) + reduce_number(month) + reduce_number(year)
+    )
 
 
 def calculate_pinnacles(birthdate: str) -> list[dict]:

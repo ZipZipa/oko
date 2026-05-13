@@ -7,12 +7,10 @@ from .numerology import reduce_number
 
 
 def _matrix_number(a: int, b: int) -> int:
-    """Сводит сумму a+b к диапазону 1–22 (арканы Таро)."""
     s = a + b
     while s > 22:
-        s = reduce_number(s)          # итеративно, пока ≤ 22
-    return s if s != 0 else 22        # 0 → Шут (22)
-
+        s = reduce_number(s, keep_master=False)  # ← False, не допускаем зависания
+    return s if s != 0 else 22
 
 def calculate_matrix(birthdate: str) -> dict:
     """
