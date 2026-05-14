@@ -314,7 +314,8 @@ async def _edit_to_packages(message: Message, user: User, report_prefix: str):
     purchased = getattr(user, plan_field, None) or "demo"
     menu = _packages_menu(above_plan=purchased, report_prefix=report_prefix)
     if menu.inline_keyboard[:-1]:
-        await edit_msg(message, "choose_package", reply_markup=menu)
+        pkg_msg_key = {"self": "choose_package_self", "money": "choose_package_money", "couple": "choose_package_couple"}[report_prefix]
+        await edit_msg(message, pkg_msg_key, reply_markup=menu)
     else:
         await edit_msg(message, "max_package", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="← В меню", callback_data="back_to_main")],
@@ -983,7 +984,8 @@ async def _send_report(message: Message, html: str, caption: str, plan: str,
 
     menu = _packages_menu(above_plan=current_plan, report_prefix=report_prefix)
     if menu.inline_keyboard[:-1]:
-        await send_msg(message, "choose_package", reply_markup=menu)
+        pkg_msg_key = {"self": "choose_package_self", "money": "choose_package_money", "couple": "choose_package_couple"}[report_prefix]
+        await send_msg(message, pkg_msg_key, reply_markup=menu)
     else:
         await send_msg(message, "max_package", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="← В меню", callback_data="back_to_main")],

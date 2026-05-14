@@ -177,9 +177,17 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
 
     # ── Пакеты ────────────────────────────────────────────────────────────────
-    "choose_package": MessageConfig(
-        key="choose_package",
-        text="Выбери пакет:",
+    "choose_package_self": MessageConfig(
+        key="choose_package_self",
+        text="Выбери пакет для <b>Портрета личности</b>:",
+    ),
+    "choose_package_money": MessageConfig(
+        key="choose_package_money",
+        text="Выбери пакет для <b>Денежной карты</b>:",
+    ),
+    "choose_package_couple": MessageConfig(
+        key="choose_package_couple",
+        text="Выбери пакет для <b>Совместимости пары</b>:",
     ),
     "max_package": MessageConfig(
         key="max_package",
