@@ -64,9 +64,27 @@ MESSAGES: dict[str, MessageConfig] = {
         ),
         photos=["intro.png"]
     ),
-    "start_returning_incomplete": MessageConfig(
-        key="start_returning_incomplete",
-        text="С возвращением, <b>{name}</b>! <tg-emoji emoji-id=\"5237948187838262194\">👁️</tg-emoji>",
+    "start_returning_no_name": MessageConfig(
+        key="start_returning_no_name",
+        text=(
+            "С возвращением! <tg-emoji emoji-id=\"5237948187838262194\">👁️</tg-emoji>\n\n"
+            "Для начала, напиши свое имя <tg-emoji emoji-id=\"5348460861755262251\">✍️</tg-emoji>"
+        ),
+    ),
+    "start_returning_no_photo": MessageConfig(
+        key="start_returning_no_photo",
+        text=(
+            "С возвращением, <b>{name}</b>! <tg-emoji emoji-id=\"5237948187838262194\">👁️</tg-emoji>\n\n"
+            "Для анализа нужно твоё фото — пришли селфи <tg-emoji emoji-id=\"5395698544164233115\">🤩</tg-emoji>"
+        ),
+        photos=["man.jpg","woman.jpg"]
+    ),
+    "start_returning_no_birthdate": MessageConfig(
+        key="start_returning_no_birthdate",
+        text=(
+            "С возвращением, <b>{name}</b>! <tg-emoji emoji-id=\"5237948187838262194\">👁️</tg-emoji>\n\n"
+            "Отправь дату рождения в формате <b>ДД.ММ.ГГГГ</b> <tg-emoji emoji-id=\"5203934104143294160\">🔏</tg-emoji>"
+        ),
     ),
     "photo_received": MessageConfig(
         key="photo_received",
@@ -143,6 +161,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "как ты привлекаешь деньги, где теряешь ресурсы и твои скрытые точки роста\n\n"
             "Запустим тестовый анализ?"
         ),
+        photos=["money.jpg"]
     ),
 
     # ── Couple ────────────────────────────────────────────────────────────────
@@ -154,6 +173,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "партнера, о которых ты можешь не догадываться\n\n"
             "Запустим тестовый анализ?"
         ),
+        photos=["couple.jpg"]
     ),
 
     # ── Пакеты ────────────────────────────────────────────────────────────────
@@ -297,7 +317,7 @@ MESSAGES: dict[str, MessageConfig] = {
     # ── Анализ (статусы) ──────────────────────────────────────────────────────
     "analyzing": MessageConfig(
         key="analyzing",
-        text="Запускаю анализ... Это займёт минуту <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>",
+        text="Запускаю анализ.Это займет некоторое время <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>",
     ),
 
     # ── Ладони ────────────────────────────────────────────────────────────────

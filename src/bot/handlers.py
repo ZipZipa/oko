@@ -194,8 +194,15 @@ async def cmd_start(message: Message, state: FSMContext, command: CommandObject)
         await state.clear()
         if _is_complete(user):
             await send_msg(message, "choose_section", reply_markup=_main_menu())
-        else:
-            await send_msg(message, "start_returning_incomplete", name=user.name)
+        elif not user.name:
+            await send_msg(message, "start_returning_no_name")
+            await state.set_state(RegistrationStates.waiting_for_name)
+        elif not user.face_json:
+            await send_msg(message, "start_returning_no_photo", name=user.name)
+            await state.set_state(RegistrationStates.waiting_for_photo)
+        elif not user.birth_date:
+            await send_msg(message, "start_returning_no_birthdate", name=user.name)
+            await state.set_state(RegistrationStates.waiting_for_birth_date)
         return
 
     ref_arg = command.args  # deep link payload, e.g. /start REF_CODE
