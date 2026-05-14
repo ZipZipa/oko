@@ -63,6 +63,10 @@ body { font-family: 'Jost', sans-serif; font-weight: 300; background: var(--whit
 .pair-person .label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--g500); margin-bottom: 0.4rem; font-variant: small-caps; letter-spacing: 0.18em; }
 .pair-person .name { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 300; color: var(--black); margin-bottom: 0.3rem; }
 .pair-person .meta { font-size: 11px; color: var(--g700); letter-spacing: 0.05em; }
+.pair-portrait { position: relative; width: 96px; height: 96px; border-radius: 50%; overflow: hidden; margin: 0 auto 0.85rem; }
+.pair-portrait img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.02); display: block; }
+.pair-portrait::after { content: ""; position: absolute; inset: 0; border-radius: 50%; pointer-events: none; background: radial-gradient(circle at 50% 50%, transparent 0%, transparent 72%, rgba(250,250,248,0.55) 88%, rgba(250,250,248,1) 100%); }
+.pair-portrait-placeholder { position: relative; width: 96px; height: 96px; border-radius: 50%; margin: 0 auto 0.85rem; background: var(--g100); border: 0.5px solid var(--accent-line); }
 
 .cover-toc { width: 100%; max-width: 760px; margin: 1rem auto 0; display: flex; flex-direction: column; gap: 0.85rem; font-size: 9.5px; color: var(--g500); letter-spacing: 0.16em; text-transform: uppercase; position: relative; z-index: 3; }
 .toc-items { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem 1.25rem; }
@@ -282,11 +286,21 @@ hr::after { content: ""; position: absolute; left: 50%; top: 50%; width: 5px; he
 
     <div class="cover-pair-info">
       <div class="pair-person">
+        {% if data.person_a.user.photo_url %}
+        <div class="pair-portrait"><img src="{{ data.person_a.user.photo_url }}" alt="Portrait A" loading="eager"></div>
+        {% else %}
+        <div class="pair-portrait-placeholder"></div>
+        {% endif %}
         <div class="label">Партнёр A</div>
         <div class="name">{{ data.person_a.user.name }}</div>
         <div class="meta">{{ data.person_a.user.birthdate }} · {{ data.person_a.user.age }} лет<br>Число пути {{ data.person_a.numerology.life_path }} · {{ data.person_a.numerology.life_path_archetype.name }}</div>
       </div>
       <div class="pair-person">
+        {% if data.person_b.user.photo_url %}
+        <div class="pair-portrait"><img src="{{ data.person_b.user.photo_url }}" alt="Portrait B" loading="eager"></div>
+        {% else %}
+        <div class="pair-portrait-placeholder"></div>
+        {% endif %}
         <div class="label">Партнёр Б</div>
         <div class="name">{{ data.person_b.user.name }}</div>
         <div class="meta">{{ data.person_b.user.birthdate }} · {{ data.person_b.user.age }} лет<br>Число пути {{ data.person_b.numerology.life_path }} · {{ data.person_b.numerology.life_path_archetype.name }}</div>
