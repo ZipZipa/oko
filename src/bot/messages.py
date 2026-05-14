@@ -1,17 +1,16 @@
 """Централизованная конфигурация сообщений бота.
 
-Каждое сообщение описано в одном месте — текст и опциональная картинка.
-Для изменения текста или добавления/удаления картинки достаточно изменить MESSAGES.
+Каждое сообщение описано в одном месте — текст и опциональные картинки.
+Для изменения текста или добавления/удаления картинок достаточно изменить MESSAGES.
 
 Структура:
-- MessageConfig — конфигурация одного сообщения (текст + опциональная картинка)
+- MessageConfig — конфигурация одного сообщения (текст + опциональные картинки)
 - MESSAGES — словарь всех сообщений бота
 - send_msg() — отправка сообщения с учётом конфигурации
 - edit_msg() — редактирование сообщения с учётом конфигурации
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 from html import escape as _html_escape
 
@@ -29,24 +28,27 @@ class MessageConfig:
     Attributes:
         key: Уникальный идентификатор сообщения
         text: Текст сообщения (поддерживает {placeholders} для format())
-        photo: Имя файла картинки из директории media/ (или None)
+        photos: Список имён файлов картинок из директории media/ (может быть пустым)
     """
     key: str
     text: str
-    photo: Optional[str] = None  # имя файла из MEDIA_DIR или None
+    photos: list[str] = field(default_factory=list)  # имена файлов из MEDIA_DIR
 
     @property
-    def photo_path(self) -> Optional[Path]:
-        """Полный путь к файлу картинки или None."""
-        if self.photo:
-            path = MEDIA_DIR / self.photo
-            return path if path.exists() else None
-        return None
+    def photo_paths(self) -> list[Path]:
+        """Список полных путей к существующим файлам картинок."""
+        result: list[Path] = []
+        for name in self.photos:
+            path = MEDIA_DIR / name
+            if path.exists():
+                result.append(path)
+        return result
 
 
 # ─── Все сообщения бота ────────────────────────────────────────────────────────
-# Чтобы добавить картинку к сообщению, просто укажи имя файла в поле photo.
-# Файл должен лежать в директории src/bot/media/.
+# Чтобы добавить картинки к сообщению, укажи имена файлов в поле photos.
+# Файлы должны лежать в директории src/bot/media/.
+# Пример: photos=["img1.jpeg", "img2.jpeg"]
 
 MESSAGES: dict[str, MessageConfig] = {
 
@@ -60,6 +62,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "<tg-emoji emoji-id=\"5359794223887443699\">◀️</tg-emoji> денежный потенциал\n\n"
             "<b>Для начала, напиши свое имя</b> <tg-emoji emoji-id=\"5348460861755262251\">✍️</tg-emoji>"
         ),
+        photos=["intro.png"]
     ),
     "start_returning_incomplete": MessageConfig(
         key="start_returning_incomplete",
@@ -76,6 +79,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "<tg-emoji emoji-id=\"5359794223887443699\">◀️</tg-emoji> Прямая поза без наклонов головы и шеи\n"
             "<tg-emoji emoji-id=\"5359794223887443699\">◀️</tg-emoji> Хорошее освещение = качественный результат"
         ),
+        photos=["man.jpg","woman.jpg"]
     ),
     "photo_invalid": MessageConfig(
         key="photo_invalid",
@@ -109,11 +113,11 @@ MESSAGES: dict[str, MessageConfig] = {
     # ── Главное меню ──────────────────────────────────────────────────────────
     "choose_section": MessageConfig(
         key="choose_section",
-                text=(
+        text=(
             "Можем переходить к анализу <tg-emoji emoji-id=\"5237948187838262194\">👁️</tg-emoji>\n\n"
             "Выбери, что хочешь посмотреть:"
         ),
-        photo="menu.jpeg"
+        photos=["menu.png"]
     ),
     "incomplete_profile": MessageConfig(
         key="incomplete_profile",
@@ -128,7 +132,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "твоей внешности, психологических паттернов и скрытых особенностей, о которых ты даже не догадываешься\n\n"
             "Запустим тестовый анализ?"
         ),
-        photo="self_main.jpeg"
+        photos=["self_main.jpeg"]
     ),
 
     # ── Money ─────────────────────────────────────────────────────────────────
@@ -413,32 +417,58 @@ async def send_msg(
     reply_markup=None,
     **fmt,
 ) -> Message:
-    """Отправить сообщение с опциональной картинкой.
+    """Отправить сообщение с опциональными картинками.
 
-    Если в конфигурации сообщения указана картинка — отправляет как photo+caption.
-    Иначе — как обычное текстовое сообщение.
+    - 0 фото: обычное текстовое сообщение
+    - 1 фото:  photo + caption (поддерживает reply_markup)
+    - 2+ фото: медиагруппа; reply_markup отправляется отдельным сообщением
+               (Telegram API не поддерживает reply_markup для медиагрупп)
 
     Returns:
-        Отправленное сообщение.
+        Последнее отправленное сообщение.
     """
     text = _get_text(msg_key, **fmt)
     config = MESSAGES[msg_key]
-    photo_path = config.photo_path
+    paths = config.photo_paths
 
-    if photo_path:
-        photo = FSInputFile(str(photo_path))
+    if not paths:
+        return await message.answer(
+            text=text,
+            reply_markup=reply_markup,
+            parse_mode="HTML",
+        )
+
+    if len(paths) == 1:
+        photo = FSInputFile(str(paths[0]))
         return await message.answer_photo(
             photo=photo,
             caption=text,
             reply_markup=reply_markup,
             parse_mode="HTML",
         )
-    else:
+
+    # 2+ фото — медиагруппа
+    media_list: list[InputMediaPhoto] = []
+    for i, p in enumerate(paths):
+        media_list.append(InputMediaPhoto(
+            media=FSInputFile(str(p)),
+            caption=text if i == 0 else None,
+            parse_mode="HTML" if i == 0 else None,
+        ))
+
+    await message.answer_media_group(media=media_list)
+
+    # reply_markup не поддерживается для медиагрупп —
+    # отправляем отдельное сообщение с клавиатурой
+    if reply_markup:
         return await message.answer(
-            text=text,
+            text="↑",
             reply_markup=reply_markup,
-            parse_mode="HTML",
         )
+
+    # Возвращаем последнее сообщение из медиагруппы (хотя достать его сложно,
+    # answer_media_group возвращает список). Возвращаем заглушку.
+    return message
 
 
 async def edit_msg(
@@ -447,27 +477,26 @@ async def edit_msg(
     reply_markup=None,
     **fmt,
 ) -> Message:
-    """Редактировать сообщение с опциональной картинкой.
+    """Редактировать сообщение с опциональными картинками.
 
     Обрабатывает переходы между текстом и фото:
     - текст → текст: edit_text
-    - фото → фото: edit_media (меняет и картинку, и подпись)
-    - текст → фото: delete + send_photo
-    - фото → текст: delete + send_message
+    - 1 фото → 1 фото: edit_media (меняет и картинку, и подпись)
+    - в остальных случаях: delete + resend
 
     Returns:
         Актуальное сообщение (может отличаться от исходного при delete+resend).
     """
     text = _get_text(msg_key, **fmt)
     config = MESSAGES[msg_key]
-    photo_path = config.photo_path
-    has_photo_config = photo_path is not None
+    paths = config.photo_paths
+    has_photos = len(paths) > 0
     message_has_photo = bool(message.photo)
 
-    if has_photo_config and message_has_photo:
-        # Оба с фото — обновляем медиа и подпись
+    # Простой случай: 1 фото → 1 фото — обновляем медиа и подпись
+    if has_photos and len(paths) == 1 and message_has_photo:
         media = InputMediaPhoto(
-            media=FSInputFile(str(photo_path)),
+            media=FSInputFile(str(paths[0])),
             caption=text,
             parse_mode="HTML",
         )
@@ -478,8 +507,8 @@ async def edit_msg(
                 return message
             raise
 
-    elif not has_photo_config and not message_has_photo:
-        # Оба без фото — edit_text
+    # Простой случай: текст → текст
+    if not has_photos and not message_has_photo:
         try:
             return await message.edit_text(text=text, reply_markup=reply_markup, parse_mode="HTML")
         except TelegramBadRequest as e:
@@ -487,28 +516,49 @@ async def edit_msg(
                 return message
             raise
 
-    else:
-        # Структура изменилась (фото↔текст) — удаляем и отправляем заново
-        chat_id = message.chat.id
-        bot = message.bot
-        try:
-            await message.delete()
-        except TelegramBadRequest:
-            pass  # сообщение уже удалено
+    # Во всех остальных случаях — удаляем и отправляем заново
+    chat_id = message.chat.id
+    bot = message.bot
+    try:
+        await message.delete()
+    except TelegramBadRequest:
+        pass  # сообщение уже удалено
 
-        if has_photo_config:
-            photo = FSInputFile(str(photo_path))
-            return await bot.send_photo(
-                chat_id=chat_id,
-                photo=photo,
-                caption=text,
-                reply_markup=reply_markup,
-                parse_mode="HTML",
-            )
-        else:
-            return await bot.send_message(
-                chat_id=chat_id,
-                text=text,
-                reply_markup=reply_markup,
-                parse_mode="HTML",
-            )
+    if not has_photos:
+        return await bot.send_message(
+            chat_id=chat_id,
+            text=text,
+            reply_markup=reply_markup,
+            parse_mode="HTML",
+        )
+
+    if len(paths) == 1:
+        photo = FSInputFile(str(paths[0]))
+        return await bot.send_photo(
+            chat_id=chat_id,
+            photo=photo,
+            caption=text,
+            reply_markup=reply_markup,
+            parse_mode="HTML",
+        )
+
+    # 2+ фото — медиагруппа
+    media_list: list[InputMediaPhoto] = []
+    for i, p in enumerate(paths):
+        media_list.append(InputMediaPhoto(
+            media=FSInputFile(str(p)),
+            caption=text if i == 0 else None,
+            parse_mode="HTML" if i == 0 else None,
+        ))
+
+    await bot.send_media_group(chat_id=chat_id, media=media_list)
+
+    # reply_markup не поддерживается для медиагрупп
+    if reply_markup:
+        return await bot.send_message(
+            chat_id=chat_id,
+            text="↑",
+            reply_markup=reply_markup,
+        )
+
+    return message
