@@ -10,7 +10,7 @@ from datetime import datetime
 from .numerology import full_numerology_profile
 from .matrix import calculate_matrix
 from .features import describe_all_features
-from .scoring import calculate_all_scores, score_grooming, score_skin
+from .scoring import calculate_all_scores
 from .face_signals import extract_face_signals
 from .palm_signals import extract_hand_signals
 from .archetypes import (
@@ -59,7 +59,7 @@ def build_person_profile(face_data: dict, name: str, birthdate: str,
     }
 
     features = describe_all_features(face_data)
-    df = face_data["deepface"]
+    df = face_data.get("deepface", {})
     face_signals = extract_face_signals(face_data)
     has_both_palms = palm_data_left is not None and palm_data_right is not None
     hand_signals = extract_hand_signals(palm_data_left, palm_data_right, face_data) if has_both_palms else None
@@ -68,7 +68,7 @@ def build_person_profile(face_data: dict, name: str, birthdate: str,
         "name": name,
         "birthdate": birthdate,
         "age": numerology["age"],
-        "gender": df["gender"],
+        "gender": df.get("gender", ""),
         "ethnicity_dominant": df.get("race", ""),
         # face_shape канонический — из features (детерминированный алгоритм)
         "face_shape": features["face_shape"],

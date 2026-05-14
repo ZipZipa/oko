@@ -1,6 +1,6 @@
-from sqlalchemy import Column, Integer, BigInteger, String, Date, Text, DateTime, Boolean
+from sqlalchemy import Column, Integer, BigInteger, String, Date, Text, DateTime
 from sqlalchemy.orm import DeclarativeBase
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class Base(DeclarativeBase):
@@ -53,5 +53,5 @@ class Payment(Base):
     amount = Column(String(20), nullable=False)
     status = Column(String(20), nullable=False, default="pending")
     confirmation_url = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     paid_at = Column(DateTime, nullable=True)

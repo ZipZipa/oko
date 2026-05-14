@@ -24,9 +24,12 @@
         birthdate="28.01.1995",
     )
 """
+import logging
 from pathlib import Path
 
 from .reports import self_report, couple_report, money_report
+
+log = logging.getLogger(__name__)
 
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -60,6 +63,7 @@ def generate_report(
     Для couple — дополнительно face_data_b, name_b, birthdate_b.
     palm_data — опциональные данные ладони (только для self).
     """
+    log.info("generate_report: type=%s, name=%s, plan=%s", report_type, name, plan)
     if report_type == "self":
         return self_report.generate(
             face_data=face_data, name=name, birthdate=birthdate,

@@ -99,7 +99,13 @@ def describe_forehead(height_ratio: float) -> str:
 
 
 def describe_all_features(face_data: dict) -> dict:
-    p = face_data["proportions"]
+    p = face_data.get("proportions")
+    if not p or "details" not in p:
+        return {
+            "face_shape": "",
+            "eyes": {}, "nose": {}, "lips": {},
+            "brows": {}, "jaw": {}, "forehead": {},
+        }
     d = p["details"]
 
     eyes = d["eyes"]

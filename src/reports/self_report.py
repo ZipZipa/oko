@@ -3,12 +3,14 @@ Self report: персональный портрет одного человек
 Анализ внешности + физиогномика + нумерология + матрица + глубинный анализ.
 """
 import json
-import sys
+import logging
 from pathlib import Path
 
 from ..core.profile import build_person_profile, prepare_for_llm
 from ..core.llm_client import generate_blocks
 from ..core.renderer import render_template
+
+log = logging.getLogger(__name__)
 
 
 REPORT_TYPE = "self"
@@ -272,9 +274,7 @@ def generate(face_data: dict, name: str, birthdate: str,
         blocks["chiromancy"] = palm_blocks["chiromancy"]
         errors = validate_blocks(blocks, has_palm=True)
         if errors:
-            print("Предупреждения валидации (reference + palm):", file=sys.stderr)
-            for e in errors:
-                print(f"  • {e}", file=sys.stderr)
+            log.warning("Предупреждения валидации (reference + palm): %s", errors)
         if _out_blocks is not None:
             _out_blocks.append(blocks)
         return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)
@@ -284,9 +284,7 @@ def generate(face_data: dict, name: str, birthdate: str,
         blocks = _load_reference_blocks(reference)
         errors = validate_blocks(blocks, has_palm=False)
         if errors:
-            print("Предупреждения валидации референса:", file=sys.stderr)
-            for e in errors:
-                print(f"  • {e}", file=sys.stderr)
+            log.warning("Предупреждения валидации референса: %s", errors)
         return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)
 
     # ── Обычный режим: полный LLM ──

@@ -3,13 +3,15 @@ Money report: денежный портрет одного человека.
 10 блоков от обзора до момента смены работы.
 """
 import json
-import sys
+import logging
 from pathlib import Path
 
 from ..core.profile import build_person_profile, prepare_for_llm
 from ..core.money_dynamics import full_money_profile
 from ..core.llm_client import generate_blocks
 from ..core.renderer import render_template
+
+log = logging.getLogger(__name__)
 
 
 REPORT_TYPE = "money"
@@ -209,9 +211,7 @@ def generate(face_data: dict, name: str, birthdate: str,
         blocks["palmistry_money"] = palm_block["palmistry_money"]
         errors = validate_blocks(blocks)
         if errors:
-            print("Предупреждения валидации (reference + palm):", file=sys.stderr)
-            for e in errors:
-                print(f"  • {e}", file=sys.stderr)
+            log.warning("Предупреждения валидации (reference + palm): %s", errors)
         if _out_blocks is not None:
             _out_blocks.append(blocks)
         return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)
@@ -221,9 +221,7 @@ def generate(face_data: dict, name: str, birthdate: str,
         blocks = _load_reference_blocks(reference)
         errors = validate_blocks(blocks, has_palm=has_palm)
         if errors:
-            print("Предупреждения валидации (reference):", file=sys.stderr)
-            for e in errors:
-                print(f"  • {e}", file=sys.stderr)
+            log.warning("Предупреждения валидации (reference): %s", errors)
         return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)
 
     with open(examples_subdir / "reference_blocks.json", encoding="utf-8") as f:

@@ -3,7 +3,7 @@ Couple report: парный отчёт совместимости.
 9 блоков от компатибилити до точки разрыва.
 """
 import json
-import sys
+import logging
 from pathlib import Path
 
 from ..core.profile import build_person_profile, prepare_for_llm
@@ -11,6 +11,8 @@ from ..core.couple_dynamics import couple_full_dynamics
 from ..core.face_dynamics import face_contrast, matrix_overlap
 from ..core.llm_client import generate_blocks
 from ..core.renderer import render_template
+
+log = logging.getLogger(__name__)
 
 
 REPORT_TYPE = "couple"
@@ -205,9 +207,7 @@ def generate(face_a: dict, name_a: str, birthdate_a: str,
         blocks = _load_reference_blocks(reference)
         errors = validate_blocks(blocks)
         if errors:
-            print("Предупреждения валидации (reference):", file=sys.stderr)
-            for e in errors:
-                print(f"  • {e}", file=sys.stderr)
+            log.warning("Предупреждения валидации (reference): %s", errors)
         return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)
 
     with open(examples_subdir / "reference_blocks.json", encoding="utf-8") as f:

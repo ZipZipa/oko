@@ -3,6 +3,7 @@
 Валидатор передаётся как функция — клиент работает для всех типов отчётов.
 """
 import json
+import logging
 import os
 from pathlib import Path
 from typing import Callable
@@ -13,6 +14,7 @@ from openai import OpenAI
 # Загружаем .env из корня проекта
 load_dotenv(Path(__file__).resolve().parent.parent.parent / ".env")
 
+log = logging.getLogger(__name__)
 
 DEFAULT_BASE_URL = "https://polza.ai/api/v1"
 DEFAULT_MODEL = "claude-sonnet-4-5"
@@ -35,6 +37,9 @@ def call_claude(system: str, messages: list[dict], model: str | None = None,
     max_tokens = max_tokens or int(os.environ.get("AI_MAX_TOKENS", DEFAULT_MAX_TOKENS))
     temperature = temperature if temperature is not None else float(os.environ.get("AI_TEMPERATURE", DEFAULT_TEMPERATURE))
 
+    log.debug("LLM call: model=%s, max_tokens=%s, temperature=%s, messages=%d",
+              model, max_tokens, temperature, len(messages))
+
     # Собираем сообщения в формат OpenAI Chat
     openai_messages: list[dict] = [{"role": "system", "content": system}]
     openai_messages.extend(messages)
@@ -45,7 +50,12 @@ def call_claude(system: str, messages: list[dict], model: str | None = None,
         temperature=temperature,
         messages=openai_messages,
     )
-    return response.choices[0].message.content
+    content = response.choices[0].message.content
+    usage = getattr(response, "usage", None)
+    if usage:
+        log.debug("LLM response: prompt_tokens=%s, completion_tokens=%s",
+                  getattr(usage, "prompt_tokens", "?"), getattr(usage, "completion_tokens", "?"))
+    return content
 
 
 def parse_blocks_json(raw: str) -> dict:
@@ -64,24 +74,35 @@ def generate_blocks(system: str, messages: list[dict],
     current_messages = messages
 
     for attempt in range(max_retries + 1):
+        log.info("LLM generate_blocks: попытка %d/%d", attempt + 1, max_retries + 1)
         raw = call_claude(system, current_messages, model=model)
 
         try:
             blocks = parse_blocks_json(raw)
         except json.JSONDecodeError as e:
             last_error = f"Invalid JSON: {e}"
-            with open("/tmp/llm_raw_response.txt", "w", encoding="utf-8") as f:
-                f.write(raw)
+            log.warning("Попытка %d: ошибка парсинга JSON — %s", attempt + 1, e)
+            tmp_path = "/tmp/llm_raw_response.txt"
+            try:
+                with open(tmp_path, "w", encoding="utf-8") as f:
+                    f.write(raw)
+                log.info("Сырой ответ LLM сохранён в %s", tmp_path)
+            except OSError as write_err:
+                log.warning("Не удалось сохранить сырой ответ: %s", write_err)
             current_messages = _build_retry_messages(messages, raw, last_error)
             continue
 
         errors = validate_fn(blocks)
         if not errors:
+            log.info("LLM generate_blocks: успех на попытке %d", attempt + 1)
             return blocks
 
         last_error = "Validation errors:\n  - " + "\n  - ".join(errors)
+        log.warning("Попытка %d: ошибки валидации:\n%s", attempt + 1, last_error)
         current_messages = _build_retry_messages(messages, raw, last_error)
 
+    log.error("generate_blocks: все %d попытки исчерпаны. Последняя ошибка: %s",
+              max_retries + 1, last_error)
     raise RuntimeError(f"Failed after {max_retries + 1} attempts. Last error:\n{last_error}")
 
 

@@ -159,7 +159,7 @@ async def _analyze_and_save_face(bot, file_id: str, telegram_id: int):
                     user.face_json = json.dumps(face_data, ensure_ascii=False)
                     await session.commit()
     except Exception:
-        pass
+        log.error("Ошибка анализа/сохранения лица для telegram_id=%s", telegram_id, exc_info=True)
 
 
 async def _analyze_face_return(bot, file_id: str) -> dict | None:
@@ -181,6 +181,7 @@ async def _analyze_face_return(bot, file_id: str) -> dict | None:
             os.unlink(tmp_path)
         return face_data
     except Exception:
+        log.error("Ошибка анализа лица (file_id=%s)", file_id, exc_info=True)
         return None
 
 
@@ -798,6 +799,7 @@ async def _download_and_analyze_palm(bot, file_id: str) -> dict | None:
             os.unlink(tmp_path)
         return palm_data
     except Exception:
+        log.error("Ошибка анализа ладони (file_id=%s)", file_id, exc_info=True)
         return None
 
 
@@ -953,6 +955,7 @@ async def _download_photo_data_uri(bot, file_id: str) -> str | None:
         data = base64.b64encode(buf.read()).decode("ascii")
         return f"data:image/jpeg;base64,{data}"
     except Exception:
+        log.error("Ошибка загрузки фото (file_id=%s)", file_id, exc_info=True)
         return None
 
 
@@ -985,6 +988,7 @@ async def _send_report(message: Message, html: str, caption: str, plan: str,
 async def _run_self_report(message: Message, user: User, plan: str):
     from src.api import generate_report
 
+    log.info("Запуск self отчёта: telegram_id=%s, plan=%s", user.telegram_id, plan)
     try:
         face_data = json.loads(user.face_json)
         birthdate = user.birth_date.strftime("%d.%m.%Y")
@@ -1078,6 +1082,8 @@ async def _run_self_report(message: Message, user: User, plan: str):
         await _send_report(message, html, caption, plan, "self", filename)
 
     except Exception as e:
+        log.error("Ошибка генерации self отчёта: telegram_id=%s, plan=%s",
+                  user.telegram_id, plan, exc_info=True)
         err_text = MESSAGES["report_error"].text.format(error=html_mod.escape(str(e)))
         await message.answer(err_text, parse_mode="HTML")
 
@@ -1087,6 +1093,7 @@ async def _run_self_report(message: Message, user: User, plan: str):
 async def _run_money_report(message: Message, user: User, plan: str):
     from src.api import generate_report
 
+    log.info("Запуск money отчёта: telegram_id=%s, plan=%s", user.telegram_id, plan)
     try:
         face_data = json.loads(user.face_json)
         birthdate = user.birth_date.strftime("%d.%m.%Y")
@@ -1180,6 +1187,8 @@ async def _run_money_report(message: Message, user: User, plan: str):
         await _send_report(message, html, caption, plan, "money", filename)
 
     except Exception as e:
+        log.error("Ошибка генерации money отчёта: telegram_id=%s, plan=%s",
+                  user.telegram_id, plan, exc_info=True)
         err_text = MESSAGES["report_error"].text.format(error=html_mod.escape(str(e)))
         await message.answer(err_text, parse_mode="HTML")
 
@@ -1189,6 +1198,7 @@ async def _run_money_report(message: Message, user: User, plan: str):
 async def _run_couple_report(message: Message, user: User, plan: str):
     from src.api import generate_report
 
+    log.info("Запуск couple отчёта: telegram_id=%s, plan=%s", user.telegram_id, plan)
     try:
         if not user.partner_name or not user.partner_birth_date:
             await edit_msg(message, "partner_data_missing")
@@ -1266,6 +1276,8 @@ async def _run_couple_report(message: Message, user: User, plan: str):
         await _send_report(message, html, caption, plan, "couple", filename)
 
     except Exception as e:
+        log.error("Ошибка генерации couple отчёта: telegram_id=%s, plan=%s",
+                  user.telegram_id, plan, exc_info=True)
         err_text = MESSAGES["report_error"].text.format(error=html_mod.escape(str(e)))
         await message.answer(err_text, parse_mode="HTML")
 
