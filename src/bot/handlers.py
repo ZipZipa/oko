@@ -511,7 +511,7 @@ async def process_partner_birthdate_invalid(message: Message):
 @router.message(PartnerStates.waiting_for_partner_photo, F.photo)
 async def process_partner_photo(message: Message, state: FSMContext):
     photo: PhotoSize = message.photo[-1]
-    processing_msg = await send_msg(message, "analyzing_partner_photo")
+    processing_msg = await send_msg(message, "analyzing")
 
     face_data = await _analyze_face_return(message.bot, photo.file_id)
 
@@ -551,7 +551,7 @@ async def process_partner_photo_invalid(message: Message):
 async def cb_skip_partner_photo(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     user = await get_user(callback.from_user.id)
-    status_msg = await edit_msg(callback.message, "analyzing_couple_short")
+    status_msg = await edit_msg(callback.message, "analyzing")
     asyncio.create_task(_run_couple_report(status_msg, user, "demo"))
     await callback.answer()
 

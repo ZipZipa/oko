@@ -295,18 +295,6 @@ MESSAGES: dict[str, MessageConfig] = {
         key="analyzing",
         text="Запускаю анализ... Это займёт минуту <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>",
     ),
-    "analyzing_couple": MessageConfig(
-        key="analyzing_couple",
-        text="Запускаю анализ совместимости... Это займёт минуту <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>",
-    ),
-    "analyzing_couple_short": MessageConfig(
-        key="analyzing_couple_short",
-        text="Запускаю анализ совместимости <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>",
-    ),
-    "analyzing_partner_photo": MessageConfig(
-        key="analyzing_partner_photo",
-        text="Анализирую фото партнёра <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>",
-    ),
 
     # ── Ладони ────────────────────────────────────────────────────────────────
     "palm_needed_self": MessageConfig(
