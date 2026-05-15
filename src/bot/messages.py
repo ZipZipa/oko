@@ -439,10 +439,23 @@ def _get_text(msg_key: str, **fmt) -> str:
     return config.text
 
 
+def _resolve_photo_paths(msg_key: str, photos: list[str] | None = None) -> list[Path]:
+    """Resolve photo paths: explicit override → config photos → empty."""
+    if photos is not None:
+        result: list[Path] = []
+        for name in photos:
+            path = MEDIA_DIR / name
+            if path.exists():
+                result.append(path)
+        return result
+    return MESSAGES[msg_key].photo_paths
+
+
 async def send_msg(
     message: Message,
     msg_key: str,
     reply_markup=None,
+    photos: list[str] | None = None,
     **fmt,
 ) -> Message:
     """Отправить сообщение с опциональными картинками.
@@ -452,12 +465,14 @@ async def send_msg(
     - 2+ фото: медиагруппа; reply_markup отправляется отдельным сообщением
                (Telegram API не поддерживает reply_markup для медиагрупп)
 
+    Args:
+        photos: Override-список имён файлов из media/ (вместо конфига сообщения).
+
     Returns:
         Последнее отправленное сообщение.
     """
     text = _get_text(msg_key, **fmt)
-    config = MESSAGES[msg_key]
-    paths = config.photo_paths
+    paths = _resolve_photo_paths(msg_key, photos)
 
     if not paths:
         return await message.answer(
@@ -503,6 +518,7 @@ async def edit_msg(
     message: Message,
     msg_key: str,
     reply_markup=None,
+    photos: list[str] | None = None,
     **fmt,
 ) -> Message:
     """Редактировать сообщение с опциональными картинками.
@@ -512,12 +528,14 @@ async def edit_msg(
     - 1 фото → 1 фото: edit_media (меняет и картинку, и подпись)
     - в остальных случаях: delete + resend
 
+    Args:
+        photos: Override-список имён файлов из media/ (вместо конфига сообщения).
+
     Returns:
         Актуальное сообщение (может отличаться от исходного при delete+resend).
     """
     text = _get_text(msg_key, **fmt)
-    config = MESSAGES[msg_key]
-    paths = config.photo_paths
+    paths = _resolve_photo_paths(msg_key, photos)
     has_photos = len(paths) > 0
     message_has_photo = bool(message.photo)
 
