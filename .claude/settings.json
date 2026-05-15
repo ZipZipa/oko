@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem c:\\\\Users\\\\zig-zag\\\\Documents\\\\oko1\\\\ | Where-Object { $_.Name -ne \".venv\" } | Select-Object Name, PSIsContainer)",
+      "PowerShell(Get-ChildItem c:\\\\Users\\\\zig-zag\\\\Documents\\\\oko1\\\\src\\\\ -Recurse | Where-Object { !$_.PSIsContainer } | Select-Object FullName | Format-Table -AutoSize)"
+    ]
+  }
+}
