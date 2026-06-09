@@ -117,13 +117,7 @@ def _packages_menu(above_plan: str = "demo", report_prefix: str = "self") -> Inl
     for key in ("base", "extended", "full"):
         if _PLAN_LEVEL[key] > current_level:
             name = _PACKAGE_NAMES[key]
-            price = _get_discounted_price(above_plan, key)
-            discount_pct = _UPGRADE_DISCOUNTS.get((above_plan, key), 0)
-            if discount_pct:
-                label = f"{name} · {price} ₽ 🎁"
-            else:
-                label = f"{name} · {price} ₽"
-            rows.append([InlineKeyboardButton(text=label, callback_data=f"pkg_{report_prefix}_{key}")])
+            rows.append([InlineKeyboardButton(text=name, callback_data=f"pkg_{report_prefix}_{key}")])
     rows.append([InlineKeyboardButton(text="← В меню", callback_data="back_to_main")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
