@@ -934,7 +934,6 @@ async def process_palm_right(message: Message, state: FSMContext):
         await processing_msg.delete()
     except TelegramBadRequest:
         pass
-    await send_msg(message, "palm_both_accepted")
 
     pending_plan = data.get("pending_plan", "full")
     report_type = data.get("pending_report_type", "self")
