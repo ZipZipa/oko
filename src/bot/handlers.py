@@ -404,8 +404,25 @@ async def cb_menu_couple(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == "back_to_main")
 async def cb_back_to_main(callback: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
     await state.clear()
-    await edit_msg(callback.message, "choose_section", reply_markup=_main_menu())
+
+    # Если были в процессе сбора ладоней — возвращаем к пакетам, а не в главное меню
+    pending_report = data.get("pending_report_type")
+    if pending_report:
+        user = await get_user(callback.from_user.id)
+        if user:
+            try:
+                await _edit_to_packages(callback.message, user, pending_report)
+            except Exception:
+                await send_msg(callback.message, "choose_section", reply_markup=_main_menu())
+            await callback.answer()
+            return
+
+    try:
+        await edit_msg(callback.message, "choose_section", reply_markup=_main_menu())
+    except Exception:
+        await send_msg(callback.message, "choose_section", reply_markup=_main_menu())
     await callback.answer()
 
 

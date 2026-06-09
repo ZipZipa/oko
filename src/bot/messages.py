@@ -571,41 +571,53 @@ async def edit_msg(
     except TelegramBadRequest:
         pass  # сообщение уже удалено
 
-    if not has_photos:
-        return await bot.send_message(
-            chat_id=chat_id,
-            text=text,
-            reply_markup=reply_markup,
-            parse_mode="HTML",
-        )
+    try:
+        if not has_photos:
+            return await bot.send_message(
+                chat_id=chat_id,
+                text=text,
+                reply_markup=reply_markup,
+                parse_mode="HTML",
+            )
 
-    if len(paths) == 1:
-        photo = FSInputFile(str(paths[0]))
-        return await bot.send_photo(
-            chat_id=chat_id,
-            photo=photo,
-            caption=text,
-            reply_markup=reply_markup,
-            parse_mode="HTML",
-        )
+        if len(paths) == 1:
+            photo = FSInputFile(str(paths[0]))
+            return await bot.send_photo(
+                chat_id=chat_id,
+                photo=photo,
+                caption=text,
+                reply_markup=reply_markup,
+                parse_mode="HTML",
+            )
 
-    # 2+ фото — медиагруппа
-    media_list: list[InputMediaPhoto] = []
-    for i, p in enumerate(paths):
-        media_list.append(InputMediaPhoto(
-            media=FSInputFile(str(p)),
-            caption=text if i == 0 else None,
-            parse_mode="HTML" if i == 0 else None,
-        ))
+        # 2+ фото — медиагруппа
+        media_list: list[InputMediaPhoto] = []
+        for i, p in enumerate(paths):
+            media_list.append(InputMediaPhoto(
+                media=FSInputFile(str(p)),
+                caption=text if i == 0 else None,
+                parse_mode="HTML" if i == 0 else None,
+            ))
 
-    await bot.send_media_group(chat_id=chat_id, media=media_list)
+        await bot.send_media_group(chat_id=chat_id, media=media_list)
 
-    # reply_markup не поддерживается для медиагрупп
-    if reply_markup:
-        return await bot.send_message(
-            chat_id=chat_id,
-            text="↑",
-            reply_markup=reply_markup,
-        )
+        # reply_markup не поддерживается для медиагрупп
+        if reply_markup:
+            return await bot.send_message(
+                chat_id=chat_id,
+                text="↑",
+                reply_markup=reply_markup,
+            )
 
-    return message
+        return message
+    except Exception:
+        # Если отправка с фото не удалась — отправляем хотя бы текстовое сообщение
+        try:
+            return await bot.send_message(
+                chat_id=chat_id,
+                text=text,
+                reply_markup=reply_markup,
+                parse_mode="HTML",
+            )
+        except Exception:
+            return message
