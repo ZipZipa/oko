@@ -542,15 +542,16 @@ async def process_partner_photo(message: Message, state: FSMContext):
 
     face_data = await _analyze_face_return(message.bot, photo.file_id)
 
-    if face_data:
-        async with async_session() as session:
-            result = await session.execute(
-                select(User).where(User.telegram_id == message.from_user.id)
-            )
-            user = result.scalar_one_or_none()
-            if user:
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.telegram_id == message.from_user.id)
+        )
+        user = result.scalar_one_or_none()
+        if user:
+            user.partner_photo_file_id = photo.file_id
+            if face_data:
                 user.partner_face_json = json.dumps(face_data, ensure_ascii=False)
-                await session.commit()
+            await session.commit()
 
     try:
         await processing_msg.delete()
@@ -1267,6 +1268,11 @@ async def _run_couple_report(message: Message, user: User, plan: str):
             photo_uri = await _download_photo_data_uri(message.bot, user.photo_file_id)
             if photo_uri:
                 face_a["photo_url"] = photo_uri
+
+        if user.partner_photo_file_id and "photo_url" not in face_b:
+            photo_uri = await _download_photo_data_uri(message.bot, user.partner_photo_file_id)
+            if photo_uri:
+                face_b["photo_url"] = photo_uri
 
         loop = asyncio.get_running_loop()
 

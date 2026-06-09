@@ -20,6 +20,7 @@ async def init_db() -> None:
             "money_html TEXT",
             "partner_name VARCHAR(255)",
             "partner_birth_date DATE",
+            "partner_photo_file_id VARCHAR(512)",
             "partner_face_json TEXT",
             "couple_blocks_json TEXT",
             "couple_plan VARCHAR(20)",
