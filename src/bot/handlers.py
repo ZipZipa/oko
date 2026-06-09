@@ -399,10 +399,10 @@ async def cb_menu_couple(callback: CallbackQuery, state: FSMContext):
         await edit_msg(
             callback.message, "couple_intro",
             reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
+                [InlineKeyboardButton(text="Запустить анализ", callback_data="start_couple_demo")],
+                [InlineKeyboardButton(text="← В меню", callback_data="back_to_main")],
             ]),
         )
-        await state.set_state(PartnerStates.waiting_for_partner_name)
     await callback.answer()
 
 
@@ -463,7 +463,10 @@ async def cb_package_detail(callback: CallbackQuery):
         text = MESSAGES[msg_key].text
         text = text.replace(f"— {base_price} ₽", f"— <s>{base_price} ₽</s> {price} ₽", 1)
         try:
-            await callback.message.edit_text(text=text, reply_markup=markup, parse_mode="HTML")
+            if callback.message.photo:
+                await callback.message.edit_caption(caption=text, reply_markup=markup, parse_mode="HTML")
+            else:
+                await callback.message.edit_text(text=text, reply_markup=markup, parse_mode="HTML")
         except TelegramBadRequest as e:
             if "message is not modified" not in str(e):
                 raise
@@ -528,7 +531,6 @@ async def process_partner_birthdate(message: Message, state: FSMContext):
     await send_msg(
         message, "partner_photo_request",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="Пропустить →", callback_data="skip_partner_photo")],
             [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
         ]),
     )
@@ -571,10 +573,7 @@ async def process_partner_photo(message: Message, state: FSMContext):
 async def process_partner_photo_invalid(message: Message):
     await send_msg(
         message, "partner_photo_invalid",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="Пропустить →", callback_data="skip_partner_photo")],
-            [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
-        ]),
+        reply_markup=_cancel_keyboard(),
     )
 
 
@@ -604,6 +603,19 @@ async def cb_run_money_demo(callback: CallbackQuery):
     status_msg = await edit_msg(callback.message, "analyzing")
     await callback.answer()
     asyncio.create_task(_run_money_report(status_msg, user, "demo"))
+
+
+@router.callback_query(F.data == "start_couple_demo")
+async def cb_start_couple_demo(callback: CallbackQuery, state: FSMContext):
+    """Начинает сбор данных партнёра для анализа совместимости."""
+    await state.set_state(PartnerStates.waiting_for_partner_name)
+    await edit_msg(
+        callback.message, "partner_name_prompt",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
+        ]),
+    )
+    await callback.answer()
 
 
 @router.callback_query(F.data.startswith("buy_"))
@@ -676,12 +688,18 @@ async def cb_buy(callback: CallbackQuery, state: FSMContext):
             [InlineKeyboardButton(text="✅ Я оплатил", callback_data=f"check_{yoo_payment.id}")],
             [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
         ])
-        await callback.message.edit_text(text=text, reply_markup=markup, parse_mode="HTML")
+        if callback.message.photo:
+            await callback.message.edit_caption(caption=text, reply_markup=markup, parse_mode="HTML")
+        else:
+            await callback.message.edit_text(text=text, reply_markup=markup, parse_mode="HTML")
 
     except Exception as e:
         log.error("Ошибка создания платежа: %s", e, exc_info=True)
         err_text = MESSAGES["payment_create_error"].text.format(error=str(e))
-        await callback.message.edit_text(text=err_text, parse_mode="HTML")
+        if callback.message.photo:
+            await callback.message.edit_caption(caption=err_text, parse_mode="HTML")
+        else:
+            await callback.message.edit_text(text=err_text, parse_mode="HTML")
 
     await callback.answer()
 
@@ -964,7 +982,11 @@ async def _create_payment_and_show(callback_or_msg, user: User, report_type: str
         ])
 
         if isinstance(callback_or_msg, CallbackQuery):
-            await callback_or_msg.message.edit_text(text=text, reply_markup=markup, parse_mode="HTML")
+            msg = callback_or_msg.message
+            if msg.photo:
+                await msg.edit_caption(caption=text, reply_markup=markup, parse_mode="HTML")
+            else:
+                await msg.edit_text(text=text, reply_markup=markup, parse_mode="HTML")
         else:
             await callback_or_msg.answer(text=text, reply_markup=markup, parse_mode="HTML")
 
@@ -972,7 +994,11 @@ async def _create_payment_and_show(callback_or_msg, user: User, report_type: str
         log.error("Ошибка создания платежа (_create_payment_and_show): %s", e, exc_info=True)
         err_text = MESSAGES["payment_create_error"].text.format(error=str(e))
         if isinstance(callback_or_msg, CallbackQuery):
-            await callback_or_msg.message.edit_text(text=err_text, parse_mode="HTML")
+            msg = callback_or_msg.message
+            if msg.photo:
+                await msg.edit_caption(caption=err_text, parse_mode="HTML")
+            else:
+                await msg.edit_text(text=err_text, parse_mode="HTML")
         else:
             await callback_or_msg.answer(text=err_text, parse_mode="HTML")
 

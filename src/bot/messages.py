@@ -286,6 +286,10 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
 
     # ── Партнёр ───────────────────────────────────────────────────────────────
+    "partner_name_prompt": MessageConfig(
+        key="partner_name_prompt",
+        text="Напиши <b>имя партнёра</b> <tg-emoji emoji-id=\"5348460861755262251\">✍️</tg-emoji>",
+    ),
     "partner_name_empty": MessageConfig(
         key="partner_name_empty",
         text="Имя не может быть пустым <tg-emoji emoji-id=\"5348460861755262251\">✍️</tg-emoji>",
@@ -308,14 +312,11 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
     "partner_photo_request": MessageConfig(
         key="partner_photo_request",
-        text=(
-            "Отлично! Теперь пришли фото партнёра <tg-emoji emoji-id=\"5395698544164233115\">🤩</tg-emoji>\n\n"
-            "Это улучшит точность анализа. Если фото нет — нажми «Пропустить»."
-        ),
+        text="Пришли <b>фото партнёра</b> <tg-emoji emoji-id=\"5395698544164233115\">🤩</tg-emoji>",
     ),
     "partner_photo_invalid": MessageConfig(
         key="partner_photo_invalid",
-        text="Пожалуйста, пришли именно <b>фото</b> <tg-emoji emoji-id=\"5395698544164233115\">🤩</tg-emoji> или нажми «Пропустить»",
+        text="Пожалуйста, пришли именно <b>фото</b> <tg-emoji emoji-id=\"5395698544164233115\">🤩</tg-emoji>",
     ),
     "partner_data_received": MessageConfig(
         key="partner_data_received",
