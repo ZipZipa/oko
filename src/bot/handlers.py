@@ -52,6 +52,33 @@ def _skip_palms_keyboard() -> InlineKeyboardMarkup:
     ])
 
 
+def _premium_palms_keyboard() -> InlineKeyboardMarkup:
+    """Клавиатура для премиум-флоу — без пропуска, только отмена."""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
+    ])
+
+
+def _premium_partner_palms_keyboard() -> InlineKeyboardMarkup:
+    """Клавиатура для премиум-флоу ладоней партнёра — без пропуска."""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
+    ])
+
+
+def _skip_registration_palms_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Пропустить →", callback_data="skip_registration_palms")],
+    ])
+
+
+def _skip_partner_palms_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Пропустить →", callback_data="skip_partner_palms")],
+        [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
+    ])
+
+
 _PLAN_LEVEL = {"demo": 0, "base": 1, "extended": 2, "full": 3}
 
 # Фото для экрана выбора пакета в зависимости от (тип_отчёта, текущий_пакет)
@@ -314,13 +341,91 @@ async def process_birth_date(message: Message, state: FSMContext):
             user.birth_date = birth_date
             await session.commit()
 
-    await state.clear()
-    await send_msg(message, "choose_section", reply_markup=_main_menu())
+    await state.set_state(RegistrationStates.waiting_for_palm_left)
+    await send_msg(message, "registration_palm_request", reply_markup=_skip_registration_palms_keyboard())
 
 
 @router.message(RegistrationStates.waiting_for_birth_date)
 async def process_birth_date_invalid(message: Message):
     await send_msg(message, "birthdate_invalid_type")
+
+
+# ─── Ладони при регистрации ────────────────────────────────────────────────────
+
+@router.message(RegistrationStates.waiting_for_palm_left, F.photo)
+async def process_reg_palm_left(message: Message, state: FSMContext):
+    photo: PhotoSize = message.photo[-1]
+    processing_msg = await send_msg(message, "palm_left_analyzing")
+
+    palm_data = await _download_and_analyze_palm(message.bot, photo.file_id)
+
+    if not palm_data:
+        try:
+            await processing_msg.delete()
+        except TelegramBadRequest:
+            pass
+        await send_msg(message, "palm_not_detected", reply_markup=_skip_registration_palms_keyboard())
+        return
+
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.telegram_id == message.from_user.id)
+        )
+        user = result.scalar_one_or_none()
+        if user:
+            user.palm_left_json = json.dumps(palm_data, ensure_ascii=False)
+            await session.commit()
+
+    try:
+        await processing_msg.delete()
+    except TelegramBadRequest:
+        pass
+    await state.set_state(RegistrationStates.waiting_for_palm_right)
+    await send_msg(message, "registration_palm_left_done", reply_markup=_skip_registration_palms_keyboard())
+
+
+@router.message(RegistrationStates.waiting_for_palm_left)
+async def process_reg_palm_left_invalid(message: Message):
+    await send_msg(message, "palm_photo_invalid", reply_markup=_skip_registration_palms_keyboard())
+
+
+@router.message(RegistrationStates.waiting_for_palm_right, F.photo)
+async def process_reg_palm_right(message: Message, state: FSMContext):
+    photo: PhotoSize = message.photo[-1]
+    processing_msg = await send_msg(message, "palm_right_analyzing")
+
+    palm_data = await _download_and_analyze_palm(message.bot, photo.file_id)
+
+    if not palm_data:
+        try:
+            await processing_msg.delete()
+        except TelegramBadRequest:
+            pass
+        await send_msg(message, "palm_not_detected", reply_markup=_skip_registration_palms_keyboard())
+        return
+
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.telegram_id == message.from_user.id)
+        )
+        user = result.scalar_one_or_none()
+        if user:
+            user.palm_right_json = json.dumps(palm_data, ensure_ascii=False)
+            await session.commit()
+
+    try:
+        await processing_msg.delete()
+    except TelegramBadRequest:
+        pass
+
+    await state.clear()
+    await send_msg(message, "registration_palm_skipped")
+    await send_msg(message, "choose_section", reply_markup=_main_menu())
+
+
+@router.message(RegistrationStates.waiting_for_palm_right)
+async def process_reg_palm_right_invalid(message: Message):
+    await send_msg(message, "palm_photo_invalid", reply_markup=_skip_registration_palms_keyboard())
 
 
 # ─── Главное меню ───────────────────────────────────────────────────────────────
@@ -434,6 +539,19 @@ async def cb_skip_palms(callback: CallbackQuery, state: FSMContext):
     user = await get_user(callback.from_user.id)
     pending_plan = data.get("pending_plan", "full")
     report_type = data.get("pending_report_type", "self")
+    need_partner_palms = data.get("need_partner_palms", False)
+
+    # Для couple full — после пропуска своих ладоней запрашиваем ладони партнёра
+    if report_type == "couple" and need_partner_palms:
+        await state.set_state(PartnerStates.waiting_for_partner_palm_left)
+        await state.update_data(pending_plan=pending_plan, pending_report_type=report_type)
+        try:
+            await callback.message.delete()
+        except TelegramBadRequest:
+            pass
+        await send_msg(callback.message, "partner_palm_needed_premium", reply_markup=_skip_partner_palms_keyboard())
+        await callback.answer()
+        return
 
     # После сбора/пропуска ладоней — создаём платёж
     await _create_payment_and_show(callback, user, report_type, pending_plan)
@@ -574,11 +692,10 @@ async def process_partner_photo(message: Message, state: FSMContext):
         await processing_msg.delete()
     except TelegramBadRequest:
         pass
-    await state.clear()
 
-    user = await get_user(message.from_user.id)
-    status_msg = await send_msg(message, "partner_data_received")
-    asyncio.create_task(_run_couple_report(status_msg, user, "demo"))
+    # После фото партнёра — запрашиваем ладони партнёра
+    await state.set_state(PartnerStates.waiting_for_partner_palm_left)
+    await send_msg(message, "partner_palm_request", reply_markup=_skip_partner_palms_keyboard())
 
 
 @router.message(PartnerStates.waiting_for_partner_photo)
@@ -589,12 +706,137 @@ async def process_partner_photo_invalid(message: Message):
     )
 
 
-@router.callback_query(F.data == "skip_partner_photo")
-async def cb_skip_partner_photo(callback: CallbackQuery, state: FSMContext):
+# ─── Ладони партнёра (FSM для couple) ──────────────────────────────────────────
+
+def _partner_palms_kb(state_data: dict) -> InlineKeyboardMarkup:
+    """Клавиатура для ладоней партнёра: без пропуска в премиуме, с пропуском в демо."""
+    if state_data.get("pending_plan"):
+        return _premium_partner_palms_keyboard()
+    return _skip_partner_palms_keyboard()
+
+
+@router.message(PartnerStates.waiting_for_partner_palm_left, F.photo)
+async def process_partner_palm_left(message: Message, state: FSMContext):
+    photo: PhotoSize = message.photo[-1]
+    processing_msg = await send_msg(message, "palm_left_analyzing")
+
+    palm_data = await _download_and_analyze_palm(message.bot, photo.file_id)
+    state_data = await state.get_data()
+
+    if not palm_data:
+        try:
+            await processing_msg.delete()
+        except TelegramBadRequest:
+            pass
+        await send_msg(message, "palm_not_detected", reply_markup=_partner_palms_kb(state_data))
+        return
+
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.telegram_id == message.from_user.id)
+        )
+        user = result.scalar_one_or_none()
+        if user:
+            user.partner_palm_left_json = json.dumps(palm_data, ensure_ascii=False)
+            await session.commit()
+
+    try:
+        await processing_msg.delete()
+    except TelegramBadRequest:
+        pass
+    await state.set_state(PartnerStates.waiting_for_partner_palm_right)
+    await send_msg(message, "partner_palm_left_done", reply_markup=_partner_palms_kb(state_data))
+
+
+@router.message(PartnerStates.waiting_for_partner_palm_left)
+async def process_partner_palm_left_invalid(message: Message, state: FSMContext):
+    state_data = await state.get_data()
+    await send_msg(message, "palm_photo_invalid", reply_markup=_partner_palms_kb(state_data))
+
+
+@router.message(PartnerStates.waiting_for_partner_palm_right, F.photo)
+async def process_partner_palm_right(message: Message, state: FSMContext):
+    photo: PhotoSize = message.photo[-1]
+    processing_msg = await send_msg(message, "palm_right_analyzing")
+
+    palm_data = await _download_and_analyze_palm(message.bot, photo.file_id)
+
+    if not palm_data:
+        try:
+            await processing_msg.delete()
+        except TelegramBadRequest:
+            pass
+        state_data = await state.get_data()
+        await send_msg(message, "palm_not_detected", reply_markup=_partner_palms_kb(state_data))
+        return
+
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.telegram_id == message.from_user.id)
+        )
+        user = result.scalar_one_or_none()
+        if user:
+            user.partner_palm_right_json = json.dumps(palm_data, ensure_ascii=False)
+            await session.commit()
+
+    try:
+        await processing_msg.delete()
+    except TelegramBadRequest:
+        pass
+
+    data = await state.get_data()
     await state.clear()
+
+    user = await get_user(message.from_user.id)
+
+    # Если это премиум-флоу — создаём платёж
+    pending_plan = data.get("pending_plan")
+    if pending_plan:
+        await _create_payment_and_show(message, user, "couple", pending_plan)
+    else:
+        status_msg = await send_msg(message, "partner_data_received")
+        asyncio.create_task(_run_couple_report(status_msg, user, "demo"))
+
+
+@router.message(PartnerStates.waiting_for_partner_palm_right)
+async def process_partner_palm_right_invalid(message: Message, state: FSMContext):
+    state_data = await state.get_data()
+    await send_msg(message, "palm_photo_invalid", reply_markup=_partner_palms_kb(state_data))
+
+
+@router.callback_query(F.data == "skip_partner_palms")
+async def cb_skip_partner_palms(callback: CallbackQuery, state: FSMContext):
+    """Пропуск ладоней партнёра."""
+    data = await state.get_data()
+    await state.clear()
+
     user = await get_user(callback.from_user.id)
-    status_msg = await edit_msg(callback.message, "analyzing")
-    asyncio.create_task(_run_couple_report(status_msg, user, "demo"))
+    pending_plan = data.get("pending_plan")
+
+    try:
+        await callback.message.delete()
+    except TelegramBadRequest:
+        pass
+
+    # Если это премиум-флоу — создаём платёж
+    if pending_plan:
+        await _create_payment_and_show(callback, user, "couple", pending_plan)
+    else:
+        status_msg = await send_msg(callback.message, "partner_data_received")
+        asyncio.create_task(_run_couple_report(status_msg, user, "demo"))
+    await callback.answer()
+
+
+@router.callback_query(F.data == "skip_registration_palms")
+async def cb_skip_registration_palms(callback: CallbackQuery, state: FSMContext):
+    """Пропуск ладоней при регистрации — переход в главное меню."""
+    await state.clear()
+    try:
+        await callback.message.delete()
+    except TelegramBadRequest:
+        pass
+    await send_msg(callback.message, "registration_palm_skipped")
+    await send_msg(callback.message, "choose_section", reply_markup=_main_menu())
     await callback.answer()
 
 
@@ -645,7 +887,7 @@ async def cb_buy(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
         return
 
-    # Для full-пакетов нужна проверка ладоней — спрашиваем до оплаты
+    # Для full-пакетов нужна проверка ладоней — спрашиваем до оплаты (без пропуска!)
     if plan_key == "full" and report_prefix in ("self", "money"):
         has_both_palms = bool(user.palm_left_json and user.palm_right_json)
         if not has_both_palms:
@@ -653,8 +895,25 @@ async def cb_buy(callback: CallbackQuery, state: FSMContext):
             await state.update_data(pending_plan=plan_key, pending_report_type=report_prefix)
             await edit_msg(
                 callback.message, "palm_needed_self" if report_prefix == "self" else "palm_needed_money",
-                reply_markup=_skip_palms_keyboard(),
+                reply_markup=_premium_palms_keyboard(),
             )
+            await callback.answer()
+            return
+
+    # Для couple full — проверяем ладони пользователя и партнёра (без пропуска!)
+    if plan_key == "full" and report_prefix == "couple":
+        has_user_palms = bool(user.palm_left_json and user.palm_right_json)
+        has_partner_palms = bool(user.partner_palm_left_json and user.partner_palm_right_json)
+        if not has_user_palms:
+            await state.set_state(PalmStates.waiting_for_palm_left)
+            await state.update_data(pending_plan=plan_key, pending_report_type=report_prefix, need_partner_palms=not has_partner_palms)
+            await edit_msg(callback.message, "palm_needed_couple", reply_markup=_premium_palms_keyboard())
+            await callback.answer()
+            return
+        if not has_partner_palms:
+            await state.set_state(PartnerStates.waiting_for_partner_palm_left)
+            await state.update_data(pending_plan=plan_key, pending_report_type=report_prefix)
+            await edit_msg(callback.message, "partner_palm_needed_premium", reply_markup=_premium_partner_palms_keyboard())
             await callback.answer()
             return
 
@@ -829,7 +1088,7 @@ async def _start_self_report(callback: CallbackQuery, plan: str, state: FSMConte
             await state.update_data(pending_plan=plan, pending_report_type="self")
             await edit_msg(
                 callback.message, "palm_needed_self",
-                reply_markup=_skip_palms_keyboard(),
+                reply_markup=_premium_palms_keyboard(),
             )
             await callback.answer()
             return
@@ -876,7 +1135,7 @@ async def process_palm_left(message: Message, state: FSMContext):
             await processing_msg.delete()
         except TelegramBadRequest:
             pass
-        await send_msg(message, "palm_not_detected", reply_markup=_skip_palms_keyboard())
+        await send_msg(message, "palm_not_detected", reply_markup=_premium_palms_keyboard())
         return
 
     async with async_session() as session:
@@ -893,12 +1152,12 @@ async def process_palm_left(message: Message, state: FSMContext):
     except TelegramBadRequest:
         pass
     await state.set_state(PalmStates.waiting_for_palm_right)
-    await send_msg(message, "palm_left_accepted", reply_markup=_skip_palms_keyboard())
+    await send_msg(message, "palm_left_accepted", reply_markup=_premium_palms_keyboard())
 
 
 @router.message(PalmStates.waiting_for_palm_left)
 async def process_palm_left_invalid(message: Message):
-    await send_msg(message, "palm_photo_invalid", reply_markup=_skip_palms_keyboard())
+    await send_msg(message, "palm_photo_invalid", reply_markup=_premium_palms_keyboard())
 
 
 @router.message(PalmStates.waiting_for_palm_right, F.photo)
@@ -913,7 +1172,7 @@ async def process_palm_right(message: Message, state: FSMContext):
             await processing_msg.delete()
         except TelegramBadRequest:
             pass
-        await send_msg(message, "palm_not_detected", reply_markup=_skip_palms_keyboard())
+        await send_msg(message, "palm_not_detected", reply_markup=_premium_palms_keyboard())
         return
 
     async with async_session() as session:
@@ -937,6 +1196,14 @@ async def process_palm_right(message: Message, state: FSMContext):
 
     pending_plan = data.get("pending_plan", "full")
     report_type = data.get("pending_report_type", "self")
+    need_partner_palms = data.get("need_partner_palms", False)
+
+    # Для couple full — после своих ладоней запрашиваем ладони партнёра
+    if report_type == "couple" and need_partner_palms:
+        await state.set_state(PartnerStates.waiting_for_partner_palm_left)
+        await state.update_data(pending_plan=pending_plan, pending_report_type=report_type)
+        await send_msg(message, "partner_palm_needed_premium", reply_markup=_premium_partner_palms_keyboard())
+        return
 
     # Ладони собраны — создаём платёж
     await _create_payment_and_show(message, user, report_type, pending_plan)
@@ -944,7 +1211,7 @@ async def process_palm_right(message: Message, state: FSMContext):
 
 @router.message(PalmStates.waiting_for_palm_right)
 async def process_palm_right_invalid(message: Message):
-    await send_msg(message, "palm_photo_invalid", reply_markup=_skip_palms_keyboard())
+    await send_msg(message, "palm_photo_invalid", reply_markup=_premium_palms_keyboard())
 
 
 # ─── Хелпер создания платежа ────────────────────────────────────────────────────
@@ -1290,6 +1557,12 @@ async def _run_couple_report(message: Message, user: User, plan: str):
             if photo_uri:
                 face_b["photo_url"] = photo_uri
 
+        # Данные ладоней
+        palm_a_left = json.loads(user.palm_left_json) if user.palm_left_json else None
+        palm_a_right = json.loads(user.palm_right_json) if user.palm_right_json else None
+        palm_b_left = json.loads(user.partner_palm_left_json) if user.partner_palm_left_json else None
+        palm_b_right = json.loads(user.partner_palm_right_json) if user.partner_palm_right_json else None
+
         loop = asyncio.get_running_loop()
 
         if plan == "demo":
@@ -1304,6 +1577,10 @@ async def _run_couple_report(message: Message, user: User, plan: str):
                     face_data_b=face_b,
                     name_b=user.partner_name,
                     birthdate_b=birthdate_b,
+                    palm_data_left=palm_a_left,
+                    palm_data_right=palm_a_right,
+                    palm_data_b_left=palm_b_left,
+                    palm_data_b_right=palm_b_right,
                     plan="demo",
                     _out_blocks=out_blocks,
                 ),
@@ -1329,6 +1606,10 @@ async def _run_couple_report(message: Message, user: User, plan: str):
                     face_data_b=face_b,
                     name_b=user.partner_name,
                     birthdate_b=birthdate_b,
+                    palm_data_left=palm_a_left,
+                    palm_data_right=palm_a_right,
+                    palm_data_b_left=palm_b_left,
+                    palm_data_b_right=palm_b_right,
                     plan=plan,
                     reference=reference,
                 ),

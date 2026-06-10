@@ -49,6 +49,8 @@ def generate_report(
     model: str = None,
     palm_data_left: dict = None,
     palm_data_right: dict = None,
+    palm_data_b_left: dict = None,
+    palm_data_b_right: dict = None,
     photo_url: str = None,
     plan: str = "full",
     reference: str = None,
@@ -61,7 +63,8 @@ def generate_report(
 
     Для self и money — нужны face_data, name, birthdate.
     Для couple — дополнительно face_data_b, name_b, birthdate_b.
-    palm_data — опциональные данные ладони (только для self).
+    palm_data_left/right — опциональные данные ладони пользователя A.
+    palm_data_b_left/right — опциональные данные ладони партнёра (B).
     """
     log.info("generate_report: type=%s, name=%s, plan=%s", report_type, name, plan)
     if report_type == "self":
@@ -92,6 +95,10 @@ def generate_report(
             face_b=face_data_b, name_b=name_b, birthdate_b=birthdate_b,
             examples_dir=EXAMPLES_DIR, templates_dir=TEMPLATES_DIR,
             ref_year=ref_year, model=model,
+            palm_data_a_left=palm_data_left,
+            palm_data_a_right=palm_data_right,
+            palm_data_b_left=palm_data_b_left,
+            palm_data_b_right=palm_data_b_right,
             plan=plan, reference=reference, _out_blocks=_out_blocks,
         )
 
@@ -122,6 +129,10 @@ def build_input_only(report_type: str, **kwargs) -> dict:
             kwargs["face_data"], kwargs["name"], kwargs["birthdate"],
             kwargs["face_data_b"], kwargs["name_b"], kwargs["birthdate_b"],
             kwargs.get("ref_year"),
+            palm_data_a_left=kwargs.get("palm_data_left"),
+            palm_data_a_right=kwargs.get("palm_data_right"),
+            palm_data_b_left=kwargs.get("palm_data_b_left"),
+            palm_data_b_right=kwargs.get("palm_data_b_right"),
         )
     else:
         raise ValueError(f"Unknown report_type: {report_type}")

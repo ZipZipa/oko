@@ -34,6 +34,8 @@ class User(Base):
     partner_birth_date = Column(Date, nullable=True)
     partner_photo_file_id = Column(String(512), nullable=True)
     partner_face_json = Column(Text, nullable=True)
+    partner_palm_left_json = Column(Text, nullable=True)
+    partner_palm_right_json = Column(Text, nullable=True)
     couple_blocks_json = Column(Text, nullable=True)
     couple_plan = Column(String(20), nullable=True)
     couple_html = Column(Text, nullable=True)

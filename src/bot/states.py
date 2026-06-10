@@ -5,6 +5,8 @@ class RegistrationStates(StatesGroup):
     waiting_for_photo = State()
     waiting_for_name = State()
     waiting_for_birth_date = State()
+    waiting_for_palm_left = State()
+    waiting_for_palm_right = State()
 
 
 class PalmStates(StatesGroup):
@@ -16,3 +18,5 @@ class PartnerStates(StatesGroup):
     waiting_for_partner_name = State()
     waiting_for_partner_birthdate = State()
     waiting_for_partner_photo = State()
+    waiting_for_partner_palm_left = State()
+    waiting_for_partner_palm_right = State()

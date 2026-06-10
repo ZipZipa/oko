@@ -318,6 +318,27 @@ MESSAGES: dict[str, MessageConfig] = {
         key="partner_photo_invalid",
         text="Пожалуйста, пришли именно <b>фото</b> <tg-emoji emoji-id=\"5395698544164233115\">🤩</tg-emoji>",
     ),
+    "partner_palm_request": MessageConfig(
+        key="partner_palm_request",
+        text=(
+            "<tg-emoji emoji-id=\"5262912590756982214\">👋</tg-emoji> <b>Ладони партнёра усилят анализ совместимости</b>\n\n"
+            "Хиромантия раскроет скрытые паттерны в отношениях и кармические связи.\n\n"
+            "Пришли фото <b>левой ладони партнёра</b> (ладонью вверх, линии должны быть чётко видны)\n"
+            "Или нажми «Пропустить»."
+        ),
+    ),
+    "partner_palm_left_done": MessageConfig(
+        key="partner_palm_left_done",
+        text=(
+            "<b>Левая ладонь партнёра считана!</b> <tg-emoji emoji-id=\"5395526217191416774\">🤩</tg-emoji>\n\n"
+            "Теперь пришли <b>правую ладонь партнёра</b> (ладонью вверх)\n"
+            "Или нажми «Пропустить»."
+        ),
+    ),
+    "partner_palm_skipped": MessageConfig(
+        key="partner_palm_skipped",
+        text="Хорошо, ладони партнёра можно добавить позже <tg-emoji emoji-id=\"5222154218701352505\">✔️</tg-emoji>\n\n",
+    ),
     "partner_data_received": MessageConfig(
         key="partner_data_received",
         text="Данные партнёра получены <tg-emoji emoji-id=\"5395526217191416774\">🤩</tg-emoji>\n\nЗапускаю анализ совместимости <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>",
@@ -327,6 +348,51 @@ MESSAGES: dict[str, MessageConfig] = {
     "analyzing": MessageConfig(
         key="analyzing",
         text="Запускаю анализ. Это займет некоторое время <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>",
+    ),
+
+    # ── Ладони при регистрации ────────────────────────────────────────────────
+    "registration_palm_request": MessageConfig(
+        key="registration_palm_request",
+        text=(
+            "<tg-emoji emoji-id=\"5262912590756982214\">👋</tg-emoji> <b>Ладони хранят больше информации, чем кажется</b>\n\n"
+            "Фото ладоней усилят анализ — хиромантия раскроет скрытые таланты, денежные линии и кармические уроки.\n\n"
+            "Пришли фото <b>левой ладони</b> (ладонью вверх, линии должны быть чётко видны)\n"
+            "Или нажми «Пропустить» — можно добавить ладони позже."
+        ),
+    ),
+    "registration_palm_left_done": MessageConfig(
+        key="registration_palm_left_done",
+        text=(
+            "<b>Левая ладонь считана!</b> <tg-emoji emoji-id=\"5395526217191416774\">🤩</tg-emoji>\n\n"
+            "Теперь пришли <b>правую ладонь</b> (ладонью вверх)\n"
+            "Или нажми «Пропустить»."
+        ),
+    ),
+    "registration_palm_skipped": MessageConfig(
+        key="registration_palm_skipped",
+        text=(
+            "Хорошо, ладони можно добавить позже <tg-emoji emoji-id=\"5222154218701352505\">✔️</tg-emoji>\n\n"
+        ),
+    ),
+
+    # ── Ладони для couple full ───────────────────────────────────────────────
+    "palm_needed_couple": MessageConfig(
+        key="palm_needed_couple",
+        text=(
+            "<tg-emoji emoji-id=\"5262912590756982214\">👋</tg-emoji> <b>Ладоны усилят анализ совместимости</b>\n\n"
+            "Хиромантия раскроет скрытые паттерны в отношениях и кармические связи.\n\n"
+            "Для премиум-анализа нужны твои ладони. Пришли фото <b>левой ладони</b> (ладонью вверх, линии должны быть чётко видны)\n"
+            "Или нажми «Пропустить»."
+        ),
+    ),
+    "partner_palm_needed_premium": MessageConfig(
+        key="partner_palm_needed_premium",
+        text=(
+            "<tg-emoji emoji-id=\"5262912590756982214\">👋</tg-emoji> <b>Ладони партнёра усилят анализ совместимости</b>\n\n"
+            "Хиромантия раскроет скрытые паттерны в отношениях и кармические связи.\n\n"
+            "Пришли фото <b>левой ладони партнёра</b> (ладонью вверх, линии должны быть чётко видны)\n"
+            "Или нажми «Пропустить»."
+        ),
     ),
 
     # ── Ладони ────────────────────────────────────────────────────────────────

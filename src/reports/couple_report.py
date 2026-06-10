@@ -62,7 +62,7 @@ def build_user_prompt(reference_blocks: dict, target_input: dict) -> str:
     source_map = """
 ИСТОЧНИКИ БЛОКОВ (используй ТОЛЬКО указанные данные):
 - compatibility → couple.compatibility (score, type), couple.matrix_overlap, couple.union_number, couple.year_sync
-- palmistry_heart → person_a.features, person_b.features (косвенные индикаторы — реальных ладоней нет)
+- palmistry_heart → person_a.palm_left/palm_right, person_b.palm_left/palm_right (если есть реальные данные ладоней — анализируй по ним; иначе — person_a.features, person_b.features как косвенные индикаторы)
 - fidelity → person_a.numerology, person_b.numerology, person_a.matrix, person_b.matrix, couple.face_contrast
 - marriage_perspective → couple.compatibility, couple.union_number, person_a.numerology.personal_year, person_b.numerology.personal_year
 - karma → couple.matrix_overlap, person_a.matrix, person_b.matrix, couple.union_number
@@ -151,7 +151,11 @@ def validate_blocks(blocks: dict) -> list[str]:
 
 def build_target_input(face_a: dict, name_a: str, birthdate_a: str,
                        face_b: dict, name_b: str, birthdate_b: str,
-                       ref_year: int = None) -> dict:
+                       ref_year: int = None,
+                       palm_data_a_left: dict = None,
+                       palm_data_a_right: dict = None,
+                       palm_data_b_left: dict = None,
+                       palm_data_b_right: dict = None) -> dict:
     person_a = build_person_profile(
         face_a, name_a, birthdate_a, ref_year=ref_year,
         include_scores=False, include_matrix_raw=True,
@@ -160,6 +164,16 @@ def build_target_input(face_a: dict, name_a: str, birthdate_a: str,
         face_b, name_b, birthdate_b, ref_year=ref_year,
         include_scores=False, include_matrix_raw=True,
     )
+
+    # Добавляем данные ладоней, если есть
+    if palm_data_a_left:
+        person_a["palm_left"] = palm_data_a_left
+    if palm_data_a_right:
+        person_a["palm_right"] = palm_data_a_right
+    if palm_data_b_left:
+        person_b["palm_left"] = palm_data_b_left
+    if palm_data_b_right:
+        person_b["palm_right"] = palm_data_b_right
 
     couple = couple_full_dynamics(
         birthdate_a, birthdate_b,
@@ -170,6 +184,10 @@ def build_target_input(face_a: dict, name_a: str, birthdate_a: str,
     )
     couple["face_contrast"] = face_contrast(person_a["features"], person_b["features"])
     couple["matrix_overlap"] = matrix_overlap(person_a["matrix_raw"], person_b["matrix_raw"])
+
+    # Отмечаем наличие ладоней для промпта
+    couple["has_palms_a"] = bool(palm_data_a_left or palm_data_a_right)
+    couple["has_palms_b"] = bool(palm_data_b_left or palm_data_b_right)
 
     person_a.pop("matrix_raw", None)
     person_b.pop("matrix_raw", None)
@@ -188,11 +206,17 @@ def generate(face_a: dict, name_a: str, birthdate_a: str,
              face_b: dict, name_b: str, birthdate_b: str,
              examples_dir: Path, templates_dir: Path,
              ref_year: int = None, model: str = None,
+             palm_data_a_left: dict = None,
+             palm_data_a_right: dict = None,
+             palm_data_b_left: dict = None,
+             palm_data_b_right: dict = None,
              plan: str = "full",
              reference: str = None,
              _out_blocks: list = None) -> str:
     """Генерирует couple отчёт и возвращает HTML.
 
+    palm_data_a_left/right — данные ладоней пользователя A.
+    palm_data_b_left/right — данные ладоней партнёра B.
     reference: путь к JSON-файлу с блоками ИЛИ сырая JSON-строка.
                Если указан — LLM не вызывается.
     _out_blocks: если передан пустой список, в него будет добавлен dict blocks.
@@ -200,6 +224,10 @@ def generate(face_a: dict, name_a: str, birthdate_a: str,
     target = build_target_input(
         face_a, name_a, birthdate_a,
         face_b, name_b, birthdate_b, ref_year,
+        palm_data_a_left=palm_data_a_left,
+        palm_data_a_right=palm_data_a_right,
+        palm_data_b_left=palm_data_b_left,
+        palm_data_b_right=palm_data_b_right,
     )
     examples_subdir = examples_dir / EXAMPLES_SUBDIR
 

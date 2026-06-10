@@ -27,6 +27,8 @@ async def init_db() -> None:
             "couple_html TEXT",
             "palm_left_json TEXT",
             "palm_right_json TEXT",
+            "partner_palm_left_json TEXT",
+            "partner_palm_right_json TEXT",
             "referral_code VARCHAR(20)",
             "referred_by VARCHAR(20)",
         ]
