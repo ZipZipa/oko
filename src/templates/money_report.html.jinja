@@ -48,7 +48,6 @@ body { font-family: 'Jost', sans-serif; font-weight: 300; background: var(--whit
 
 /* Cover stage */
 .cover-stage { position: relative; flex: 1; width: 100%; max-width: 760px; margin: 2rem auto 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.25rem; }
-.cover-stage::before { content: ""; position: absolute; left: 0; right: 0; top: 28%; height: 28%; background: linear-gradient(90deg, transparent 0%, #F1E9D6 20%, #F1E9D6 80%, transparent 100%); z-index: 0; pointer-events: none; }
 
 /* Portrait */
 .cover-portrait { position: relative; width: 100%; max-width: 320px; aspect-ratio: 1/1; border-radius: 50%; overflow: hidden; z-index: 1; }
@@ -272,8 +271,8 @@ body.no-grain::before { display: none !important; }
     <div class="locked-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V7.5a4 4 0 0 1 8 0V11"></path><circle cx="12" cy="15.5" r="1.1" fill="currentColor" stroke="none" style="fill: var(--accent-soft);"></circle></svg>
     </div>
-    <div class="locked-eyebrow">Доступно в пакете</div>
     <div class="locked-title">{{ title }}</div>
+    <div class="locked-eyebrow">Доступно в пакете</div>
     <div class="locked-pkg-name">{{ pkg }}</div>
   </div>
 </div>
