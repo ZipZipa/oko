@@ -438,7 +438,7 @@ body.no-grain::before { display: none !important; }
 
 
 {%- set _ch = locked_cfg['hand'] -%}
-{%- if blocks.hand_analysis and (plan == 'demo' or _cur_level >= _plan_levels[_ch.min_plan]) %}
+{%- if (plan == 'demo') or (blocks.hand_analysis and _cur_level >= _plan_levels[_ch.min_plan]) %}
 <!-- ═══ ЧАСТЬ I.5: АНАЛИЗ ЛАДОНИ ═══ -->
 <div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть первая · дополнение</div>
@@ -447,6 +447,7 @@ body.no-grain::before { display: none !important; }
 </div>
 
 <div class="page">
+{%- if blocks.hand_analysis %}
 {%- set _cho = locked_cfg['hand_overview'] -%}
 {%- call locked_card(_cho.min_plan, _cho.title, _cho.pkg) %}
   <div class="card">
@@ -513,6 +514,19 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 {%- endcall %}
+{%- else %}
+  {#- Демо без данных ладони — заглушка с замочком -#}
+  <div class="locked-wrap" aria-label="Заблокированный раздел">
+    <div style="position:relative; background:var(--g100); border-radius:var(--r-lg); padding:3.5rem 1.5rem; text-align:center;">
+      <div class="locked-icon" style="margin:0 auto 0.85rem;" aria-hidden="true">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V7.5a4 4 0 0 1 8 0V11"></path><circle cx="12" cy="15.5" r="1.1" fill="currentColor" stroke="none" style="fill: var(--accent-soft);"></circle></svg>
+      </div>
+      <div class="locked-eyebrow">Доступно в пакете</div>
+      <div class="locked-title">Анализ ладони</div>
+      <div class="locked-pkg-name">Премиум</div>
+    </div>
+  </div>
+{%- endif %}
 </div>
 {%- endif %}
 
@@ -614,7 +628,7 @@ body.no-grain::before { display: none !important; }
 {%- endif %}
 
 {%- set _chiro = locked_cfg['chiromancy'] -%}
-{%- if blocks.chiromancy and (plan == 'demo' or _cur_level >= _plan_levels[_chiro.min_plan]) %}
+{%- if (plan == 'demo') or (blocks.chiromancy and _cur_level >= _plan_levels[_chiro.min_plan]) %}
 <!-- ═══ ЧАСТЬ III: ХИРОМАНТИЯ ═══ -->
 <div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть третья</div>
@@ -623,6 +637,7 @@ body.no-grain::before { display: none !important; }
 </div>
 
 <div class="page">
+{%- if blocks.chiromancy %}
 {%- call locked_card(_chiro.min_plan, _chiro.title, _chiro.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.chiromancy.quote }}</p>
@@ -634,6 +649,19 @@ body.no-grain::before { display: none !important; }
     <div class="final-line">{{ blocks.chiromancy.final_line }}</div>
   </div>
 {%- endcall %}
+{%- else %}
+  {#- Демо без данных хиромантии — заглушка с замочком -#}
+  <div class="locked-wrap" aria-label="Заблокированный раздел">
+    <div style="position:relative; background:var(--g100); border-radius:var(--r-lg); padding:3.5rem 1.5rem; text-align:center;">
+      <div class="locked-icon" style="margin:0 auto 0.85rem;" aria-hidden="true">
+        <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V7.5a4 4 0 0 1 8 0V11"></path><circle cx="12" cy="15.5" r="1.1" fill="currentColor" stroke="none" style="fill: var(--accent-soft);"></circle></svg>
+      </div>
+      <div class="locked-eyebrow">Доступно в пакете</div>
+      <div class="locked-title">Хиромантия</div>
+      <div class="locked-pkg-name">Премиум</div>
+    </div>
+  </div>
+{%- endif %}
 </div>
 {%- endif %}
 
