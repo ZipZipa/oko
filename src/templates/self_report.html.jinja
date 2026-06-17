@@ -539,8 +539,6 @@ body.no-grain::before { display: none !important; }
   </div>
 {%- endcall %}
 
-{%- set _cgs = locked_cfg['grooming_sides'] -%}
-{%- call locked_card(_cgs.min_plan, _cgs.title, _cgs.pkg) %}
   <div class="g2">
     <div class="card" style="margin-bottom:0;">
       <div class="card-lbl">Что работает</div>
@@ -550,6 +548,8 @@ body.no-grain::before { display: none !important; }
         {% endfor %}
       </div>
     </div>
+    {%- set _cgs = locked_cfg['grooming_sides'] -%}
+    {%- call locked_card(_cgs.min_plan, _cgs.title, _cgs.pkg) %}
     <div class="card" style="margin-bottom:0;">
       <div class="card-lbl">Что восстановить</div>
       <div class="bt">
@@ -558,8 +558,8 @@ body.no-grain::before { display: none !important; }
         {% endfor %}
       </div>
     </div>
+    {%- endcall %}
   </div>
-{%- endcall %}
 
 {%- set _cga = locked_cfg['grooming_archetype'] -%}
 {%- call locked_card(_cga.min_plan, _cga.title, _cga.pkg) %}
@@ -670,11 +670,11 @@ body.no-grain::before { display: none !important; }
   </div>
 {%- endcall %}
 
-{%- set _cnl = locked_cfg['num_life_path'] -%}
-{%- call locked_card(_cnl.min_plan, _cnl.title, _cnl.pkg) %}
   <div class="card">
     <div class="card-lbl">Число жизненного пути — {{ data.numerology.life_path }} «{{ data.numerology.life_path_archetype.name }}»</div>
     <p class="q">{{ blocks.numerology.life_path_quote }}</p>
+    {%- set _cnl = locked_cfg['num_life_path'] -%}
+    {%- call locked_card(_cnl.min_plan, _cnl.title, _cnl.pkg) %}
     <div class="bt">
       {% for item in blocks.numerology.life_path_points %}
       <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
@@ -683,8 +683,8 @@ body.no-grain::before { display: none !important; }
     <div class="tags">
       {% for tag in blocks.numerology.life_path_tags %}<span class="tag">{{ tag }}</span>{% endfor %}
     </div>
+    {%- endcall %}
   </div>
-{%- endcall %}
 
 {%- set _cnd = locked_cfg['num_day'] -%}
 {%- call locked_card(_cnd.min_plan, _cnd.title, _cnd.pkg) %}
@@ -794,16 +794,16 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 
-  {%- call locked_card(_b1.min_plan, _b1.title, _b1.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.deep_portrait.block_1_personality.quote }}</p>
+    {%- call locked_card(_b1.min_plan, _b1.title, _b1.pkg) %}
     <div class="bt">
       {% for item in blocks.deep_portrait.block_1_personality.points %}
       <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
       {% endfor %}
     </div>
+    {%- endcall %}
   </div>
-  {%- endcall %}
 {%- endif %}
 
 {%- set _b3 = locked_cfg['block_3'] -%}
