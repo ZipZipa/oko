@@ -163,7 +163,7 @@ hr::after { content: ""; position: absolute; left: 50%; top: 50%; width: 5px; he
 /* FOOTER */
 .footer { text-align: center; padding: 3rem 4rem; border-top: 0.5px solid var(--border); font-size: 11px; color: var(--g500); letter-spacing: 0.07em; line-height: 2.2; max-width: 920px; margin: 0 auto; }
 
-/* LOCKED */
+/* ═══ LOCKED — страничный замок (целая глава) ═══ */
 .locked-wrap { position: relative; margin-bottom: 1rem; border-radius: var(--r-lg); overflow: hidden; isolation: isolate; }
 .locked-content { filter: blur(2px) saturate(0.95); pointer-events: none; user-select: none; opacity: 0.95; }
 .locked-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.85rem; padding: 1.5rem; background: radial-gradient(ellipse at center, rgba(250,250,248,0.45) 0%, rgba(250,250,248,0.78) 70%, rgba(250,250,248,0.92) 100%); text-align: center; }
@@ -172,6 +172,23 @@ hr::after { content: ""; position: absolute; left: 50%; top: 50%; width: 5px; he
 .locked-eyebrow { font-size: 9.5px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--accent-deep); font-variant: small-caps; }
 .locked-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; color: var(--black); line-height: 1.15; max-width: 26ch; }
 .locked-pkg-name { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 14px; color: var(--accent-deep); letter-spacing: 0.04em; margin-top: 2px; }
+
+/* ═══ LOCKED BLOCK — замок на отдельном блоке внутри карточки ═══ */
+.locked-block { position: relative; border-radius: var(--r-md); overflow: hidden; isolation: isolate; min-height: 160px; }
+.locked-block-content { filter: blur(3px) saturate(0.9); pointer-events: none; user-select: none; opacity: 0.9; min-height: 160px; }
+.locked-block-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.6rem; padding: 1.25rem; background: radial-gradient(ellipse at center, rgba(250,250,248,0.35) 0%, rgba(250,250,248,0.72) 65%, rgba(250,250,248,0.90) 100%); text-align: center; }
+.locked-block-overlay .locked-icon { width: 36px; height: 36px; flex-shrink: 0; box-shadow: 0 6px 18px rgba(0,0,0,0.15), 0 0 0 5px rgba(184,153,104,0.10); }
+.locked-block-overlay .locked-icon svg { width: 16px; height: 16px; }
+.locked-block-overlay .locked-title { font-size: 17px; max-width: 28ch; }
+.locked-block-overlay .locked-pkg-name { font-size: 12px; white-space: nowrap; }
+.locked-block-overlay .locked-eyebrow { font-size: 9px; white-space: nowrap; }
+
+/* ═══ LOCKED BLOCK — тёмный вариант (внутри dark-card) ═══ */
+.locked-block-dark .locked-block-overlay { background: radial-gradient(ellipse at center, rgba(17,17,16,0.25) 0%, rgba(17,17,16,0.65) 65%, rgba(17,17,16,0.88) 100%); }
+.locked-block-dark .locked-block-overlay .locked-icon { background: rgba(255,255,255,0.12); box-shadow: 0 6px 18px rgba(0,0,0,0.35), 0 0 0 5px rgba(184,153,104,0.15); }
+.locked-block-dark .locked-block-overlay .locked-title { color: rgba(255,255,255,0.92); }
+.locked-block-dark .locked-block-overlay .locked-eyebrow { color: var(--accent-soft); }
+.locked-block-dark .locked-block-overlay .locked-pkg-name { color: var(--accent-soft); }
 
 @media print {
   .cover { page-break-after: always; min-height: auto; }
@@ -250,32 +267,60 @@ body.no-grain::before { display: none !important; }
 </head>
 <body>
 {#- ══ ПЛАН ДОСТУПА ══════════════════════════════════════════════════════
-    demo     — I, II (совместимость + хиромантия)
-    base     — + III, V (верность + карма)
-    extended — + IV, VI, VII (брак + богатство + дети)
-    full     — + VIII, IX (длительность + точка разрыва)
+    demo     — все главы видны, платные блоки скрыты замочком
+    base     — I (совместимость) + III, IV, V (верность, брак, карма)
+    extended — + VI, VII (богатство, семья)
+    full     — + II (хиромантия), VIII, IX (длительность, разрыв)
+
+    Хиромантия (II) — только в самом лучшем пакете (full/Премиум)
+
+    Внутри глав — дополнительная блокировка отдельных блоков:
+    base-блоки:     описания лет y.desc (IV), урок для пары (V)
+    extended-блоки: ситуации-триггеры + стабилизирующие (III),
+                    личные уроки lesson_a/lesson_b (V),
+                    оптимальное время (VII)
+    full-блоки:     что блокирует благосостояние (VI),
+                    что удлинит + что укоротит (VIII)
 ══════════════════════════════════════════════════════════════════════ -#}
 {%- set _plan_levels = {'demo': 0, 'base': 1, 'extended': 2, 'full': 3} -%}
 {%- set _cur_level   = _plan_levels.get(plan | default('full'), 3) -%}
 {%- set locked_cfg = {
-  'compatibility':        {'min_plan': 'demo', 'title': 'Анализ совместимости',      'pkg': ''},
-  'palmistry_heart':      {'min_plan': 'demo', 'title': 'Хиромантия пары',           'pkg': ''},
-  'fidelity':             {'min_plan': 'base',     'title': 'Верность в паре',       'pkg': 'Базовый'},
-  'karma':                {'min_plan': 'base',     'title': 'Карма в отношениях',    'pkg': 'Базовый'},
-  'marriage_perspective': {'min_plan': 'extended', 'title': 'Перспектива брака',     'pkg': 'Расширенный'},
-  'wealth':               {'min_plan': 'extended', 'title': 'Уровень богатства',     'pkg': 'Расширенный'},
-  'family':               {'min_plan': 'extended', 'title': 'Семья и родительство', 'pkg': 'Расширенный'},
-  'duration':             {'min_plan': 'full',     'title': 'Длительность союза',    'pkg': 'Премиум'},
-  'breaking_point':       {'min_plan': 'full',     'title': 'Точка разрыва',         'pkg': 'Премиум'},
+  'compatibility':        {'min_plan': 'base',     'title': 'Анализ совместимости',      'pkg': 'Базовый'},
+  'palmistry_heart':      {'min_plan': 'full',     'title': 'Хиромантия пары',           'pkg': 'Премиум'},
+  'fidelity':             {'min_plan': 'base',     'title': 'Верность в паре',           'pkg': 'Базовый'},
+  'marriage_perspective': {'min_plan': 'base',     'title': 'Перспектива брака',         'pkg': 'Базовый'},
+  'karma':                {'min_plan': 'base',     'title': 'Карма в отношениях',        'pkg': 'Базовый'},
+  'wealth':               {'min_plan': 'extended', 'title': 'Уровень богатства',         'pkg': 'Расширенный'},
+  'family':               {'min_plan': 'extended', 'title': 'Семья и родительство',      'pkg': 'Расширенный'},
+  'duration':             {'min_plan': 'full',     'title': 'Длительность союза',        'pkg': 'Премиум'},
+  'breaking_point':       {'min_plan': 'full',     'title': 'Точка разрыва',             'pkg': 'Премиум'},
 } -%}
+
+{#- ══ МАКРОС: locked_card — блокирует целую страницу/главу ══
+    В demo: всегда показывает содержимое (замки только на sub-блоках через locked_block)
+    Куплено: показывает если уровень достаточен
+    Не куплено (не demo): скрывает всё (рендерится только title-заглушка через locked_wrap)
+-#}
 {%- macro locked_card(min_plan, title, pkg) -%}
+  {%- set min_level = _plan_levels.get(min_plan, 1) -%}
+  {%- if _cur_level >= min_level or plan == 'demo' -%}
+{{ caller() }}
+  {%- endif -%}
+{%- endmacro -%}
+
+{#- ══ МАКРОС: locked_block — блокирует отдельный блок внутри карточки ══
+    В demo:      показывает с blur + замочком (min-height обеспечивает высоту)
+    Куплен:      показывает контент как есть
+    Не куплен (не demo): скрывает блок полностью (не рендерится)
+-#}
+{%- macro locked_block(min_plan, title, pkg, dark=false) -%}
   {%- set min_level = _plan_levels.get(min_plan, 1) -%}
   {%- if _cur_level >= min_level -%}
 {{ caller() }}
   {%- elif plan == 'demo' -%}
-<div class="locked-wrap" aria-label="Заблокированный раздел">
-  <div class="locked-content" aria-hidden="true">{{ caller() }}</div>
-  <div class="locked-overlay">
+<div class="locked-block{% if dark %} locked-block-dark{% endif %}" aria-label="Заблокированный блок">
+  <div class="locked-block-content" aria-hidden="true">{{ caller() }}</div>
+  <div class="locked-block-overlay">
     <div class="locked-icon" aria-hidden="true">
       <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V7.5a4 4 0 0 1 8 0V11"></path><circle cx="12" cy="15.5" r="1.1" fill="currentColor" stroke="none" style="fill: var(--accent-soft);"></circle></svg>
     </div>
@@ -286,6 +331,11 @@ body.no-grain::before { display: none !important; }
 </div>
   {%- endif -%}
 {%- endmacro -%}
+
+{#- ══ ВСПОМОГАТЕЛЬНЫЕ ПЕРЕМЕННЫЕ для условных g2-сеток ══ -#}
+{%- set _base_ok     = (_cur_level >= 1 or plan == 'demo') -%}
+{%- set _ext_ok      = (_cur_level >= 2 or plan == 'demo') -%}
+{%- set _full_ok     = (_cur_level >= 3 or plan == 'demo') -%}
 
 <!-- COVER -->
 <div class="cover">
@@ -412,6 +462,7 @@ body.no-grain::before { display: none !important; }
 {%- endif %}
 
 
+{#- Хиромантия (II) — только Премиум (full) -#}
 {%- set _cii = locked_cfg['palmistry_heart'] -%}
 {%- if plan == 'demo' or _cur_level >= _plan_levels[_cii.min_plan] %}
 <!-- ═══ II: ХИРОМАНТИЯ ═══ -->
@@ -474,7 +525,10 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 
+  {#- g2: оба блока расширенные. В demo — оба с замком. Ниже extended — скрываем. -#}
+  {%- if _ext_ok %}
   <div class="g2">
+    {% call locked_block('extended', 'Ситуации-триггеры', 'Расширенный') %}
     <div class="card" style="margin-bottom:0;">
       <div class="card-lbl">Ситуации-триггеры</div>
       <div class="bt">
@@ -483,6 +537,8 @@ body.no-grain::before { display: none !important; }
         {% endfor %}
       </div>
     </div>
+    {% endcall %}
+    {% call locked_block('extended', 'Стабилизирующие факторы', 'Расширенный') %}
     <div class="card" style="margin-bottom:0;">
       <div class="card-lbl">Стабилизирующие факторы</div>
       <div class="bt">
@@ -491,7 +547,9 @@ body.no-grain::before { display: none !important; }
         {% endfor %}
       </div>
     </div>
+    {% endcall %}
   </div>
+  {%- endif %}
 {% endcall %}
 </div>
 {%- endif %}
@@ -515,7 +573,10 @@ body.no-grain::before { display: none !important; }
     <div class="yr">
       <div><div class="yr-n">{{ y.year_range }}</div><div class="yr-age">{{ y.phase }}</div></div>
       <div style="flex:1;">
+        {#- Описание периода — базовый блок -#}
+        {% call locked_block('base', 'Описание периода', 'Базовый') %}
         <div class="yr-desc">{{ y.desc }}</div>
+        {% endcall %}
       </div>
     </div>
     {% endfor %}
@@ -538,22 +599,34 @@ body.no-grain::before { display: none !important; }
 {% call locked_card(_cv.min_plan, _cv.title, _cv.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.karma.intro_quote }}</p>
-    <div class="card-lbl" style="margin-top:1rem;">Урок для пары</div>
-    <div class="bt">{{ blocks.karma.lesson_for_pair }}</div>
+    {#- «Урок для пары» — базовый блок -#}
+    {% call locked_block('base', 'Урок для пары', 'Базовый') %}
+    <div>
+      <div class="card-lbl" style="margin-top:1rem;">Урок для пары</div>
+      <div class="bt">{{ blocks.karma.lesson_for_pair }}</div>
+    </div>
+    {% endcall %}
   </div>
 
+  {#- g2: оба блока расширенные. В demo — оба с замком. Ниже extended — скрываем. -#}
+  {%- if _ext_ok %}
   <div class="g2">
+    {% call locked_block('extended', 'Личный урок ' ~ data.person_a.user.name, 'Расширенный') %}
     <div class="person-card">
       <div class="person-name-mini">{{ data.person_a.user.name }}</div>
       <div class="ml">Личный урок</div>
       <div class="bt">{{ blocks.karma.lesson_a }}</div>
     </div>
+    {% endcall %}
+    {% call locked_block('extended', 'Личный урок ' ~ data.person_b.user.name, 'Расширенный') %}
     <div class="person-card">
       <div class="person-name-mini">{{ data.person_b.user.name }}</div>
       <div class="ml">Личный урок</div>
       <div class="bt">{{ blocks.karma.lesson_b }}</div>
     </div>
+    {% endcall %}
   </div>
+  {%- endif %}
 
   <div class="final-line">{{ blocks.karma.final_line }}</div>
 {% endcall %}
@@ -587,6 +660,8 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 
+  {#- «Что блокирует благосостояние» — премиум блок -#}
+  {% call locked_block('full', 'Что блокирует благосостояние', 'Премиум') %}
   <div class="card">
     <div class="card-lbl">Что блокирует благосостояние</div>
     <div class="bt">
@@ -595,6 +670,7 @@ body.no-grain::before { display: none !important; }
       {% endfor %}
     </div>
   </div>
+  {% endcall %}
 {% endcall %}
 </div>
 {%- endif %}
@@ -624,10 +700,13 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 
+  {#- «Оптимальное время» — расширенный блок -#}
+  {% call locked_block('extended', 'Оптимальное время', 'Расширенный') %}
   <div class="card">
     <div class="card-lbl">Оптимальное время</div>
     <div class="bt">{{ blocks.family.timing }}</div>
   </div>
+  {% endcall %}
 {% endcall %}
 </div>
 {%- endif %}
@@ -653,7 +732,10 @@ body.no-grain::before { display: none !important; }
     <div class="bt">{{ blocks.duration.summary }}</div>
   </div>
 
+  {#- g2: оба блока — премиум. В demo — оба с замком. Ниже full — скрываем. -#}
+  {%- if _full_ok %}
   <div class="g2">
+    {% call locked_block('full', 'Что удлинит союз', 'Премиум') %}
     <div class="card" style="margin-bottom:0;">
       <div class="card-lbl">Что удлинит союз</div>
       <div class="bt">
@@ -662,6 +744,8 @@ body.no-grain::before { display: none !important; }
         {% endfor %}
       </div>
     </div>
+    {% endcall %}
+    {% call locked_block('full', 'Что укоротит', 'Премиум') %}
     <div class="card" style="margin-bottom:0;">
       <div class="card-lbl">Что укоротит</div>
       <div class="bt">
@@ -670,7 +754,9 @@ body.no-grain::before { display: none !important; }
         {% endfor %}
       </div>
     </div>
+    {% endcall %}
   </div>
+  {%- endif %}
 {% endcall %}
 </div>
 {%- endif %}
