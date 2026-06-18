@@ -296,6 +296,8 @@ body.no-grain::before { display: none !important; }
   'family':               {'min_plan': 'extended', 'title': 'Семья и родительство',      'pkg': 'Расширенный'},
   'duration':             {'min_plan': 'full',     'title': 'Длительность союза',        'pkg': 'Премиум'},
   'breaking_point':       {'min_plan': 'extended', 'title': 'Точка разрыва',             'pkg': 'Расширенный'},
+  'sexual_compatibility': {'min_plan': 'full',     'title': 'Сексуальная совместимость', 'pkg': 'Премиум'},
+  'perception':           {'min_plan': 'extended', 'title': 'Восприятие друг друга',     'pkg': 'Расширенный'},
 } -%}
 
 {#- ══ МАКРОС: locked_card — блокирует целую страницу/главу ══
@@ -386,6 +388,8 @@ body.no-grain::before { display: none !important; }
       <span>VII · Семья</span>
       <span>VIII · Длительность</span>
       <span>IX · Точка разрыва</span>
+      <span>X · Сексуальность</span>
+      <span>XI · Восприятие</span>
     </div>
     <div class="toc-foot">
       <span>Анализ пары</span>
@@ -786,6 +790,8 @@ body.no-grain::before { display: none !important; }
 <div class="page">
 {% call locked_card(_cix.min_plan, _cix.title, _cix.pkg) %}
   <div class="dark-card">
+    {#- «Если разрыв случится» — базовый блок -#}
+    {% call locked_block('base', 'Если разрыв случится', 'Базовый', dark=true) %}
     <div class="card-lbl">Если разрыв случится</div>
     <p class="q">{{ blocks.breaking_point.intro_quote }}</p>
     <div class="bt" style="margin-bottom:1rem;">
@@ -793,6 +799,7 @@ body.no-grain::before { display: none !important; }
       <div class="ri"><div class="d"></div><span><span class="hl">Триггер:</span> {{ blocks.breaking_point.trigger }}</span></div>
       <div class="ri"><div class="d"></div><span><span class="hl">Время:</span> {{ blocks.breaking_point.timing }}</span></div>
     </div>
+    {% endcall %}
     {#- «Что предотвратит» — премиум блок (в dark-card) -#}
     {% call locked_block('full', 'Что предотвратит', 'Премиум', dark=true) %}
     <div class="card-lbl">Что предотвратит</div>
@@ -809,9 +816,111 @@ body.no-grain::before { display: none !important; }
 {%- endif %}
 
 
+{%- set _cx = locked_cfg['sexual_compatibility'] -%}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_cx.min_plan] %}
+<!-- ═══ X: СЕКСУАЛЬНАЯ СОВМЕСТИМОСТЬ ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Часть десятая</div>
+  <div class="chap-title-big">Сексуальная совместимость</div>
+  <div class="chap-num">X</div>
+</div>
+
+<div class="page">
+{% call locked_card(_cx.min_plan, _cx.title, _cx.pkg) %}
+  {#- Карточки о нём и о ней — базовый блок -#}
+  {% call locked_block('base', 'Стиль в близости', 'Базовый') %}
+  <div class="card">
+    <p class="q">{{ blocks.sexual_compatibility.intro_quote }}</p>
+    <div class="g2" style="margin-top:1rem;">
+      <div class="person-card">
+        <div class="person-name-mini">{{ data.person_a.user.name }}</div>
+        <div class="bt">{{ blocks.sexual_compatibility.person_a_style }}</div>
+      </div>
+      <div class="person-card">
+        <div class="person-name-mini">{{ data.person_b.user.name }}</div>
+        <div class="bt">{{ blocks.sexual_compatibility.person_b_style }}</div>
+      </div>
+    </div>
+  </div>
+  {% endcall %}
+
+  {#- Динамика близости — расширенный блок -#}
+  {% call locked_block('extended', 'Динамика близости', 'Расширенный') %}
+  <div class="card">
+    <div class="card-lbl">Динамика близости</div>
+    <div class="bt">{{ blocks.sexual_compatibility.dynamic }}</div>
+  </div>
+  {% endcall %}
+
+  {%- if _full_ok %}
+  {% call locked_block('full', 'Точки напряжения', 'Премиум') %}
+  <div class="card">
+    <div class="card-lbl">Точки напряжения</div>
+    <div class="bt">
+      {% for item in blocks.sexual_compatibility.tension_points %}
+      <div class="ri"><div class="dh"></div><span>{{ item }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endcall %}
+  {%- endif %}
+
+  <div class="final-line">{{ blocks.sexual_compatibility.final_line }}</div>
+{% endcall %}
+</div>
+{%- endif %}
+
+
+{%- set _cxi = locked_cfg['perception'] -%}
+{%- if plan == 'demo' or _cur_level >= _plan_levels[_cxi.min_plan] %}
+<!-- ═══ XI: ВОСПРИЯТИЕ ДРУГ ДРУГА ═══ -->
+<div class="chapter-divider chap-wrap">
+  <div class="chap-eyebrow">Часть одиннадцатая</div>
+  <div class="chap-title-big">Что думает о тебе партнёр</div>
+  <div class="chap-num">XI</div>
+</div>
+
+<div class="page">
+{% call locked_card(_cxi.min_plan, _cxi.title, _cxi.pkg) %}
+  {#- Карточки о нём и о ней — базовый блок -#}
+  {% call locked_block('base', 'Восприятие партнёра', 'Базовый') %}
+  <div class="card">
+    <p class="q">{{ blocks.perception.intro_quote }}</p>
+    <div class="g2" style="margin-top:1rem;">
+      <div class="person-card">
+        <div class="person-name-mini">{{ data.person_a.user.name }} о {{ data.person_b.user.name }}</div>
+        <div class="bt">{{ blocks.perception.how_a_sees_b }}</div>
+      </div>
+      <div class="person-card">
+        <div class="person-name-mini">{{ data.person_b.user.name }} о {{ data.person_a.user.name }}</div>
+        <div class="bt">{{ blocks.perception.how_b_sees_a }}</div>
+      </div>
+    </div>
+  </div>
+  {% endcall %}
+
+  {%- if _ext_ok %}
+  {% call locked_block('extended', 'Слепые пятна', 'Расширенный') %}
+  <div class="card">
+    <div class="card-lbl">Слепые пятна</div>
+    <div class="bt">
+      {% for item in blocks.perception.blind_spots %}
+      <div class="ri"><div class="dh"></div><span>{{ item }}</span></div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endcall %}
+  {%- endif %}
+
+  <div class="final-line">{{ blocks.perception.final_line }}</div>
+{% endcall %}
+</div>
+{%- endif %}
+
+
 <div class="footer">
   Анализ пары · {{ data.person_a.user.name }} ({{ data.person_a.user.birthdate }}) и {{ data.person_b.user.name }} ({{ data.person_b.user.birthdate }})<br>
-  Совместимость · Хиромантия · Верность · Перспектива брака · Карма · Богатство · Семья · Длительность · Точка разрыва<br>
+  Совместимость · Хиромантия · Верность · Перспектива брака · Карма · Богатство · Семья · Длительность · Точка разрыва · Сексуальность · Восприятие<br>
   Анализ носит интерпретационный характер. Эзотерика — язык символов, не детерминизм.
 </div>
 

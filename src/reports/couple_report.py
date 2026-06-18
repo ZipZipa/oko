@@ -70,6 +70,8 @@ def build_user_prompt(reference_blocks: dict, target_input: dict) -> str:
 - family → person_a.numerology, person_b.numerology, couple.age (семья и родительство — учитывай что у пары уже могут быть дети)
 - duration → couple.compatibility, couple.age, couple.year_sync, couple.matrix_overlap
 - breaking_point → couple.face_contrast, couple.year_sync, couple.compatibility
+- sexual_compatibility → person_a.features, person_b.features, person_a.numerology, person_b.numerology, couple.compatibility, couple.face_contrast
+- perception → person_a.features, person_b.features, person_a.numerology, person_b.numerology, couple.face_contrast, couple.compatibility
 """
     return f"""ЭТАЛОННЫЙ ПРИМЕР ВЫХОДА:
 {json.dumps(reference_blocks, ensure_ascii=False, indent=2)}
@@ -109,6 +111,10 @@ REQUIRED_STRUCTURE = {
                  "factors_shortening"],
     "breaking_point": ["intro_quote", "probability", "trigger", "timing",
                        "preventable_by", "final_line"],
+    "sexual_compatibility": ["intro_quote", "person_a_style", "person_b_style",
+                             "dynamic", "tension_points", "final_line"],
+    "perception": ["intro_quote", "how_a_sees_b", "how_b_sees_a",
+                   "blind_spots", "final_line"],
 }
 
 NESTED_REQUIREMENTS = {
