@@ -268,19 +268,21 @@ body.no-grain::before { display: none !important; }
 <body>
 {#- ══ ПЛАН ДОСТУПА ══════════════════════════════════════════════════════
     demo     — все главы видны, платные блоки скрыты замочком
-    base     — I (совместимость) + III, IV, V (верность, брак, карма)
-    extended — + VI, VII (богатство, семья)
-    full     — + II (хиромантия), VIII, IX (длительность, разрыв)
+    base     — I (совместимость) + III, IV, V (верность, брак, карма) + VI (богатство)
+    extended — + VII (семья) + IX (точка разрыва)
+    full     — + II (хиромантия), VIII (длительность)
 
     Хиромантия (II) — только в самом лучшем пакете (full/Премиум)
 
     Внутри глав — дополнительная блокировка отдельных блоков:
-    base-блоки:     описания лет y.desc (IV), урок для пары (V)
+    base-блоки:     сильные стороны + точки напряжения (I), описания лет y.desc (IV),
+                    урок для пары (V), денежный паттерн (VI)
     extended-блоки: ситуации-триггеры + стабилизирующие (III),
                     личные уроки lesson_a/lesson_b (V),
                     оптимальное время (VII)
     full-блоки:     что блокирует благосостояние (VI),
-                    что удлинит + что укоротит (VIII)
+                    что удлинит + что укоротит (VIII),
+                    что предотвратит (IX)
 ══════════════════════════════════════════════════════════════════════ -#}
 {%- set _plan_levels = {'demo': 0, 'base': 1, 'extended': 2, 'full': 3} -%}
 {%- set _cur_level   = _plan_levels.get(plan | default('full'), 3) -%}
@@ -290,10 +292,10 @@ body.no-grain::before { display: none !important; }
   'fidelity':             {'min_plan': 'base',     'title': 'Верность в паре',           'pkg': 'Базовый'},
   'marriage_perspective': {'min_plan': 'base',     'title': 'Перспектива брака',         'pkg': 'Базовый'},
   'karma':                {'min_plan': 'base',     'title': 'Карма в отношениях',        'pkg': 'Базовый'},
-  'wealth':               {'min_plan': 'extended', 'title': 'Уровень богатства',         'pkg': 'Расширенный'},
+  'wealth':               {'min_plan': 'base',     'title': 'Уровень богатства',         'pkg': 'Базовый'},
   'family':               {'min_plan': 'extended', 'title': 'Семья и родительство',      'pkg': 'Расширенный'},
   'duration':             {'min_plan': 'full',     'title': 'Длительность союза',        'pkg': 'Премиум'},
-  'breaking_point':       {'min_plan': 'full',     'title': 'Точка разрыва',             'pkg': 'Премиум'},
+  'breaking_point':       {'min_plan': 'extended', 'title': 'Точка разрыва',             'pkg': 'Расширенный'},
 } -%}
 
 {#- ══ МАКРОС: locked_card — блокирует целую страницу/главу ══
@@ -439,7 +441,10 @@ body.no-grain::before { display: none !important; }
     </div>
   </div>
 
+  {#- g2: оба блока базовые. В demo — оба с замком. -#}
+  {%- if _base_ok %}
   <div class="g2">
+    {% call locked_block('base', 'Сильные стороны пары', 'Базовый') %}
     <div class="card" style="margin-bottom:0;">
       <div class="card-lbl">Сильные стороны пары</div>
       <div class="bt">
@@ -448,6 +453,8 @@ body.no-grain::before { display: none !important; }
         {% endfor %}
       </div>
     </div>
+    {% endcall %}
+    {% call locked_block('base', 'Точки напряжения', 'Базовый') %}
     <div class="card" style="margin-bottom:0;">
       <div class="card-lbl">Точки напряжения</div>
       <div class="bt">
@@ -456,7 +463,9 @@ body.no-grain::before { display: none !important; }
         {% endfor %}
       </div>
     </div>
+    {% endcall %}
   </div>
+  {%- endif %}
 {% endcall %}
 </div>
 {%- endif %}
@@ -473,7 +482,7 @@ body.no-grain::before { display: none !important; }
 </div>
 
 <div class="page">
-{% call locked_card(_cii.min_plan, _cii.title, _cii.pkg) %}
+{% call locked_block('full', _cii.title, _cii.pkg) %}
   <div class="card">
     <div class="card-lbl">Линия сердца — как каждый любит</div>
     <p class="q">{{ blocks.palmistry_heart.intro_quote }}</p>
@@ -651,8 +660,11 @@ body.no-grain::before { display: none !important; }
       <div class="ml" style="margin-bottom:0.4rem;">Уровень потенциала</div>
       <div style="font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:300;color:var(--black);">{{ blocks.wealth.level | capitalize }}</div>
     </div>
+    {#- «Денежный паттерн» — базовый блок -#}
+    {% call locked_block('base', 'Денежный паттерн', 'Базовый') %}
     <div class="card-lbl">Денежный паттерн</div>
     <div class="bt" style="margin-bottom:1rem;">{{ blocks.wealth.money_pattern }}</div>
+    {% endcall %}
     <div class="bt">
       {% for item in blocks.wealth.points %}
       <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
@@ -781,12 +793,15 @@ body.no-grain::before { display: none !important; }
       <div class="ri"><div class="d"></div><span><span class="hl">Триггер:</span> {{ blocks.breaking_point.trigger }}</span></div>
       <div class="ri"><div class="d"></div><span><span class="hl">Время:</span> {{ blocks.breaking_point.timing }}</span></div>
     </div>
+    {#- «Что предотвратит» — премиум блок (в dark-card) -#}
+    {% call locked_block('full', 'Что предотвратит', 'Премиум', dark=true) %}
     <div class="card-lbl">Что предотвратит</div>
     <div class="bt">
       {% for item in blocks.breaking_point.preventable_by %}
       <div class="ri"><div class="d"></div><span>{{ item }}</span></div>
       {% endfor %}
     </div>
+    {% endcall %}
     <div class="final-line">{{ blocks.breaking_point.final_line }}</div>
   </div>
 {% endcall %}

@@ -259,9 +259,11 @@ body.no-grain::before { display: none !important; }
 <body>
 {#- ══ ПЛАН ДОСТУПА ══════════════════════════════════════════════════════
     demo     — все главы видны, платные блоки скрыты замочком
-    base     — I, II (обзор + ладонь) + III, IV (проблема + код) + VII (прогноз)
+    base     — I (обзор) + III, IV (проблема + код) + VII (прогноз)
     extended — + V, VI (потолок + стратегия) + VIII (сфера)
-    full     — + IX, X (якорь, смена работы)
+    full     — + II (ладонь), IX, X (якорь, смена работы)
+
+    Хиромантия (II) — только в самом лучшем пакете (full/Премиум)
 
     Внутри глав — дополнительная блокировка отдельных блоков:
     base-блоки:     суть кода, как работает, где проявляется, yr.desc
@@ -276,7 +278,7 @@ body.no-grain::before { display: none !important; }
 {%- set _cur_level   = _plan_levels.get(plan | default('full'), 3) -%}
 {%- set locked_cfg = {
   'overview':         {'min_plan': 'demo', 'title': 'Денежный разбор',              'pkg': ''},
-  'palmistry_money':  {'min_plan': 'demo', 'title': 'Деньги по ладони',             'pkg': ''},
+  'palmistry_money':  {'min_plan': 'full',     'title': 'Деньги по ладони',             'pkg': 'Премиум'},
   'main_problem':     {'min_plan': 'base',     'title': 'Главная причина проблем',  'pkg': 'Базовый'},
   'money_code':       {'min_plan': 'base',     'title': 'Денежный код',             'pkg': 'Базовый'},
   'ceiling':          {'min_plan': 'extended', 'title': 'Денежный потолок',         'pkg': 'Расширенный'},
@@ -449,7 +451,7 @@ body.no-grain::before { display: none !important; }
 </div>
 
 <div class="page">
-{% call locked_card(_cii.min_plan, _cii.title, _cii.pkg) %}
+{% call locked_block('full', _cii.title, _cii.pkg) %}
   <div class="card">
     <p class="q">{{ blocks.palmistry_money.intro_quote }}</p>
     <div class="card-lbl">Тип руки</div>
