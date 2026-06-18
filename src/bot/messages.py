@@ -150,7 +150,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "твоей внешности, психологических паттернов и скрытых особенностей, о которых ты даже не догадываешься\n\n"
             "Запустим тестовый анализ?"
         ),
-        photos=["self_main.jpeg"]
+        photos=["self/demo.jpeg"]
     ),
 
     # ── Money ─────────────────────────────────────────────────────────────────
@@ -161,7 +161,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "как ты привлекаешь деньги, где теряешь ресурсы и твои скрытые точки роста\n\n"
             "Запустим тестовый анализ?"
         ),
-        photos=["money.jpg"]
+        photos=["money/full.jpeg"]
     ),
 
     # ── Couple ────────────────────────────────────────────────────────────────
@@ -173,21 +173,24 @@ MESSAGES: dict[str, MessageConfig] = {
             "партнера, о которых ты можешь не догадываться\n\n"
             "Запустим тестовый анализ?"
         ),
-        photos=["couple.jpg"]
+        photos=["couple/full.jpeg"]
     ),
 
     # ── Пакеты ────────────────────────────────────────────────────────────────
     "choose_package_self": MessageConfig(
         key="choose_package_self",
         text="Выбери пакет для <b>Портрета личности</b>:",
+        photos=["self/all.jpeg"]
     ),
     "choose_package_money": MessageConfig(
         key="choose_package_money",
         text="Выбери пакет для <b>Денежной карты</b>:",
+        photos=["money/all.jpeg"]
     ),
     "choose_package_couple": MessageConfig(
         key="choose_package_couple",
         text="Выбери пакет для <b>Совместимости пары</b>:",
+        photos=["couple/all.jpeg"]
     ),
     "max_package": MessageConfig(
         key="max_package",
@@ -203,6 +206,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "• <b>Ошибка, которая тормозит жизнь</b> — паттерн, который мешает двигаться вперёд\n"
             "• <b>Сценарий в отношениях</b> — как ты строишь близкие связи и где ломаешься"
         ),
+        photos=["self/base.jpeg"]
     ),
     "pkg_self_extended": MessageConfig(
         key="pkg_self_extended",
@@ -212,6 +216,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "• <b>Жизненные сценарии</b> — глубокие программы, которые управляют твоими решениями\n"
             "• <b>Кармический урок</b> — то, что повторяется до тех пор, пока не осознано"
         ),
+        photos=["self/extra.jpeg"]
     ),
     "pkg_self_full": MessageConfig(
         key="pkg_self_full",
@@ -222,6 +227,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "• <b>Скрытая правда</b> — то, что проявляется, когда уходит контроль\n"
             "• <b>Сводный портрет</b> — итоговый психологический профиль"
         ),
+        photos=["self/full.jpeg"]
     ),
 
     # ── Пакеты: Money ─────────────────────────────────────────────────────────
@@ -233,6 +239,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "• <b>Главная причина финансовых проблем</b> — паттерн, который держит тебя в минусе\n"
             "• <b>Денежный код</b> — как именно деньги приходят к тебе по природе"
         ),
+        photos=["money/base.jpeg"]
     ),
     "pkg_money_extended": MessageConfig(
         key="pkg_money_extended",
@@ -242,6 +249,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "• <b>Денежный потолок</b> — твоя естественная зона и что её поднимает\n"
             "• <b>Стратегия заработка</b> — природный путь и лучшие сферы"
         ),
+        photos=["money/extra.jpeg"]
     ),
     "pkg_money_full": MessageConfig(
         key="pkg_money_full",
@@ -253,6 +261,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "• <b>Финансовый якорь</b> — блокирующее убеждение и как его растворить\n"
             "• <b>Лучший момент для смены работы</b>"
         ),
+        photos=["money/full.jpeg"]
     ),
 
     # ── Пакеты: Couple ────────────────────────────────────────────────────────
@@ -264,6 +273,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "• <b>Верность в паре</b> — риски и стабилизирующие факторы\n"
             "• <b>Карма в отношениях</b> — урок, который несёт пара вместе"
         ),
+        photos=["couple/base.jpeg"]
     ),
     "pkg_couple_extended": MessageConfig(
         key="pkg_couple_extended",
@@ -274,6 +284,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "• <b>Уровень богатства в семье</b> — денежный паттерн пары\n"
             "• <b>Потенциал на детей</b> — оптимальное время"
         ),
+        photos=["couple/extra.jpeg"]
     ),
     "pkg_couple_full": MessageConfig(
         key="pkg_couple_full",
@@ -283,6 +294,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "• <b>Длительность союза</b> — краткосрочная история или долгий путь\n"
             "• <b>Точка разрыва</b> — вероятность, триггер и что предотвратит"
         ),
+        photos=["couple/full.jpeg"]
     ),
 
     # ── Партнёр ───────────────────────────────────────────────────────────────

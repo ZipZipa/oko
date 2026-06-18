@@ -81,28 +81,6 @@ def _skip_partner_palms_keyboard() -> InlineKeyboardMarkup:
 
 _PLAN_LEVEL = {"demo": 0, "base": 1, "extended": 2, "full": 3}
 
-# Фото для экрана выбора пакета в зависимости от (тип_отчёта, текущий_пакет)
-_PACKAGE_PHOTOS: dict[str, dict[str, str]] = {
-    "self": {
-        "demo": "self_main.jpeg",
-        "base": "self_main.jpeg",
-        "extended": "self_main.jpeg",
-        "full": "self_main.jpeg",
-    },
-    "money": {
-        "demo": "money.jpg",
-        "base": "money.jpg",
-        "extended": "money.jpg",
-        "full": "money.jpg",
-    },
-    "couple": {
-        "demo": "couple.jpg",
-        "base": "couple.jpg",
-        "extended": "couple.jpg",
-        "full": "couple.jpg",
-    },
-}
-
 # ── Лейблы пакетов (текст берётся из MESSAGES) ──────────────────────────────────
 _PACKAGE_NAMES = {"base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
 
@@ -436,8 +414,7 @@ async def _edit_to_packages(message: Message, user: User, report_prefix: str):
     menu = _packages_menu(above_plan=purchased, report_prefix=report_prefix)
     if menu.inline_keyboard[:-1]:
         pkg_msg_key = {"self": "choose_package_self", "money": "choose_package_money", "couple": "choose_package_couple"}[report_prefix]
-        pkg_photos = [_PACKAGE_PHOTOS[report_prefix][purchased]]
-        await edit_msg(message, pkg_msg_key, reply_markup=menu, photos=pkg_photos)
+        await edit_msg(message, pkg_msg_key, reply_markup=menu)
     else:
         await edit_msg(message, "max_package", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="← В меню", callback_data="back_to_main")],
@@ -1312,8 +1289,7 @@ async def _send_report(message: Message, html: str, caption: str, plan: str,
     menu = _packages_menu(above_plan=current_plan, report_prefix=report_prefix)
     if menu.inline_keyboard[:-1]:
         pkg_msg_key = {"self": "choose_package_self", "money": "choose_package_money", "couple": "choose_package_couple"}[report_prefix]
-        pkg_photos = [_PACKAGE_PHOTOS[report_prefix].get(current_plan, "self_main.jpeg")]
-        await send_msg(message, pkg_msg_key, reply_markup=menu, photos=pkg_photos)
+        await send_msg(message, pkg_msg_key, reply_markup=menu)
     else:
         await send_msg(message, "max_package", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text="← В меню", callback_data="back_to_main")],
