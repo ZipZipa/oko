@@ -62,7 +62,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "<tg-emoji emoji-id=\"5359794223887443699\">◀️</tg-emoji> денежный потенциал\n\n"
             "<b>Для начала, напиши свое имя</b> <tg-emoji emoji-id=\"5348460861755262251\">✍️</tg-emoji>"
         ),
-        photos=["intro.png"]
+        photos=["intro.jpeg"]
     ),
     "start_returning_no_name": MessageConfig(
         key="start_returning_no_name",
