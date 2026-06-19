@@ -33,10 +33,10 @@ router = Router()
 
 def _main_menu() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Портрет личности", callback_data="menu_self")],
-        [InlineKeyboardButton(text="Совместимость пары", callback_data="menu_couple")],
-        [InlineKeyboardButton(text="Денежная карта",    callback_data="menu_money")],
-        [InlineKeyboardButton(text="Начать заново",  callback_data="reset_confirm", icon_custom_emoji_id="5445267414562389170")],
+        [InlineKeyboardButton(text="Портрет личности", callback_data="menu_self", icon_custom_emoji_id="5256059072788054036")],
+        [InlineKeyboardButton(text="Совместимость пары", callback_data="menu_couple", icon_custom_emoji_id="5256059072788054036")],
+        [InlineKeyboardButton(text="Денежная карта",    callback_data="menu_money", icon_custom_emoji_id="5256059072788054036")],
+        [InlineKeyboardButton(text="Начать заново",  callback_data="reset_confirm", icon_custom_emoji_id="5339077943056413575")],
     ])
 
 
@@ -54,15 +54,17 @@ def _skip_palms_keyboard() -> InlineKeyboardMarkup:
 
 
 def _premium_palms_keyboard() -> InlineKeyboardMarkup:
-    """Клавиатура для премиум-флоу — без пропуска, только отмена."""
+    """Клавиатура для премиум-флоу — пропуск или отмена."""
     return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Пропустить →", callback_data="skip_palms")],
         [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
     ])
 
 
 def _premium_partner_palms_keyboard() -> InlineKeyboardMarkup:
-    """Клавиатура для премиум-флоу ладоней партнёра — без пропуска."""
+    """Клавиатура для премиум-флоу ладоней партнёра — пропуск или отмена."""
     return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Пропустить →", callback_data="skip_partner_palms")],
         [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
     ])
 
@@ -123,7 +125,10 @@ def _packages_menu(above_plan: str = "demo", report_prefix: str = "self") -> Inl
     for key in ("base", "extended", "full"):
         if _PLAN_LEVEL[key] > current_level:
             name = _PACKAGE_NAMES[key]
-            rows.append([InlineKeyboardButton(text=name, callback_data=f"pkg_{report_prefix}_{key}")])
+            if key == "full":
+                rows.append([InlineKeyboardButton(text=name, callback_data=f"pkg_{report_prefix}_{key}", icon_custom_emoji_id="5307923023385342441")])
+            else:
+                rows.append([InlineKeyboardButton(text=name, callback_data=f"pkg_{report_prefix}_{key}", icon_custom_emoji_id="5256191422205280320")])
     rows.append([InlineKeyboardButton(text="← В меню", callback_data="back_to_main")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
@@ -687,7 +692,7 @@ async def process_partner_photo_invalid(message: Message):
 # ─── Ладони партнёра (FSM для couple) ──────────────────────────────────────────
 
 def _partner_palms_kb(state_data: dict) -> InlineKeyboardMarkup:
-    """Клавиатура для ладоней партнёра: без пропуска в премиуме, с пропуском в демо."""
+    """Клавиатура для ладоней партнёра (с пропуском в любом флоу)."""
     if state_data.get("pending_plan"):
         return _premium_partner_palms_keyboard()
     return _skip_partner_palms_keyboard()
@@ -865,7 +870,7 @@ async def cb_buy(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
         return
 
-    # Для full-пакетов нужна проверка ладоней — спрашиваем до оплаты (без пропуска!)
+    # Для full-пакетов нужна проверка ладоней — спрашиваем до оплаты (с возможностью пропуска)
     if plan_key == "full" and report_prefix in ("self", "money"):
         has_both_palms = bool(user.palm_left_json and user.palm_right_json)
         if not has_both_palms:
@@ -878,7 +883,7 @@ async def cb_buy(callback: CallbackQuery, state: FSMContext):
             await callback.answer()
             return
 
-    # Для couple full — проверяем ладони пользователя и партнёра (без пропуска!)
+    # Для couple full — проверяем ладони пользователя и партнёра (с возможностью пропуска)
     if plan_key == "full" and report_prefix == "couple":
         has_user_palms = bool(user.palm_left_json and user.palm_right_json)
         has_partner_palms = bool(user.partner_palm_left_json and user.partner_palm_right_json)
@@ -895,61 +900,8 @@ async def cb_buy(callback: CallbackQuery, state: FSMContext):
             await callback.answer()
             return
 
-    # Создаём платёж в YooKassa
-    try:
-        plan_field = {"self": "purchased_plan", "money": "money_plan", "couple": "couple_plan"}[report_prefix]
-        current_plan = getattr(user, plan_field, None) or "demo"
-        price = _get_discounted_price(current_plan, plan_key)
-        amount_str = f"{price}.00"
-
-        yoo_payment = await asyncio.get_running_loop().run_in_executor(
-            None,
-            lambda: create_payment(report_prefix, plan_key, user.telegram_id, amount=amount_str),
-        )
-
-        # Сохраняем платёж в БД
-        async with async_session() as session:
-            payment_record = Payment(
-                yookassa_id=yoo_payment.id,
-                telegram_id=user.telegram_id,
-                report_type=report_prefix,
-                plan=plan_key,
-                amount=amount_str,
-                status=yoo_payment.status,
-                confirmation_url=yoo_payment.confirmation.confirmation_url,
-            )
-            session.add(payment_record)
-            await session.commit()
-
-        confirmation_url = yoo_payment.confirmation.confirmation_url
-
-        _plan_label = {"base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
-        _report_label = {"self": "Портрет личности", "money": "Денежная карта", "couple": "Совместимость пары"}
-
-        text = MESSAGES["payment_created"].text.format(
-            report=_report_label.get(report_prefix, ""),
-            plan=_plan_label.get(plan_key, ""),
-            price=price,
-        )
-
-        markup = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="💳 Перейти к оплате", url=confirmation_url)],
-            [InlineKeyboardButton(text="✅ Я оплатил", callback_data=f"check_{yoo_payment.id}")],
-            [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
-        ])
-        if callback.message.photo:
-            await callback.message.edit_caption(caption=text, reply_markup=markup, parse_mode="HTML")
-        else:
-            await callback.message.edit_text(text=text, reply_markup=markup, parse_mode="HTML")
-
-    except Exception as e:
-        log.error("Ошибка создания платежа: %s", e, exc_info=True)
-        err_text = MESSAGES["payment_create_error"].text.format(error=str(e))
-        if callback.message.photo:
-            await callback.message.edit_caption(caption=err_text, parse_mode="HTML")
-        else:
-            await callback.message.edit_text(text=err_text, parse_mode="HTML")
-
+    # Создаём платёж через общий хелпер
+    await _create_payment_and_show(callback, user, report_prefix, plan_key)
     await callback.answer()
 
 
@@ -1194,6 +1146,15 @@ async def process_palm_right_invalid(message: Message):
 
 # ─── Хелпер создания платежа ────────────────────────────────────────────────────
 
+def _payment_keyboard(yoo_payment_id: str, confirmation_url: str) -> InlineKeyboardMarkup:
+    """Клавиатура для оплаты YooKassa — единая для всех флоу."""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Перейти к оплате", url=confirmation_url, icon_custom_emoji_id="5337238593247131255")],
+        [InlineKeyboardButton(text="Я оплатил", callback_data=f"check_{yoo_payment_id}", icon_custom_emoji_id="5206607081334906820")],
+        [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
+    ])
+
+
 async def _create_payment_and_show(callback_or_msg, user: User, report_type: str, plan_key: str):
     """Создаёт платёж YooKassa и показывает кнопку оплаты."""
     try:
@@ -1231,11 +1192,7 @@ async def _create_payment_and_show(callback_or_msg, user: User, report_type: str
             price=price,
         )
 
-        markup = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="💳 Перейти к оплате", url=confirmation_url)],
-            [InlineKeyboardButton(text="✅ Я оплатил", callback_data=f"check_{yoo_payment.id}")],
-            [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
-        ])
+        markup = _payment_keyboard(yoo_payment.id, confirmation_url)
 
         if isinstance(callback_or_msg, CallbackQuery):
             msg = callback_or_msg.message
@@ -1391,7 +1348,7 @@ async def _run_self_report(message: Message, user: User, plan: str):
                     await session.commit()
 
         _plan_label = {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
-        caption = f"<b>Портрет личности</b> · {_plan_label.get(plan, plan)} готов! ✅"
+        caption = f"<b>Портрет личности</b> · {_plan_label.get(plan, plan)} готов! <tg-emoji emoji-id=\"5337019240677388490\">📚</tg-emoji>"
         filename = f"Портрет личности {_plan_label.get(plan, plan)}.html"
         await _send_report(message, html, caption, plan, "self", filename)
 
@@ -1496,7 +1453,7 @@ async def _run_money_report(message: Message, user: User, plan: str):
                     await session.commit()
 
         _plan_label = {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
-        caption = f"<b>Денежная карта</b> · {_plan_label.get(plan, plan)} готова! ✅"
+        caption = f"<b>Денежная карта</b> · {_plan_label.get(plan, plan)} готова! <tg-emoji emoji-id=\"5337019240677388490\">📚</tg-emoji>"
         filename = f"Денежная карта {_plan_label.get(plan, plan)}.html"
         await _send_report(message, html, caption, plan, "money", filename)
 
@@ -1604,7 +1561,7 @@ async def _run_couple_report(message: Message, user: User, plan: str):
                     await session.commit()
 
         _plan_label = {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
-        caption = f"<b>Совместимость пары</b> · {_plan_label.get(plan, plan)} готова! ✅"
+        caption = f"<b>Совместимость пары</b> · {_plan_label.get(plan, plan)} готова! <tg-emoji emoji-id=\"5337019240677388490\">📚</tg-emoji>"
         filename = f"Совместимость {user.name} и {user.partner_name} {_plan_label.get(plan, plan)}.html"
         await _send_report(message, html, caption, plan, "couple", filename)
 

@@ -555,7 +555,7 @@ body.no-grain::before { display: none !important; }
 
 {#- Хиромантия (II) — только Премиум (full) -#}
 {%- set _cii = locked_cfg['palmistry_heart'] -%}
-{%- if plan == 'demo' or _cur_level >= _plan_levels[_cii.min_plan] %}
+{%- if (plan == 'demo') or (blocks.palmistry_heart and _cur_level >= _plan_levels[_cii.min_plan]) %}
 <!-- ═══ II: ХИРОМАНТИЯ ═══ -->
 <div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть вторая</div>

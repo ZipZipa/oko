@@ -505,7 +505,7 @@ body.no-grain::before { display: none !important; }
 
 
 {%- set _cii = locked_cfg['palmistry_money'] -%}
-{%- if plan == 'demo' or _cur_level >= _plan_levels[_cii.min_plan] %}
+{%- if (plan == 'demo') or (blocks.palmistry_money and _cur_level >= _plan_levels[_cii.min_plan]) %}
 <!-- ═══ II: ХИРОМАНТИЯ ═══ -->
 <div class="chapter-divider chap-wrap">
   <div class="chap-eyebrow">Часть вторая</div>

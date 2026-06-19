@@ -57,8 +57,10 @@ def _strip_photo_url(data: dict) -> dict:
     return d
 
 
-def build_user_prompt(reference_blocks: dict, target_input: dict) -> str:
+def build_user_prompt(reference_blocks: dict, target_input: dict,
+                      has_palm: bool = False) -> str:
     target_input = prepare_for_llm(_strip_photo_url(target_input))
+    palm_note = "" if has_palm else "\nВНИМАНИЕ: ладони НЕ переданы — НЕ генерируй блок palmistry_heart, оставь ключ null.\n"
     source_map = """
 ИСТОЧНИКИ БЛОКОВ (используй ТОЛЬКО указанные данные):
 - compatibility → couple.compatibility (score, type), couple.matrix_overlap, couple.union_number, couple.year_sync
@@ -76,7 +78,7 @@ def build_user_prompt(reference_blocks: dict, target_input: dict) -> str:
     return f"""ЭТАЛОННЫЙ ПРИМЕР ВЫХОДА:
 {json.dumps(reference_blocks, ensure_ascii=False, indent=2)}
 
-{source_map}
+{source_map}{palm_note}
 ═══════════════════════════════════════
 
 ТВОЯ ЗАДАЧА
@@ -132,11 +134,16 @@ def _get_nested(d: dict, path: str):
     return cur
 
 
-def validate_blocks(blocks: dict) -> list[str]:
+def validate_blocks(blocks: dict, has_palm: bool = False) -> list[str]:
+    structure = dict(REQUIRED_STRUCTURE)
+    if not has_palm:
+        structure.pop("palmistry_heart", None)
     errors = []
-    for top, fields in REQUIRED_STRUCTURE.items():
+    for top, fields in structure.items():
         if top not in blocks:
             errors.append(f"Missing top-level: {top}")
+            continue
+        if blocks[top] is None:
             continue
         for f in fields:
             if f not in blocks[top]:
@@ -208,6 +215,38 @@ def _load_reference_blocks(reference: str) -> dict:
         return json.load(f)
 
 
+def _generate_palmistry_heart_block(target: dict, ref_palmistry: dict,
+                                    model: str = None) -> dict:
+    """Точечный LLM-вызов: только palmistry_heart на основе реальных ладоней."""
+    ph_fields = REQUIRED_STRUCTURE["palmistry_heart"]
+
+    def validate_fn(blocks):
+        if "palmistry_heart" not in blocks:
+            return ["Missing top-level: palmistry_heart"]
+        return [f"Missing: palmistry_heart.{f}" for f in ph_fields if f not in blocks["palmistry_heart"]]
+
+    user_msg = f"""Эталонный пример блока palmistry_heart:
+{json.dumps({"palmistry_heart": ref_palmistry}, ensure_ascii=False, indent=2)}
+
+ЗАДАЧА: сгенерируй блок "palmistry_heart" для новой пары.
+- Источник: person_a.palm_left/palm_right, person_b.palm_left/palm_right
+- Левая рука = врождённое, правая = реализованное
+- Анализируй линии применительно к любви и эмоциям
+- Свяжи с numerology.life_path и couple.compatibility из входных данных
+
+Данные пары:
+{json.dumps(prepare_for_llm(target), ensure_ascii=False, indent=2)}
+
+Верни ТОЛЬКО JSON вида:
+{{"palmistry_heart": {{...}}}}
+Без обёрток, без комментариев."""
+
+    kwargs = {}
+    if model:
+        kwargs["model"] = model
+    return generate_blocks(SYSTEM_PROMPT, [{"role": "user", "content": user_msg}], validate_fn, **kwargs)
+
+
 def generate(face_a: dict, name_a: str, birthdate_a: str,
              face_b: dict, name_b: str, birthdate_b: str,
              examples_dir: Path, templates_dir: Path,
@@ -236,10 +275,29 @@ def generate(face_a: dict, name_a: str, birthdate_a: str,
         palm_data_b_right=palm_data_b_right,
     )
     examples_subdir = examples_dir / EXAMPLES_SUBDIR
+    has_palm = all([palm_data_a_left, palm_data_a_right,
+                    palm_data_b_left, palm_data_b_right])
 
+    # ── Референс + ладони: перегенерируем только palmistry_heart ──
+    if reference and has_palm:
+        blocks = _load_reference_blocks(reference)
+        with open(examples_subdir / "reference_blocks.json", encoding="utf-8") as f:
+            ref_ex = json.load(f)
+        palm_block = _generate_palmistry_heart_block(
+            target, ref_ex.get("palmistry_heart", {}), model=model,
+        )
+        blocks["palmistry_heart"] = palm_block["palmistry_heart"]
+        errors = validate_blocks(blocks, has_palm=True)
+        if errors:
+            log.warning("Предупреждения валидации (reference + palm): %s", errors)
+        if _out_blocks is not None:
+            _out_blocks.append(blocks)
+        return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)
+
+    # ── Референс без ладоней: только рендеринг ──
     if reference:
         blocks = _load_reference_blocks(reference)
-        errors = validate_blocks(blocks)
+        errors = validate_blocks(blocks, has_palm=has_palm)
         if errors:
             log.warning("Предупреждения валидации (reference): %s", errors)
         return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)
@@ -247,13 +305,21 @@ def generate(face_a: dict, name_a: str, birthdate_a: str,
     with open(examples_subdir / "reference_blocks.json", encoding="utf-8") as f:
         ref_blocks = json.load(f)
 
-    user_msg = build_user_prompt(ref_blocks, target)
+    user_msg = build_user_prompt(ref_blocks, target, has_palm=has_palm)
     messages = [{"role": "user", "content": user_msg}]
 
     kwargs = {}
     if model:
         kwargs["model"] = model
-    blocks = generate_blocks(SYSTEM_PROMPT, messages, validate_blocks, **kwargs)
+    blocks = generate_blocks(
+        SYSTEM_PROMPT, messages,
+        lambda b: validate_blocks(b, has_palm=has_palm),
+        **kwargs,
+    )
+
+    # Без ладоней — подставляем референсный блок как заглушку для отображения замка
+    if not has_palm:
+        blocks.setdefault("palmistry_heart", ref_blocks.get("palmistry_heart"))
 
     if _out_blocks is not None:
         _out_blocks.append(blocks)

@@ -107,7 +107,7 @@ REQUIRED_STRUCTURE = {
 }
 
 
-def validate_blocks(blocks: dict, has_palm: bool = True) -> list[str]:
+def validate_blocks(blocks: dict, has_palm: bool = False) -> list[str]:
     structure = dict(REQUIRED_STRUCTURE)
     if not has_palm:
         structure.pop("palmistry_money", None)
@@ -239,6 +239,7 @@ def generate(face_data: dict, name: str, birthdate: str,
         **kwargs,
     )
 
+    # Без ладоней — подставляем референсный блок как заглушку для отображения замка
     if not has_palm:
         blocks.setdefault("palmistry_money", ref_blocks.get("palmistry_money"))
 
