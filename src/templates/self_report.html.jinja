@@ -66,6 +66,41 @@ body { font-family: 'Jost', sans-serif; font-weight: 300; background: var(--whit
 .toc-items { display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem 1.25rem; }
 .toc-foot { display: flex; justify-content: space-between; padding-top: 0; }
 
+/* COVER — body wrapper */
+.cover-body { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1rem; max-width: 760px; width: 100%; margin: 0 auto; position: relative; z-index: 3; padding: 1rem 0; }
+
+/* COVER — ID strip */
+.cover-id { display: flex; align-items: center; gap: 0.85rem; }
+.cover-id-photo { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; flex-shrink: 0; border: 0.5px solid var(--accent-line); }
+.cover-id-photo img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(1.02); display: block; }
+.cover-id-photo-ph { width: 52px; height: 52px; border-radius: 50%; background: var(--g100); border: 0.5px solid var(--accent-line); flex-shrink: 0; }
+.cover-id-info { display: flex; flex-direction: column; gap: 1px; }
+.cover-id-name { font-family: 'Cormorant Garamond', serif; font-size: 15px; color: var(--g900); font-style: italic; }
+.cover-id-date { font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--g500); }
+
+/* COVER — Main archetype */
+.cover-arch { background: linear-gradient(180deg, #FBF8F0 0%, var(--g100) 100%); border: 0.5px solid var(--accent-line); border-radius: var(--r-md); padding: 1.5rem 1.25rem; text-align: center; }
+.cover-arch-num { font-family: 'Cormorant Garamond', serif; font-size: 64px; font-weight: 300; line-height: 1; color: var(--accent-deep); }
+.cover-arch-lbl { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--g500); margin-top: 0.4rem; font-variant: small-caps; }
+.cover-arch-name { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 400; color: var(--black); margin-top: 0.5rem; line-height: 1.2; }
+.cover-arch-short { font-size: 13px; color: var(--g700); margin-top: 0.4rem; line-height: 1.5; font-style: italic; }
+
+/* COVER — Key points */
+.cover-pts { display: flex; flex-direction: column; gap: 0.6rem; }
+.cover-pt { display: flex; gap: 0.6rem; align-items: flex-start; font-size: 13px; color: var(--g700); line-height: 1.5; }
+.cover-pt-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent-deep); margin-top: 7px; flex-shrink: 0; }
+
+/* COVER — Pinnacles timeline */
+.cover-tl { padding: 0 0.5rem; }
+.cover-tl-title { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--g500); margin-bottom: 0.6rem; font-variant: small-caps; text-align: center; }
+.cover-tl-track { position: relative; display: flex; justify-content: space-between; align-items: flex-start; padding: 0 0.5rem; }
+.cover-tl-track::before { content: ""; position: absolute; top: 5px; left: 1.5rem; right: 1.5rem; height: 1px; background: var(--accent-line); }
+.cover-tl-pt { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; position: relative; z-index: 1; }
+.cover-tl-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--white); border: 1.5px solid var(--accent-deep); }
+.cover-tl-dot.active { background: var(--accent-deep); }
+.cover-tl-num { font-family: 'Cormorant Garamond', serif; font-size: 16px; color: var(--accent-deep); line-height: 1; margin-top: 0.15rem; }
+.cover-tl-age { font-size: 8px; letter-spacing: 0.08em; color: var(--g500); text-transform: uppercase; }
+
 /* CHAPTER DIVIDER */
 .chapter-divider { border-top: none; padding: 4rem 4rem 1.5rem; max-width: 920px; margin: 0 auto; position: relative; }
 .chapter-divider::before { content: ""; position: absolute; top: 0; left: 4rem; right: 4rem; height: 1px; background: linear-gradient(to right, transparent 0%, var(--accent-line) 20%, var(--accent-line) 80%, transparent 100%); }
@@ -235,8 +270,18 @@ hr::after { content: ""; position: absolute; left: 50%; top: 50%; width: 5px; he
   .toc-items { grid-template-columns: 1fr; gap: 0.4rem; }
   .g3 { grid-template-columns: 1fr; }
   .g4 { grid-template-columns: 1fr 1fr; }
-  .cover-portrait, .cover-portrait-placeholder { max-width: 78vw; }
-  .cover-stage { gap: 1.5rem; margin-top: 1.25rem; }
+  .cover-body { gap: 0.75rem; padding: 0.5rem 0; }
+  .cover-arch { padding: 1.1rem 0.85rem; }
+  .cover-arch-num { font-size: 50px; }
+  .cover-arch-name { font-size: 20px; }
+  .cover-arch-short { font-size: 12px; }
+  .cover-pt { font-size: 12px; }
+  .cover-tl-track { padding: 0 0.25rem; }
+  .cover-tl-num { font-size: 14px; }
+  .cover-tl-age { font-size: 7px; }
+  .cover-id-photo, .cover-id-photo-ph { width: 44px; height: 44px; }
+  .cover-id-name { font-size: 13px; }
+  .cover-id-date { font-size: 8.5px; }
 }
 
 /* LOCKED BLOCK */
@@ -356,18 +401,54 @@ body.no-grain::before { display: none !important; }
     <span class="cover-edition">Конфиденциально</span>
   </div>
 
-  <div class="cover-stage">
-    {% if data.user.photo_url %}
-    <div class="cover-portrait">
-      <img src="{{ data.user.photo_url }}" alt="Portrait" loading="eager">
+  <div class="cover-body">
+    {# ── ID strip: mini photo + birthdate ── #}
+    <div class="cover-id">
+      {% if data.user.photo_url %}
+      <div class="cover-id-photo"><img src="{{ data.user.photo_url }}" alt=""></div>
+      {% else %}
+      <div class="cover-id-photo-ph"></div>
+      {% endif %}
+      <div class="cover-id-info">
+        <div class="cover-id-name">{{ data.user.birthdate }}</div>
+        <div class="cover-id-date">{{ data.user.age }} лет · Персональный отчёт</div>
+      </div>
     </div>
-    {% else %}
-    <div class="cover-portrait-placeholder"></div>
-    {% endif %}
+
+    {# ── Title block ── #}
     <div class="cover-center">
       <div class="cover-eyebrow">Комплексный анализ личности</div>
       <div class="cover-title">Полный портрет</div>
       <div class="cover-sub">Внешность · Физиогномика · Нумерология<br>Матрица судьбы · Глубинный анализ</div>
+    </div>
+
+    {# ── Main archetype ── #}
+    <div class="cover-arch">
+      <div class="cover-arch-num">{{ data.numerology.life_path }}</div>
+      <div class="cover-arch-lbl">Число жизненного пути</div>
+      <div class="cover-arch-name">{{ data.numerology.life_path_archetype.name }}</div>
+      <div class="cover-arch-short">{{ data.numerology.life_path_archetype.short }}</div>
+    </div>
+
+    {# ── Key points ── #}
+    <div class="cover-pts">
+      {% for item in blocks.summary.points[:3] %}
+      <div class="cover-pt"><div class="cover-pt-dot"></div><span>{{ item }}</span></div>
+      {% endfor %}
+    </div>
+
+    {# ── Pinnacles timeline ── #}
+    <div class="cover-tl">
+      <div class="cover-tl-title">Периоды жизни · Пиннакли</div>
+      <div class="cover-tl-track">
+        {% for p in data.numerology.pinnacles %}
+        <div class="cover-tl-pt">
+          <div class="cover-tl-dot {% if data.user.age >= p.age_start and (p.age_end is none or data.user.age < p.age_end) %}active{% endif %}"></div>
+          <div class="cover-tl-num">{{ p.number }}</div>
+          <div class="cover-tl-age">{% if p.age_end %}{{ p.age_start }}–{{ p.age_end }}{% else %}{{ p.age_start }}+{% endif %}</div>
+        </div>
+        {% endfor %}
+      </div>
     </div>
   </div>
 
