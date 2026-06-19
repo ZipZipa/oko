@@ -135,7 +135,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "Можем переходить к анализу <tg-emoji emoji-id=\"5237948187838262194\">👁️</tg-emoji>\n\n"
             "Выбери, что хочешь посмотреть:"
         ),
-        photos=["menu.png"]
+        photos=["menu.jpeg"]
     ),
     "incomplete_profile": MessageConfig(
         key="incomplete_profile",
@@ -468,7 +468,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "{report} · {plan}\n\n"
             "Сумма: <b>{price} ₽</b>\n\n"
             "Нажми кнопку ниже, чтобы перейти к оплате.\n"
-            "После оплаты нажми «✅ Я оплатил»."
+            "После оплаты нажми «<tg-emoji emoji-id=\"5206607081334906820\">✅</tg-emoji> Я оплатил»."
         ),
     ),
     "payment_success": MessageConfig(
@@ -485,11 +485,31 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
     "payment_error": MessageConfig(
         key="payment_error",
-        text="⚠️ Ошибка оплаты: {error}",
+        text="<tg-emoji emoji-id=\"5447644880824181073\">⚠️</tg-emoji> Ошибка оплаты: {error}",
     ),
     "payment_create_error": MessageConfig(
         key="payment_create_error",
-        text="⚠️ Не удалось создать платёж: {error}",
+        text="<tg-emoji emoji-id=\"5447644880824181073\">⚠️</tg-emoji> Не удалось создать платёж: {error}",
+    ),
+
+    # ── Сброс данных ──────────────────────────────────────────────────────────
+    "reset_confirm": MessageConfig(
+        key="reset_confirm",
+        text=(
+            "<tg-emoji emoji-id=\"5447644880824181073\"><tg-emoji emoji-id=\"5447644880824181073\">⚠️</tg-emoji></tg-emoji> <b>Сброс данных</b>\n\n"
+            "Будут удалены все результаты отчётов (Портрет личности, Денежная карта, Совместимость пары), "
+            "а также данные партнёра и ладоней.\n\n"
+            "Ранее полученные отчеты сохранятся в вашем чате.\n\n"
+            "После сброса тебе нужно будет пройти регистрацию заново.\n\n"
+            "Продолжить?"
+        ),
+    ),
+    "reset_done": MessageConfig(
+        key="reset_done",
+        text=(
+            "<tg-emoji emoji-id=\"5206607081334906820\">✅</tg-emoji> <b>Данные сброшены</b>\n\n"
+            "Все результаты отчётов удалены. Начнём заново!"
+        ),
     ),
 
     # ── Ошибки ────────────────────────────────────────────────────────────────

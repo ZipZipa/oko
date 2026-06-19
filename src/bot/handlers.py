@@ -36,6 +36,7 @@ def _main_menu() -> InlineKeyboardMarkup:
         [InlineKeyboardButton(text="Портрет личности", callback_data="menu_self")],
         [InlineKeyboardButton(text="Совместимость пары", callback_data="menu_couple")],
         [InlineKeyboardButton(text="Денежная карта",    callback_data="menu_money")],
+        [InlineKeyboardButton(text="Начать заново",  callback_data="reset_confirm", icon_custom_emoji_id="5445267414562389170")],
     ])
 
 
@@ -1719,3 +1720,67 @@ async def cmd_refstats(message: Message):
     lines.append(f"\n<b>Итого:</b> {total_referred} реф. пользователей · {total_paid:.0f} ₽")
 
     await message.answer("\n".join(lines), parse_mode="HTML")
+
+
+# ─── Сброс данных ────────────────────────────────────────────────────────────────
+
+@router.callback_query(F.data == "reset_confirm")
+async def cb_reset_confirm(callback: CallbackQuery, state: FSMContext):
+    """Показывает экран подтверждения сброса."""
+    await state.clear()
+    markup = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Да, сбросить", callback_data="reset_execute", icon_custom_emoji_id="5447644880824181073")],
+        [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
+    ])
+    try:
+        await edit_msg(callback.message, "reset_confirm", reply_markup=markup)
+    except Exception:
+        await send_msg(callback.message, "reset_confirm", reply_markup=markup)
+    await callback.answer()
+
+
+@router.callback_query(F.data == "reset_execute")
+async def cb_reset_execute(callback: CallbackQuery, state: FSMContext):
+    """Сбрасывает результаты отчётов и запускает регистрацию заново."""
+    await state.clear()
+
+    async with async_session() as session:
+        result = await session.execute(
+            select(User).where(User.telegram_id == callback.from_user.id)
+        )
+        user = result.scalar_one_or_none()
+        if user:
+            # Сбрасываем все результаты отчётов, данные ладоней и партнёра
+            user.face_json = None
+            user.palm_left_json = None
+            user.palm_right_json = None
+            user.blocks_json = None
+            user.purchased_plan = None
+            user.report_html = None
+            user.money_blocks_json = None
+            user.money_plan = None
+            user.money_html = None
+            user.partner_name = None
+            user.partner_birth_date = None
+            user.partner_photo_file_id = None
+            user.partner_face_json = None
+            user.partner_palm_left_json = None
+            user.partner_palm_right_json = None
+            user.couple_blocks_json = None
+            user.couple_plan = None
+            user.couple_html = None
+            # Сбрасываем базовые данные профиля для полной перерегистрации
+            user.name = None
+            user.photo_file_id = None
+            user.birth_date = None
+            await session.commit()
+
+    try:
+        await callback.message.delete()
+    except TelegramBadRequest:
+        pass
+
+    await send_msg(callback.message, "reset_done")
+    await send_msg(callback.message, "start_new")
+    await state.set_state(RegistrationStates.waiting_for_name)
+    await callback.answer()
