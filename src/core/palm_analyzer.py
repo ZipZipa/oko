@@ -3,7 +3,15 @@
 OpenCV + Gabor/Ridge (детекция линий ладони) + анализ кожи.
 На выходе — JSON, совместимый по структуре с face_analyzer.
 """
+import os
+
+# GPU отключен — предотвращает краш на VDS без CUDA (идентично face_analyzer)
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["GLOG_minloglevel"] = "2"
+
 import math
+import threading
 import urllib.request
 from pathlib import Path
 from typing import Optional
@@ -18,6 +26,33 @@ HandLandmarker = mp.tasks.vision.HandLandmarker
 HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
 HandLandmarkerResult = mp.tasks.vision.HandLandmarkerResult
 VisionRunningMode = mp.tasks.vision.RunningMode
+
+# Кэш landmarker-объекта (создаётся один раз, переиспользуется)
+_hand_landmarker: HandLandmarker | None = None
+_hand_landmarker_lock = threading.Lock()
+
+
+def _get_hand_landmarker() -> HandLandmarker:
+    """Возвращает синглтон HandLandmarker (потокобезопасно, delegate=CPU)."""
+    global _hand_landmarker
+    if _hand_landmarker is None:
+        with _hand_landmarker_lock:
+            if _hand_landmarker is None:
+                model_path = _ensure_model()
+                options = HandLandmarkerOptions(
+                    base_options=BaseOptions(
+                        model_asset_path=model_path,
+                        delegate=BaseOptions.Delegate.CPU,
+                    ),
+                    running_mode=VisionRunningMode.IMAGE,
+                    num_hands=1,
+                    min_hand_detection_confidence=0.5,
+                    min_hand_presence_confidence=0.5,
+                    min_tracking_confidence=0.5,
+                )
+                _hand_landmarker = HandLandmarker.create_from_options(options)
+    return _hand_landmarker
+
 
 # Путь к модели
 _MODEL_DIR = Path(__file__).resolve().parent.parent / "models"
@@ -182,20 +217,10 @@ def _analyze_hand_landmarks(image_path: str) -> dict:
     h, w, _ = image.shape
     rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-    model_path = _ensure_model()
+    # Используем кэшированный landmarker (синглтон, delegate=CPU)
     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
-
-    options = HandLandmarkerOptions(
-        base_options=BaseOptions(model_asset_path=model_path),
-        running_mode=VisionRunningMode.IMAGE,
-        num_hands=1,
-        min_hand_detection_confidence=0.5,
-        min_hand_presence_confidence=0.5,
-        min_tracking_confidence=0.5,
-    )
-
-    with HandLandmarker.create_from_options(options) as landmarker:
-        result = landmarker.detect(mp_image)
+    landmarker = _get_hand_landmarker()
+    result = landmarker.detect(mp_image)
 
     if not result.hand_landmarks:
         raise ValueError("MediaPipe: рука не обнаружена")

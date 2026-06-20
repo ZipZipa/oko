@@ -8,9 +8,12 @@ import os
 # Без этого флага TensorFlow 2.16+ подхватывает Keras 3, и модели DeepFace падают:
 # "A KerasTensor cannot be used as input to a TensorFlow function"
 os.environ["TF_USE_LEGACY_KERAS"] = "1"
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = ""          # GPU отключен — предотвращает краш на VDS без CUDA
+os.environ["GLOG_minloglevel"] = "2"             # подавляет abseil/CUDA-логи
 
 import math
+import threading
 import urllib.request
 from pathlib import Path
 from typing import Optional
@@ -26,6 +29,35 @@ FaceLandmarker = mp.tasks.vision.FaceLandmarker
 FaceLandmarkerOptions = mp.tasks.vision.FaceLandmarkerOptions
 FaceLandmarkerResult = mp.tasks.vision.FaceLandmarkerResult
 VisionRunningMode = mp.tasks.vision.RunningMode
+
+# Кэш landmarker-объекта (создаётся один раз, переиспользуется)
+_face_landmarker: FaceLandmarker | None = None
+_face_landmarker_lock = threading.Lock()
+
+
+def _get_face_landmarker() -> FaceLandmarker:
+    """Возвращает синглтон FaceLandmarker (потокобезопасно, delegate=CPU)."""
+    global _face_landmarker
+    if _face_landmarker is None:
+        with _face_landmarker_lock:
+            if _face_landmarker is None:
+                model_path = _ensure_model()
+                options = FaceLandmarkerOptions(
+                    base_options=BaseOptions(
+                        model_asset_path=model_path,
+                        delegate=BaseOptions.Delegate.CPU,
+                    ),
+                    running_mode=VisionRunningMode.IMAGE,
+                    num_faces=1,
+                    min_face_detection_confidence=0.5,
+                    min_face_presence_confidence=0.5,
+                    min_tracking_confidence=0.5,
+                    output_face_blendshapes=True,
+                    output_facial_transformation_matrixes=True,
+                )
+                _face_landmarker = FaceLandmarker.create_from_options(options)
+    return _face_landmarker
+
 
 # Путь к модели
 _MODEL_DIR = Path(__file__).resolve().parent.parent / "models"
@@ -157,23 +189,10 @@ def _analyze_mediapipe(image_path: str) -> dict:
     h, w, _ = image.shape
     rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-    # Создаём FaceLandmarker
-    model_path = _ensure_model()
+    # Используем кэшированный landmarker (синглтон, delegate=CPU)
     mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
-
-    options = FaceLandmarkerOptions(
-        base_options=BaseOptions(model_asset_path=model_path),
-        running_mode=VisionRunningMode.IMAGE,
-        num_faces=1,
-        min_face_detection_confidence=0.5,
-        min_face_presence_confidence=0.5,
-        min_tracking_confidence=0.5,
-        output_face_blendshapes=True,
-        output_facial_transformation_matrixes=True,
-    )
-
-    with FaceLandmarker.create_from_options(options) as landmarker:
-        result = landmarker.detect(mp_image)
+    landmarker = _get_face_landmarker()
+    result = landmarker.detect(mp_image)
 
     if not result.face_landmarks:
         raise ValueError("MediaPipe: лицо не обнаружено")
