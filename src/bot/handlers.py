@@ -796,15 +796,15 @@ async def cb_skip_partner_palms(callback: CallbackQuery, state: FSMContext):
     user = await get_user(callback.from_user.id)
     pending_plan = data.get("pending_plan")
 
-    try:
-        await callback.message.delete()
-    except TelegramBadRequest:
-        pass
-
-    # Если это премиум-флоу — создаём платёж
+    # Если это премиум-флоу — создаём платёж (сообщение НЕ удаляем,
+    # т.к. _create_payment_and_show редактирует его для показа кнопки оплаты)
     if pending_plan:
         await _create_payment_and_show(callback, user, "couple", pending_plan)
     else:
+        try:
+            await callback.message.delete()
+        except TelegramBadRequest:
+            pass
         status_msg = await send_msg(callback.message, "partner_data_received")
         asyncio.create_task(_run_couple_report(status_msg, user, "demo"))
     await callback.answer()
@@ -1196,10 +1196,14 @@ async def _create_payment_and_show(callback_or_msg, user: User, report_type: str
 
         if isinstance(callback_or_msg, CallbackQuery):
             msg = callback_or_msg.message
-            if msg.photo:
-                await msg.edit_caption(caption=text, reply_markup=markup, parse_mode="HTML")
-            else:
-                await msg.edit_text(text=text, reply_markup=markup, parse_mode="HTML")
+            try:
+                if msg.photo:
+                    await msg.edit_caption(caption=text, reply_markup=markup, parse_mode="HTML")
+                else:
+                    await msg.edit_text(text=text, reply_markup=markup, parse_mode="HTML")
+            except TelegramBadRequest:
+                # Сообщение могло быть удалено/устареть — отправляем новое
+                await msg.answer(text=text, reply_markup=markup, parse_mode="HTML")
         else:
             await callback_or_msg.answer(text=text, reply_markup=markup, parse_mode="HTML")
 
@@ -1208,10 +1212,13 @@ async def _create_payment_and_show(callback_or_msg, user: User, report_type: str
         err_text = MESSAGES["payment_create_error"].text.format(error=str(e))
         if isinstance(callback_or_msg, CallbackQuery):
             msg = callback_or_msg.message
-            if msg.photo:
-                await msg.edit_caption(caption=err_text, parse_mode="HTML")
-            else:
-                await msg.edit_text(text=err_text, parse_mode="HTML")
+            try:
+                if msg.photo:
+                    await msg.edit_caption(caption=err_text, parse_mode="HTML")
+                else:
+                    await msg.edit_text(text=err_text, parse_mode="HTML")
+            except TelegramBadRequest:
+                await msg.answer(text=err_text, parse_mode="HTML")
         else:
             await callback_or_msg.answer(text=err_text, parse_mode="HTML")
 
