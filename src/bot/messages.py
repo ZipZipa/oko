@@ -386,6 +386,13 @@ MESSAGES: dict[str, MessageConfig] = {
             "Хорошо, ладони можно добавить позже <tg-emoji emoji-id=\"5222154218701352505\">✔️</tg-emoji>\n\n"
         ),
     ),
+    "registration_palm_done": MessageConfig(
+        key="registration_palm_done",
+        text=(
+            "<tg-emoji emoji-id=\"5222154218701352505\">✔️</tg-emoji> <b>Ладонии успешно считаны!</b>\n\n"
+            "Хиромантия добавлена в твой профиль — это усилит будущие анализы.\n"
+        ),
+    ),
 
     # ── Ладони для couple full ───────────────────────────────────────────────
     "palm_needed_couple": MessageConfig(

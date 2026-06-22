@@ -403,7 +403,7 @@ async def process_reg_palm_right(message: Message, state: FSMContext):
         pass
 
     await state.clear()
-    await send_msg(message, "registration_palm_skipped")
+    await send_msg(message, "registration_palm_done")
     await send_msg(message, "choose_section", reply_markup=_main_menu())
 
 
