@@ -229,7 +229,7 @@ MESSAGES: dict[str, MessageConfig] = {
     "pkg_money_base": MessageConfig(
         key="pkg_money_base",
         text=(
-            "<b>Базовый · Денежная</b>\n"
+            "<b>Базовый · Денежная карта</b>\n"
             "Деньги не приходят случайно — и не уходят тоже."
             "Узнай, что стоит между тобой и другим уровнем."
         ),
