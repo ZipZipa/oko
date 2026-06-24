@@ -189,17 +189,22 @@ async def _analyze_and_save_face(bot, file_id: str, telegram_id: int):
         log.error("Ошибка анализа/сохранения лица для telegram_id=%s", telegram_id, exc_info=True)
 
 
-async def _analyze_face_return(bot, file_id: str) -> dict | None:
-    """Скачивает и анализирует лицо, возвращает dict или None."""
+async def _analyze_face_return(message: Message, file_id: str, error_msg_key: str = "partner_face_missing") -> dict | None:
+    """Скачивает и анализирует лицо.
+
+    При ошибке (лицо не обнаружено или сбой) отправляет пользователю сообщение
+    с ключом error_msg_key и возвращает None.
+    """
     from src.core.face_analyzer import analyze_face
     import os
 
     try:
-        file = await bot.get_file(file_id)
+        file = await message.bot.get_file(file_id)
         if not file.file_path:
+            await send_msg(message, error_msg_key, reply_markup=_cancel_keyboard())
             return None
         with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
-            await bot.download_file(file.file_path, tmp.name)
+            await message.bot.download_file(file.file_path, tmp.name)
             tmp_path = tmp.name
         try:
             loop = asyncio.get_running_loop()
@@ -209,6 +214,7 @@ async def _analyze_face_return(bot, file_id: str) -> dict | None:
         return face_data
     except Exception:
         log.error("Ошибка анализа лица (file_id=%s)", file_id, exc_info=True)
+        await send_msg(message, error_msg_key, reply_markup=_cancel_keyboard())
         return None
 
 
@@ -658,7 +664,7 @@ async def process_partner_photo(message: Message, state: FSMContext):
     photo: PhotoSize = message.photo[-1]
     processing_msg = await send_msg(message, "analyzing")
 
-    face_data = await _analyze_face_return(message.bot, photo.file_id)
+    face_data = await _analyze_face_return(message, photo.file_id, error_msg_key="partner_face_missing")
 
     async with async_session() as session:
         result = await session.execute(
@@ -675,6 +681,9 @@ async def process_partner_photo(message: Message, state: FSMContext):
         await processing_msg.delete()
     except TelegramBadRequest:
         pass
+
+    if not face_data:
+        return
 
     # После фото партнёра — запрашиваем ладони партнёра
     await state.set_state(PartnerStates.waiting_for_partner_palm_left)
