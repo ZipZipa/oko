@@ -1488,6 +1488,10 @@ async def _run_couple_report(message: Message, user: User, plan: str):
 
         face_b = json.loads(user.partner_face_json) if user.partner_face_json else {}
 
+        if not face_b.get("proportions"):
+            await edit_msg(message, "partner_face_missing")
+            return
+
         if user.photo_file_id and "photo_url" not in face_a:
             photo_uri = await _download_photo_data_uri(message.bot, user.photo_file_id)
             if photo_uri:

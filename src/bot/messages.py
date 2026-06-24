@@ -514,6 +514,10 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
 
     # ── Ошибки ────────────────────────────────────────────────────────────────
+    "partner_face_missing": MessageConfig(
+        key="partner_face_missing",
+        text="Не удалось распознать лицо на фото партнёра <tg-emoji emoji-id=\"5805364370376496031\">😎</tg-emoji>\n\nЗагрузи другое фото — хорошо освещённое, анфас, с чётко видимым лицом.",
+    ),
     "partner_data_missing": MessageConfig(
         key="partner_data_missing",
         text="Данные партнёра не найдены <tg-emoji emoji-id=\"5805364370376496031\">😎</tg-emoji>\n\nНачни заново через меню.",
