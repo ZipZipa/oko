@@ -6,7 +6,7 @@ import logging
 import secrets
 import tempfile
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 
 log = logging.getLogger(__name__)
 
@@ -25,6 +25,12 @@ from src.bot.db import async_session, User, Payment
 from src.bot.states import RegistrationStates, PalmStates, PartnerStates
 from src.bot.messages import send_msg, edit_msg, MESSAGES
 from src.bot.services.payment import create_payment, check_payment
+from src.bot.notifications.events import (
+    log_event, log_event_once, mark_purchase_completed, reset_notification_state,
+    REGISTRATION_STARTED, PROFILE_COMPLETED, ENTERED_MENU,
+    COUPLE_PARTNER_STARTED, COUPLE_PARTNER_COMPLETED,
+    DEMO_SHOWN, PAYMENT_INITIATED, PURCHASE_COMPLETED,
+)
 
 router = Router()
 
@@ -185,6 +191,8 @@ async def _analyze_and_save_face(bot, file_id: str, telegram_id: int):
                 if user:
                     user.face_json = json.dumps(face_data, ensure_ascii=False)
                     await session.commit()
+                    if _is_complete(user):
+                        await log_event_once(telegram_id, PROFILE_COMPLETED)
     except Exception:
         log.error("Ошибка анализа/сохранения лица для telegram_id=%s", telegram_id, exc_info=True)
 
@@ -227,6 +235,7 @@ async def cmd_start(message: Message, state: FSMContext, command: CommandObject)
         await state.clear()
         if _is_complete(user):
             await send_msg(message, "choose_section", reply_markup=_main_menu())
+            await log_event(message.from_user.id, ENTERED_MENU)
         elif not user.name:
             await send_msg(message, "start_returning_no_name")
             await state.set_state(RegistrationStates.waiting_for_name)
@@ -257,6 +266,7 @@ async def cmd_start(message: Message, state: FSMContext, command: CommandObject)
         session.add(new_user)
         await session.commit()
 
+    await log_event(message.from_user.id, REGISTRATION_STARTED)
     await send_msg(message, "start_new")
     await state.set_state(RegistrationStates.waiting_for_name)
 
@@ -330,6 +340,8 @@ async def process_birth_date(message: Message, state: FSMContext):
         if user:
             user.birth_date = birth_date
             await session.commit()
+            if _is_complete(user):
+                await log_event_once(message.from_user.id, PROFILE_COMPLETED)
 
     await state.set_state(RegistrationStates.waiting_for_palm_left)
     await send_msg(message, "registration_palm_request", reply_markup=_skip_registration_palms_keyboard())
@@ -411,6 +423,7 @@ async def process_reg_palm_right(message: Message, state: FSMContext):
     await state.clear()
     await send_msg(message, "registration_palm_done")
     await send_msg(message, "choose_section", reply_markup=_main_menu())
+    await log_event(message.from_user.id, ENTERED_MENU)
 
 
 @router.message(RegistrationStates.waiting_for_palm_right)
@@ -517,6 +530,7 @@ async def cb_back_to_main(callback: CallbackQuery, state: FSMContext):
         await edit_msg(callback.message, "choose_section", reply_markup=_main_menu())
     except Exception:
         await send_msg(callback.message, "choose_section", reply_markup=_main_menu())
+    await log_event(callback.from_user.id, ENTERED_MENU)
     await callback.answer()
 
 
@@ -685,6 +699,9 @@ async def process_partner_photo(message: Message, state: FSMContext):
     if not face_data:
         return
 
+    # Данных партнёра достаточно для запуска demo — фиксируем завершение
+    await log_event(message.from_user.id, COUPLE_PARTNER_COMPLETED)
+
     # После фото партнёра — запрашиваем ладони партнёра
     await state.set_state(PartnerStates.waiting_for_partner_palm_left)
     await send_msg(message, "partner_palm_request", reply_markup=_skip_partner_palms_keyboard())
@@ -829,6 +846,7 @@ async def cb_skip_registration_palms(callback: CallbackQuery, state: FSMContext)
         pass
     await send_msg(callback.message, "registration_palm_skipped")
     await send_msg(callback.message, "choose_section", reply_markup=_main_menu())
+    await log_event(callback.from_user.id, ENTERED_MENU)
     await callback.answer()
 
 
@@ -855,6 +873,7 @@ async def cb_run_money_demo(callback: CallbackQuery):
 async def cb_start_couple_demo(callback: CallbackQuery, state: FSMContext):
     """Начинает сбор данных партнёра для анализа совместимости."""
     await state.set_state(PartnerStates.waiting_for_partner_name)
+    await log_event(callback.from_user.id, COUPLE_PARTNER_STARTED)
     await edit_msg(
         callback.message, "partner_name_prompt",
         reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -937,6 +956,21 @@ async def cb_check_payment(callback: CallbackQuery, state: FSMContext):
         except TelegramBadRequest:
             pass
 
+        # Гарантируем paid_at и фиксируем покупку (идемпотентно)
+        if not payment_record.paid_at:
+            async with async_session() as session:
+                result = await session.execute(
+                    select(Payment).where(Payment.yookassa_id == payment_id)
+                )
+                pr = result.scalar_one_or_none()
+                if pr and not pr.paid_at:
+                    pr.paid_at = datetime.now(timezone.utc)
+                    await session.commit()
+        await mark_purchase_completed(
+            callback.from_user.id,
+            payment_record.report_type, payment_record.plan, payment_id,
+        )
+
         user = await get_user(callback.from_user.id)
         if not user:
             await callback.answer()
@@ -975,9 +1009,15 @@ async def cb_check_payment(callback: CallbackQuery, state: FSMContext):
         payment_record = result.scalar_one_or_none()
         if payment_record:
             payment_record.status = new_status
+            if new_status == "succeeded" and not payment_record.paid_at:
+                payment_record.paid_at = datetime.now(timezone.utc)
             await session.commit()
 
     if new_status == "succeeded":
+        await mark_purchase_completed(
+            callback.from_user.id,
+            payment_record.report_type, payment_record.plan, payment_id,
+        )
         await callback.answer("Оплата подтверждена! ✅", show_alert=False)
         try:
             await callback.message.edit_reply_markup(reply_markup=None)
@@ -1190,6 +1230,11 @@ async def _create_payment_and_show(callback_or_msg, user: User, report_type: str
             session.add(payment_record)
             await session.commit()
 
+        await log_event(
+            user.telegram_id, PAYMENT_INITIATED,
+            report_type=report_type, plan=plan_key, payment_id=yoo_payment.id,
+        )
+
         confirmation_url = yoo_payment.confirmation.confirmation_url
 
         _plan_label = {"base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
@@ -1309,6 +1354,7 @@ async def _run_self_report(message: Message, user: User, plan: str):
                     if db_user:
                         db_user.blocks_json = json.dumps(out_blocks[0], ensure_ascii=False)
                         await session.commit()
+                await log_event_once(user.telegram_id, DEMO_SHOWN, report_type="self")
 
         elif plan == "full":
             palm_left = json.loads(user.palm_left_json) if user.palm_left_json else None
@@ -1414,6 +1460,7 @@ async def _run_money_report(message: Message, user: User, plan: str):
                     if db_user:
                         db_user.money_blocks_json = json.dumps(out_blocks[0], ensure_ascii=False)
                         await session.commit()
+                await log_event_once(user.telegram_id, DEMO_SHOWN, report_type="money")
 
         elif plan == "full":
             palm_left = json.loads(user.palm_left_json) if user.palm_left_json else None
@@ -1548,6 +1595,7 @@ async def _run_couple_report(message: Message, user: User, plan: str):
                     if db_user:
                         db_user.couple_blocks_json = json.dumps(out_blocks[0], ensure_ascii=False)
                         await session.commit()
+                await log_event_once(user.telegram_id, DEMO_SHOWN, report_type="couple")
         else:
             reference = user.couple_blocks_json or None
             html = await loop.run_in_executor(
@@ -1751,6 +1799,9 @@ async def cb_reset_execute(callback: CallbackQuery, state: FSMContext):
             user.photo_file_id = None
             user.birth_date = None
             await session.commit()
+
+    # Очищаем воронку пушей и перезапускаем её с нуля
+    await reset_notification_state(callback.from_user.id)
 
     try:
         await callback.message.delete()

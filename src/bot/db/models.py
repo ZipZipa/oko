@@ -1,4 +1,7 @@
-from sqlalchemy import Column, Integer, BigInteger, String, Date, Text, DateTime
+from sqlalchemy import (
+    Column, Integer, BigInteger, String, Date, Text, DateTime,
+    Boolean, UniqueConstraint,
+)
 from sqlalchemy.orm import DeclarativeBase
 from datetime import datetime, timezone
 
@@ -44,6 +47,10 @@ class User(Base):
     referral_code = Column(String(20), unique=True, nullable=True, index=True)
     referred_by = Column(String(20), nullable=True, index=True)
 
+    # notifications
+    last_activity_at = Column(DateTime, nullable=True)
+    is_blocked = Column(Boolean, nullable=False, default=False, server_default="0")
+
 
 class Payment(Base):
     __tablename__ = "payments"
@@ -58,3 +65,30 @@ class Payment(Base):
     confirmation_url = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     paid_at = Column(DateTime, nullable=True)
+
+
+class UserEvent(Base):
+    """Append-only лог событий пользователя для системы пушей."""
+    __tablename__ = "user_events"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    telegram_id = Column(BigInteger, nullable=False, index=True)
+    event_type = Column(String(40), nullable=False)
+    report_type = Column(String(20), nullable=True)   # self/money/couple или None
+    plan = Column(String(20), nullable=True)           # для purchase-событий
+    payment_id = Column(String(255), nullable=True)    # для payment-событий
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    payload_json = Column(Text, nullable=True)
+
+
+class NotificationLog(Base):
+    """Журнал отправленных пушей — для идемпотентности."""
+    __tablename__ = "notification_log"
+    __table_args__ = (
+        UniqueConstraint("telegram_id", "event_key", name="uq_notif_log"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    telegram_id = Column(BigInteger, nullable=False, index=True)
+    event_key = Column(String(60), nullable=False)
+    sent_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

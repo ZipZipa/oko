@@ -7,6 +7,8 @@ from aiogram import Bot, Dispatcher
 
 from src.bot.db import init_db
 from src.bot.handlers import router
+from src.bot.notifications.scheduler import notification_loop
+from src.bot.notifications.middleware import ActivityMiddleware
 
 load_dotenv()
 
@@ -29,6 +31,10 @@ async def main():
     bot = Bot(token=token)
     dp = Dispatcher()
     dp.include_router(router)
+    dp.message.outer_middleware(ActivityMiddleware())
+    dp.callback_query.outer_middleware(ActivityMiddleware())
+
+    asyncio.create_task(notification_loop(bot))
 
     logger.info("Бот запущен")
     await dp.start_polling(bot)

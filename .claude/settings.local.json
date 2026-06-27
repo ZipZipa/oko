@@ -11,7 +11,12 @@
       "Bash(Select-Object FullName, PSIsContainer)",
       "Bash(ConvertTo-Json -Depth 10)",
       "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\zig-zag\\\\Documents\\\\oko1\" -Recurse -Force | ForEach-Object { $_.FullName })",
-      "PowerShell(Get-Command python3, python, py -ErrorAction SilentlyContinue | Select-Object Name, Source; $env:PATH -split \";\" | Where-Object { $_ -match \"[Pp]ython\" })"
+      "PowerShell(Get-Command python3, python, py -ErrorAction SilentlyContinue | Select-Object Name, Source; $env:PATH -split \";\" | Where-Object { $_ -match \"[Pp]ython\" })",
+      "Bash(.venv/bin/python -m py_compile:*)",
+      "Bash(.venv/bin/python:*)",
+      "Bash(PYTHONPATH=. .venv/bin/python:*)",
+      "Bash(python3:*)",
+      "Bash(PYTHONPATH=/Users/a.gorcheev/Documents/pet/oko /Users/a.gorcheev/Documents/pet/oko/.venv/bin/python:*)"
     ]
   }
 }
