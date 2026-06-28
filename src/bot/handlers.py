@@ -97,7 +97,7 @@ _PLAN_LEVEL = {"demo": 0, "base": 1, "extended": 2, "full": 3}
 # ── Лейблы пакетов (текст берётся из MESSAGES) ──────────────────────────────────
 _PACKAGE_NAMES = {"base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
 
-_BASE_PRICES = {"base": 249, "extended": 449, "full": 649}
+_BASE_PRICES = {"base": 490, "extended": 990, "full": 1490}
 
 SALE_DISCOUNT_PERCENT = 15  # скидка по кнопке «Получить скидку»
 
