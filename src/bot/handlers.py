@@ -99,6 +99,8 @@ _PACKAGE_NAMES = {"base": "Базовый", "extended": "Расширенный"
 
 _BASE_PRICES = {"base": 249, "extended": 449, "full": 649}
 
+SALE_DISCOUNT_PERCENT = 15  # скидка по кнопке «Получить скидку»
+
 # Скидки при апгрейде: (текущий_пакет, целевой_пакет) → процент скидки
 _UPGRADE_DISCOUNTS = {
     ("base", "extended"): 25,
@@ -107,12 +109,13 @@ _UPGRADE_DISCOUNTS = {
 }
 
 
-def _get_discounted_price(current_plan: str, target_plan: str) -> int:
-    """Цена с учётом скидки за уже купленный пакет."""
+def _get_discounted_price(current_plan: str, target_plan: str, sale_percent: int = 0) -> int:
+    """Цена с учётом скидки за уже купленный пакет и активной скидки sale."""
     base_price = _BASE_PRICES.get(target_plan, 0)
     discount_pct = _UPGRADE_DISCOUNTS.get((current_plan, target_plan), 0)
-    if discount_pct:
-        return round(base_price * (100 - discount_pct) / 100)
+    total_pct = min(discount_pct + sale_percent, 95)
+    if total_pct:
+        return round(base_price * (100 - total_pct) / 100)
     return base_price
 
 # Маппинг: (report_prefix, plan_key) → ключ в MESSAGES
@@ -143,8 +146,8 @@ def _packages_menu(above_plan: str = "demo", report_prefix: str = "self") -> Inl
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
-def _package_detail_menu(report_prefix: str, plan_key: str, current_plan: str = "demo") -> InlineKeyboardMarkup:
-    price = _get_discounted_price(current_plan, plan_key)
+def _package_detail_menu(report_prefix: str, plan_key: str, current_plan: str = "demo", sale_percent: int = 0) -> InlineKeyboardMarkup:
+    price = _get_discounted_price(current_plan, plan_key, sale_percent)
     buy_text = f"Купить · {price} ₽"
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=buy_text, callback_data=f"buy_{report_prefix}_{plan_key}")],
@@ -235,6 +238,25 @@ async def _analyze_face_return(message: Message, file_id: str, error_msg_key: st
 @router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext, command: CommandObject):
     user = await get_user(message.from_user.id)
+
+    # /start sale — применить скидку к существующему пользователю
+    if command.args == "sale" and user:
+        await state.clear()
+        if (user.discount_percent or 0) < SALE_DISCOUNT_PERCENT:
+            async with async_session() as session:
+                result = await session.execute(
+                    select(User).where(User.telegram_id == message.from_user.id)
+                )
+                u = result.scalar_one_or_none()
+                if u:
+                    u.discount_percent = SALE_DISCOUNT_PERCENT
+                    await session.commit()
+        if _is_complete(user):
+            await send_msg(message, "sale_applied", reply_markup=_main_menu())
+            await log_event(message.from_user.id, ENTERED_MENU)
+            return
+        # профиль не завершён — скидка сохранена, продолжаем регистрацию
+
     if user:
         await state.clear()
         if _is_complete(user):
@@ -256,7 +278,7 @@ async def cmd_start(message: Message, state: FSMContext, command: CommandObject)
 
     async with async_session() as session:
         referred_by = None
-        if ref_arg:
+        if ref_arg and ref_arg != "sale":
             res = await session.execute(select(User).where(User.referral_code == ref_arg))
             referrer = res.scalar_one_or_none()
             if referrer and referrer.telegram_id != message.from_user.id:
@@ -266,6 +288,7 @@ async def cmd_start(message: Message, state: FSMContext, command: CommandObject)
             telegram_id=message.from_user.id,
             referral_code=ref_code,
             referred_by=referred_by,
+            discount_percent=SALE_DISCOUNT_PERCENT if ref_arg == "sale" else 0,
         )
         session.add(new_user)
         await session.commit()
@@ -589,12 +612,13 @@ async def cb_package_detail(callback: CallbackQuery):
     user = await get_user(callback.from_user.id)
     plan_field = {"self": "purchased_plan", "money": "money_plan", "couple": "couple_plan"}[report_prefix]
     current_plan = getattr(user, plan_field, None) or "demo" if user else "demo"
+    sale_percent = (user.discount_percent if user else 0) or 0
 
     discount_pct = _UPGRADE_DISCOUNTS.get((current_plan, plan_key), 0)
-    markup = _package_detail_menu(report_prefix, plan_key, current_plan)
+    markup = _package_detail_menu(report_prefix, plan_key, current_plan, sale_percent)
 
-    if discount_pct:
-        price = _get_discounted_price(current_plan, plan_key)
+    if discount_pct or sale_percent:
+        price = _get_discounted_price(current_plan, plan_key, sale_percent)
         base_price = _BASE_PRICES[plan_key]
         text = MESSAGES[msg_key].text
         text = text.replace(f"— {base_price} ₽", f"— <s>{base_price} ₽</s> {price} ₽", 1)
@@ -1213,7 +1237,8 @@ async def _create_payment_and_show(callback_or_msg, user: User, report_type: str
     try:
         plan_field = {"self": "purchased_plan", "money": "money_plan", "couple": "couple_plan"}[report_type]
         current_plan = getattr(user, plan_field, None) or "demo"
-        price = _get_discounted_price(current_plan, plan_key)
+        sale_percent = user.discount_percent or 0
+        price = _get_discounted_price(current_plan, plan_key, sale_percent)
         amount_str = f"{price}.00"
 
         yoo_payment = await asyncio.get_running_loop().run_in_executor(
@@ -1829,6 +1854,7 @@ async def cb_reset_execute(callback: CallbackQuery, state: FSMContext):
             user.couple_blocks_json = None
             user.couple_plan = None
             user.couple_html = None
+            user.discount_percent = 0
             # Сбрасываем базовые данные профиля для полной перерегистрации
             user.name = None
             user.photo_file_id = None

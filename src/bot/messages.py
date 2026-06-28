@@ -29,10 +29,14 @@ class MessageConfig:
         key: Уникальный идентификатор сообщения
         text: Текст сообщения (поддерживает {placeholders} для format())
         photos: Список имён файлов картинок из директории media/ (может быть пустым)
+        sale: Если True — к пушу добавляется кнопка «Получить скидку»
+        delay_minutes: Через сколько минут после события отправить пуш (только для пушей)
     """
     key: str
     text: str
     photos: list[str] = field(default_factory=list)  # имена файлов из MEDIA_DIR
+    sale: bool = False
+    delay_minutes: int | None = None
 
     @property
     def photo_paths(self) -> list[Path]:
@@ -532,85 +536,177 @@ MESSAGES: dict[str, MessageConfig] = {
     "push_e1_1": MessageConfig(
         key="push_e1_1",
         text="👁️ Твой персональный анализ ещё не начат.",
+        delay_minutes=15,
     ),
     "push_e1_2": MessageConfig(
         key="push_e1_2",
         text="Ответы о тебе всё ещё ждут тебя в ОКО.",
+        delay_minutes=1440,
     ),
     # E2: Начал анализ → бросил на заполнении данных
     "push_e2_1": MessageConfig(
         key="push_e2_1",
         text="Ты почти начал анализ. Остался последний шаг.",
+        delay_minutes=30,
     ),
     "push_e2_2": MessageConfig(
         key="push_e2_2",
         text="Дополни данные и получи свой персональный разбор.",
+        delay_minutes=720,
     ),
     # E3: Начал совместимость → не ввёл партнёра
     "push_e3_1": MessageConfig(
         key="push_e3_1",
         text="Для анализа пары не хватает данных второго человека.",
+        delay_minutes=30,
     ),
     "push_e3_2": MessageConfig(
         key="push_e3_2",
         text="Добавь данные партнёра и узнай, что происходит между вами на самом деле.",
+        delay_minutes=1440,
     ),
     # E4: Получил демо → не купил
-    "push_e4_1": MessageConfig(
-        key="push_e4_1",
-        text="Ты увидел только часть своего анализа.",
+    # self
+    "push_e4_1_self": MessageConfig(
+        key="push_e4_1_self",
+        text="Ты увидел только часть анализа личности.",
+        delay_minutes=20,
     ),
-    "push_e4_2": MessageConfig(
-        key="push_e4_2",
-        text="Самые важные выводы остались закрыты.",
+    "push_e4_2_self": MessageConfig(
+        key="push_e4_2_self",
+        text="Самые важные выводы о тебе остались закрыты.",
+        sale=True,
+        delay_minutes=720,
     ),
-    "push_e4_3": MessageConfig(
-        key="push_e4_3",
-        text="Полный разбор всё ещё доступен.",
+    "push_e4_3_self": MessageConfig(
+        key="push_e4_3_self",
+        text="Полный разбор личности всё ещё доступен.",
+        sale=True,
+        delay_minutes=2880,
+    ),
+    # money
+    "push_e4_1_money": MessageConfig(
+        key="push_e4_1_money",
+        text="Ты увидел только часть денежного анализа.",
+        delay_minutes=20,
+    ),
+    "push_e4_2_money": MessageConfig(
+        key="push_e4_2_money",
+        text="Самые важные выводы о твоих деньгах остались закрыты.",
+        sale=True,
+        delay_minutes=720,
+    ),
+    "push_e4_3_money": MessageConfig(
+        key="push_e4_3_money",
+        text="Полный денежный разбор всё ещё доступен.",
+        sale=True,
+        delay_minutes=2880,
+    ),
+    # couple
+    "push_e4_1_couple": MessageConfig(
+        key="push_e4_1_couple",
+        text="Ты увидел только часть анализа совместимости.",
+        delay_minutes=20,
+    ),
+    "push_e4_2_couple": MessageConfig(
+        key="push_e4_2_couple",
+        text="Самые важные выводы о вашей паре остались закрыты.",
+        sale=True,
+        delay_minutes=720,
+    ),
+    "push_e4_3_couple": MessageConfig(
+        key="push_e4_3_couple",
+        text="Полный разбор совместимости всё ещё доступен.",
+        sale=True,
+        delay_minutes=2880,
     ),
     # E5: Нажал оплатить → не оплатил
     "push_e5_1": MessageConfig(
         key="push_e5_1",
         text="Оплата не завершена. Твой анализ уже готов.",
+        delay_minutes=15,
     ),
     "push_e5_2": MessageConfig(
         key="push_e5_2",
         text="Остался один шаг до полного доступа.",
+        sale=True,
+        delay_minutes=180,
     ),
     "push_e5_3": MessageConfig(
         key="push_e5_3",
         text="Заверши оплату и открой свой разбор.",
+        sale=True,
+        delay_minutes=1440,
     ),
     # E6: Купил один продукт → не купил остальные
     "push_e6_self": MessageConfig(
         key="push_e6_self",
         text="Теперь узнай, как твои особенности влияют на деньги и отношения.",
+        delay_minutes=1440,
     ),
     "push_e6_money": MessageConfig(
         key="push_e6_money",
         text="Теперь узнай, какие отношения усиливают или ослабляют твой путь.",
+        delay_minutes=1440,
     ),
     "push_e6_couple": MessageConfig(
         key="push_e6_couple",
         text="Теперь узнай, почему именно такие люди появляются в твоей жизни.",
+        delay_minutes=1440,
     ),
     # E7: Купил базовый/расширенный → не купил премиум
-    "push_e7_1": MessageConfig(
-        key="push_e7_1",
-        text="Ты открыл только часть своего анализа.",
+    # self
+    "push_e7_1_self": MessageConfig(
+        key="push_e7_1_self",
+        text="Ты открыл только часть анализа личности.",
+        delay_minutes=120,
     ),
-    "push_e7_2": MessageConfig(
-        key="push_e7_2",
-        text="Самые глубокие выводы доступны в Премиум.",
+    "push_e7_2_self": MessageConfig(
+        key="push_e7_2_self",
+        text="Самые глубокие выводы о тебе доступны в Премиум.",
+        sale=True,
+        delay_minutes=1440,
+    ),
+    # money
+    "push_e7_1_money": MessageConfig(
+        key="push_e7_1_money",
+        text="Ты открыл только часть денежного анализа.",
+        delay_minutes=120,
+    ),
+    "push_e7_2_money": MessageConfig(
+        key="push_e7_2_money",
+        text="Самые глубокие выводы о твоих деньгах доступны в Премиум.",
+        sale=True,
+        delay_minutes=1440,
+    ),
+    # couple
+    "push_e7_1_couple": MessageConfig(
+        key="push_e7_1_couple",
+        text="Ты открыл только часть анализа совместимости.",
+        delay_minutes=120,
+    ),
+    "push_e7_2_couple": MessageConfig(
+        key="push_e7_2_couple",
+        text="Самые глубокие выводы о вашей паре доступны в Премиум.",
+        sale=True,
+        delay_minutes=1440,
     ),
     # E8: Давно не заходил
     "push_e8_1": MessageConfig(
         key="push_e8_1",
         text="Твои разборы всё ещё ждут тебя.",
+        delay_minutes=10080,
     ),
     "push_e8_2": MessageConfig(
         key="push_e8_2",
         text="Возможно, сейчас именно то время, чтобы посмотреть на свою жизнь иначе.",
+        delay_minutes=43200,
+    ),
+
+    # ── Скидка ────────────────────────────────────────────────────────────────
+    "sale_applied": MessageConfig(
+        key="sale_applied",
+        text="🎁 <b>Скидка 20% применена!</b>\n\nТеперь все пакеты доступны дешевле. Выбери свой разбор:",
     ),
 }
 

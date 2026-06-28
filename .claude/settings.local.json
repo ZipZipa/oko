@@ -16,7 +16,8 @@
       "Bash(.venv/bin/python:*)",
       "Bash(PYTHONPATH=. .venv/bin/python:*)",
       "Bash(python3:*)",
-      "Bash(PYTHONPATH=/Users/a.gorcheev/Documents/pet/oko /Users/a.gorcheev/Documents/pet/oko/.venv/bin/python:*)"
+      "Bash(PYTHONPATH=/Users/a.gorcheev/Documents/pet/oko /Users/a.gorcheev/Documents/pet/oko/.venv/bin/python:*)",
+      "Bash(python:*)"
     ]
   }
 }

@@ -51,6 +51,9 @@ class User(Base):
     last_activity_at = Column(DateTime, nullable=True)
     is_blocked = Column(Boolean, nullable=False, default=False, server_default="0")
 
+    # sale
+    discount_percent = Column(Integer, nullable=False, default=0, server_default="0")
+
 
 class Payment(Base):
     __tablename__ = "payments"

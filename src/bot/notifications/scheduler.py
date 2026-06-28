@@ -12,7 +12,7 @@ from datetime import datetime, timezone, timedelta
 from html import escape as _html_escape
 
 from aiogram import Bot
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile, InputMediaPhoto
 from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -55,22 +55,32 @@ def _bot_url() -> str | None:
     return f"https://t.me/{BOT_USERNAME}?start=continue"
 
 
-def _open_bot_kb() -> InlineKeyboardMarkup | None:
-    url = _bot_url()
-    if not url:
+def _sale_url() -> str | None:
+    if not BOT_USERNAME:
         return None
-    return InlineKeyboardMarkup(inline_keyboard=[[
-        InlineKeyboardButton(text="Перейти в ОКО", url=url),
-    ]])
+    return f"https://t.me/{BOT_USERNAME}?start=sale"
 
 
-def _payment_kb(confirmation_url: str | None) -> InlineKeyboardMarkup | None:
+def _push_kb(msg_key: str, confirmation_url: str | None = None) -> InlineKeyboardMarkup | None:
+    """Клавиатура пуша на основе флага sale в конфиге сообщения.
+
+    - sale=True + confirmation_url (E5): только «Получить скидку»
+    - sale=True, без confirmation_url:   только «Получить скидку»
+    - sale=False + confirmation_url:     «Перейти к оплате» + «Перейти в ОКО»
+    - sale=False, без confirmation_url:  «Перейти в ОКО»
+    """
     rows: list[list[InlineKeyboardButton]] = []
-    if confirmation_url:
+    sale_active = MESSAGES[msg_key].sale
+    if confirmation_url and not sale_active:
         rows.append([InlineKeyboardButton(text="Перейти к оплате", url=confirmation_url)])
-    url = _bot_url()
-    if url:
-        rows.append([InlineKeyboardButton(text="Открыть ОКО", url=url)])
+    if sale_active:
+        url = _sale_url()
+        if url:
+            rows.append([InlineKeyboardButton(text="Получить скидку", url=url)])
+    else:
+        url = _bot_url()
+        if url:
+            rows.append([InlineKeyboardButton(text="Перейти в ОКО", url=url)])
     return InlineKeyboardMarkup(inline_keyboard=rows) if rows else None
 
 
@@ -94,13 +104,36 @@ async def _send_push(
     bot: Bot, telegram_id: int, msg_key: str,
     reply_markup=None, **fmt,
 ) -> bool:
-    text = MESSAGES[msg_key].text
+    config = MESSAGES[msg_key]
+    text = config.text
     if fmt:
         text = text.format(**{k: _html_escape(str(v)) for k, v in fmt.items()})
+    photo_paths = config.photo_paths
     try:
-        await bot.send_message(
-            telegram_id, text, parse_mode="HTML", reply_markup=reply_markup,
-        )
+        if len(photo_paths) == 1:
+            await bot.send_photo(
+                telegram_id,
+                photo=FSInputFile(str(photo_paths[0])),
+                caption=text,
+                parse_mode="HTML",
+                reply_markup=reply_markup,
+            )
+        elif len(photo_paths) >= 2:
+            media = [
+                InputMediaPhoto(
+                    media=FSInputFile(str(p)),
+                    caption=text if i == 0 else None,
+                    parse_mode="HTML" if i == 0 else None,
+                )
+                for i, p in enumerate(photo_paths)
+            ]
+            await bot.send_media_group(telegram_id, media=media)
+            if reply_markup:
+                await bot.send_message(telegram_id, "↑", reply_markup=reply_markup)
+        else:
+            await bot.send_message(
+                telegram_id, text, parse_mode="HTML", reply_markup=reply_markup,
+            )
         return True
     except TelegramForbiddenError:
         await _mark_blocked(telegram_id)
@@ -204,10 +237,10 @@ async def _check_e1(bot, session):
             continue
         em_t = _as_utc(em.created_at)
         age = now - em_t
-        if age >= timedelta(minutes=15):
-            await _try_send(bot, session, user.telegram_id, "e1:1", "push_e1_1", _open_bot_kb())
-        if age >= timedelta(hours=24):
-            await _try_send(bot, session, user.telegram_id, "e1:2", "push_e1_2", _open_bot_kb())
+        if age >= timedelta(minutes=MESSAGES["push_e1_1"].delay_minutes):
+            await _try_send(bot, session, user.telegram_id, "e1:1", "push_e1_1", _push_kb("push_e1_1"))
+        if age >= timedelta(minutes=MESSAGES["push_e1_2"].delay_minutes):
+            await _try_send(bot, session, user.telegram_id, "e1:2", "push_e1_2", _push_kb("push_e1_2"))
 
 
 # ─── E2: Начал регистрацию → бросил ───────────────────────────────────────────
@@ -228,10 +261,10 @@ async def _check_e2(bot, session):
         ):
             continue
         age = now - ev_t
-        if age >= timedelta(minutes=30):
-            await _try_send(bot, session, tg_id, "e2:1", "push_e2_1", _open_bot_kb())
-        if age >= timedelta(hours=12):
-            await _try_send(bot, session, tg_id, "e2:2", "push_e2_2", _open_bot_kb())
+        if age >= timedelta(minutes=MESSAGES["push_e2_1"].delay_minutes):
+            await _try_send(bot, session, tg_id, "e2:1", "push_e2_1", _push_kb("push_e2_1"))
+        if age >= timedelta(minutes=MESSAGES["push_e2_2"].delay_minutes):
+            await _try_send(bot, session, tg_id, "e2:2", "push_e2_2", _push_kb("push_e2_2"))
 
 
 # ─── E3: Начал совместимость → не ввёл партнёра ───────────────────────────────
@@ -251,10 +284,10 @@ async def _check_e3(bot, session):
         ):
             continue
         age = now - ev_t
-        if age >= timedelta(minutes=30):
-            await _try_send(bot, session, tg_id, "e3:1", "push_e3_1", _open_bot_kb())
-        if age >= timedelta(hours=24):
-            await _try_send(bot, session, tg_id, "e3:2", "push_e3_2", _open_bot_kb())
+        if age >= timedelta(minutes=MESSAGES["push_e3_1"].delay_minutes):
+            await _try_send(bot, session, tg_id, "e3:1", "push_e3_1", _push_kb("push_e3_1"))
+        if age >= timedelta(minutes=MESSAGES["push_e3_2"].delay_minutes):
+            await _try_send(bot, session, tg_id, "e3:2", "push_e3_2", _push_kb("push_e3_2"))
 
 
 # ─── E4: Получил демо → не купил ──────────────────────────────────────────────
@@ -280,12 +313,12 @@ async def _check_e4(bot, session):
             continue
         age = now - ev_t
         ek = f"e4:{report_type}"
-        if age >= timedelta(minutes=20):
-            await _try_send(bot, session, tg_id, f"{ek}:1", "push_e4_1", _open_bot_kb())
-        if age >= timedelta(hours=12):
-            await _try_send(bot, session, tg_id, f"{ek}:2", "push_e4_2", _open_bot_kb())
-        if age >= timedelta(hours=48):
-            await _try_send(bot, session, tg_id, f"{ek}:3", "push_e4_3", _open_bot_kb())
+        if age >= timedelta(minutes=MESSAGES[f"push_e4_1_{report_type}"].delay_minutes):
+            await _try_send(bot, session, tg_id, f"{ek}:1", f"push_e4_1_{report_type}", _push_kb(f"push_e4_1_{report_type}"))
+        if age >= timedelta(minutes=MESSAGES[f"push_e4_2_{report_type}"].delay_minutes):
+            await _try_send(bot, session, tg_id, f"{ek}:2", f"push_e4_2_{report_type}", _push_kb(f"push_e4_2_{report_type}"))
+        if age >= timedelta(minutes=MESSAGES[f"push_e4_3_{report_type}"].delay_minutes):
+            await _try_send(bot, session, tg_id, f"{ek}:3", f"push_e4_3_{report_type}", _push_kb(f"push_e4_3_{report_type}"))
 
 
 # ─── E5: Нажал оплатить → не оплатил ──────────────────────────────────────────
@@ -321,13 +354,12 @@ async def _check_e5(bot, session):
             continue
         age = now - _as_utc(payment.created_at)
         ek = f"e5:{payment.yookassa_id}"
-        kb = _payment_kb(payment.confirmation_url)
-        if age >= timedelta(minutes=15):
-            await _try_send(bot, session, tg_id, f"{ek}:1", "push_e5_1", kb)
-        if age >= timedelta(hours=3):
-            await _try_send(bot, session, tg_id, f"{ek}:2", "push_e5_2", kb)
-        if age >= timedelta(hours=24):
-            await _try_send(bot, session, tg_id, f"{ek}:3", "push_e5_3", kb)
+        if age >= timedelta(minutes=MESSAGES["push_e5_1"].delay_minutes):
+            await _try_send(bot, session, tg_id, f"{ek}:1", "push_e5_1", _push_kb("push_e5_1", payment.confirmation_url))
+        if age >= timedelta(minutes=MESSAGES["push_e5_2"].delay_minutes):
+            await _try_send(bot, session, tg_id, f"{ek}:2", "push_e5_2", _push_kb("push_e5_2", payment.confirmation_url))
+        if age >= timedelta(minutes=MESSAGES["push_e5_3"].delay_minutes):
+            await _try_send(bot, session, tg_id, f"{ek}:3", "push_e5_3", _push_kb("push_e5_3", payment.confirmation_url))
 
 
 # ─── E6: Купил один продукт → не купил остальные ──────────────────────────────
@@ -351,7 +383,7 @@ async def _check_e6(bot, session):
     for (tg_id, report_type), ev in latest.items():
         ev_t = _as_utc(ev.created_at)
         age = now - ev_t
-        if age < timedelta(hours=24):
+        if age < timedelta(minutes=MESSAGES[f"push_e6_{report_type}"].delay_minutes):
             continue
         # куплен ли другой продукт → отмена
         other = bought.get(tg_id, set()) - {report_type}
@@ -359,7 +391,7 @@ async def _check_e6(bot, session):
             continue
         await _try_send(
             bot, session, tg_id, f"e6:{report_type}",
-            f"push_e6_{report_type}", _open_bot_kb(),
+            f"push_e6_{report_type}", _push_kb(f"push_e6_{report_type}"),
         )
 
 
@@ -387,10 +419,10 @@ async def _check_e7(bot, session):
             continue
         age = now - _as_utc(ev.created_at)
         ek = f"e7:{report_type}"
-        if age >= timedelta(hours=2):
-            await _try_send(bot, session, tg_id, f"{ek}:1", "push_e7_1", _open_bot_kb())
-        if age >= timedelta(hours=24):
-            await _try_send(bot, session, tg_id, f"{ek}:2", "push_e7_2", _open_bot_kb())
+        if age >= timedelta(minutes=MESSAGES[f"push_e7_1_{report_type}"].delay_minutes):
+            await _try_send(bot, session, tg_id, f"{ek}:1", f"push_e7_1_{report_type}", _push_kb(f"push_e7_1_{report_type}"))
+        if age >= timedelta(minutes=MESSAGES[f"push_e7_2_{report_type}"].delay_minutes):
+            await _try_send(bot, session, tg_id, f"{ek}:2", f"push_e7_2_{report_type}", _push_kb(f"push_e7_2_{report_type}"))
 
 
 # ─── E8: Давно не заходил ─────────────────────────────────────────────────────
@@ -414,10 +446,10 @@ async def _check_e8(bot, session):
             continue
         last = _as_utc(user.last_activity_at)
         age = now - last
-        if age >= timedelta(days=7):
-            await _try_send(bot, session, user.telegram_id, "e8:1", "push_e8_1", _open_bot_kb())
-        if age >= timedelta(days=30):
-            await _try_send(bot, session, user.telegram_id, "e8:2", "push_e8_2", _open_bot_kb())
+        if age >= timedelta(minutes=MESSAGES["push_e8_1"].delay_minutes):
+            await _try_send(bot, session, user.telegram_id, "e8:1", "push_e8_1", _push_kb("push_e8_1"))
+        if age >= timedelta(minutes=MESSAGES["push_e8_2"].delay_minutes):
+            await _try_send(bot, session, user.telegram_id, "e8:2", "push_e8_2", _push_kb("push_e8_2"))
 
 
 # ─── Sweep ────────────────────────────────────────────────────────────────────

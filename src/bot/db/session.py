@@ -33,6 +33,7 @@ async def init_db() -> None:
             "referred_by VARCHAR(20)",
             "last_activity_at DATETIME",
             "is_blocked BOOLEAN DEFAULT 0",
+            "discount_percent INTEGER DEFAULT 0",
         ]
         for col in new_cols:
             try:
