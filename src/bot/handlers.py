@@ -31,6 +31,10 @@ from src.bot.notifications.events import (
     COUPLE_PARTNER_STARTED, COUPLE_PARTNER_COMPLETED,
     DEMO_SHOWN, PAYMENT_INITIATED, PURCHASE_COMPLETED,
 )
+from src.bot.notifications.funnel import (
+    get_user_funnel, get_funnel_distribution,
+    format_user_card, format_distribution,
+)
 
 router = Router()
 
@@ -1745,6 +1749,37 @@ async def cmd_refstats(message: Message):
     lines.append(f"\n<b>Итого:</b> {total_referred} реф. пользователей · {total_paid:.0f} ₽")
 
     await message.answer("\n".join(lines), parse_mode="HTML")
+
+
+@router.message(Command("funnel"))
+async def cmd_funnel(message: Message, command: CommandObject):
+    """Карточка воронки пользователя.
+
+    Без аргументов — по себе. Админ может указать id: /funnel <telegram_id>.
+    """
+    target_id = message.from_user.id
+    if command.args and command.args.strip().isdigit():
+        if ADMIN_IDS and message.from_user.id in ADMIN_IDS:
+            target_id = int(command.args.strip())
+        else:
+            await message.answer("Эта команда доступна только для администраторов.")
+            return
+
+    data = await get_user_funnel(target_id)
+    if not data:
+        await message.answer("Пользователь не найден.", parse_mode="HTML")
+        return
+    await message.answer(format_user_card(data), parse_mode="HTML")
+
+
+@router.message(Command("funnelstats"))
+async def cmd_funnelstats(message: Message):
+    """Распределение всех пользователей по стадиям воронки (только админы)."""
+    if ADMIN_IDS and message.from_user.id not in ADMIN_IDS:
+        return
+
+    dist = await get_funnel_distribution()
+    await message.answer(format_distribution(dist), parse_mode="HTML")
 
 
 # ─── Сброс данных ────────────────────────────────────────────────────────────────

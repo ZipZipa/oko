@@ -169,6 +169,15 @@ def _latest_per_user(events: list[UserEvent]) -> dict[int, UserEvent]:
 # ─── E1: Зашёл → ничего не начал ──────────────────────────────────────────────
 
 async def _check_e1(bot, session):
+    """E1. Зашёл в меню → ничего не начал.
+
+    Кандидат: полный профиль + был entered_menu, но НИКОГДА не начинал
+    анализ (нет demo_shown / payment_initiated / couple_partner_started /
+    purchase_completed). Проверяем «когда-либо», а не «после последнего
+    входа»: иначе повторный заход в меню (/start, «← В меню») перезаписывает
+    entered_menu свежим временем, демо оказываются «до» него — и E1
+    ложно срабатывает для уже конвертированного пользователя.
+    """
     now = _now()
     entered = _latest_per_user(await _fetch_events(session, [ENTERED_MENU]))
     if not entered:
@@ -176,9 +185,7 @@ async def _check_e1(bot, session):
     cancels = await _fetch_events(
         session, [DEMO_SHOWN, PAYMENT_INITIATED, COUPLE_PARTNER_STARTED, PURCHASE_COMPLETED]
     )
-    cancels_after: dict[int, list[UserEvent]] = defaultdict(list)
-    for ev in cancels:
-        cancels_after[ev.telegram_id].append(ev)
+    converted: set[int] = {ev.telegram_id for ev in cancels}
 
     # пользователи с полным профилем и не заблокированные
     users_result = await session.execute(
@@ -190,13 +197,12 @@ async def _check_e1(bot, session):
         )
     )
     for user in users_result.scalars():
+        if user.telegram_id in converted:
+            continue  # уже начал анализ — E1 неактуален
         em = entered.get(user.telegram_id)
         if not em:
             continue
         em_t = _as_utc(em.created_at)
-        # отмена: любое конверсионное событие после входа в меню
-        if any(_as_utc(c.created_at) > em_t for c in cancels_after.get(user.telegram_id, [])):
-            continue
         age = now - em_t
         if age >= timedelta(minutes=15):
             await _try_send(bot, session, user.telegram_id, "e1:1", "push_e1_1", _open_bot_kb())
