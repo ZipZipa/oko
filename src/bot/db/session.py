@@ -1,8 +1,12 @@
+import logging
+
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
 from src.bot.config import DATABASE_URL
 from src.bot.db.models import Base
+
+log = logging.getLogger(__name__)
 
 engine = create_async_engine(DATABASE_URL, echo=False)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -38,8 +42,11 @@ async def init_db() -> None:
         for col in new_cols:
             try:
                 await conn.execute(text(f"ALTER TABLE users ADD COLUMN {col}"))
-            except Exception:
-                pass
+            except Exception as e:
+                # Ожидаемо: колонка уже существует после предыдущих миграций.
+                # Логируем на debug — если придёт другая ошибка (например, БД заблокирована),
+                # её будет видно в логах.
+                log.debug("init_db: колонка уже существует (%s): %s", col.split()[0], e)
 
 
 async def get_session() -> AsyncSession:

@@ -2,6 +2,7 @@
 Анализ лица: DeepFace (возраст, пол, раса, эмоции) + MediaPipe FaceLandmarker (пропорции, поза, кожа, blendshapes).
 На выходе — JSON, совместимый с sample_face_artem.json.
 """
+import logging
 import os
 
 # DeepFace использует Keras 2 API через tf-keras.
@@ -14,6 +15,7 @@ os.environ["GLOG_minloglevel"] = "2"             # подавляет abseil/CUD
 
 import math
 import threading
+import time
 import urllib.request
 from pathlib import Path
 from typing import Optional
@@ -22,6 +24,8 @@ import cv2
 import numpy as np
 import mediapipe as mp
 from deepface import DeepFace
+
+log = logging.getLogger(__name__)
 
 # MediaPipe Tasks API
 BaseOptions = mp.tasks.BaseOptions
@@ -136,8 +140,10 @@ def _compute_face_height(landmarks) -> float:
 # ---------------------------------------------------------------------------
 # DeepFace анализ
 # ---------------------------------------------------------------------------
-def _analyze_deepface(image_path: str, detector: str = "retinaface") -> dict:
+def _analyze_deepface(image_path: str, detector: str = "retinaface",
+                       telegram_id: int | None = None) -> dict:
     """Запуск DeepFace: возраст, пол, раса, эмоции."""
+    _ctx = f"tg={telegram_id} " if telegram_id else ""
     try:
         result = DeepFace.analyze(
             img_path=image_path,
@@ -168,10 +174,16 @@ def _analyze_deepface(image_path: str, detector: str = "retinaface") -> dict:
             "emotions": {k: float(v) for k, v in emotion_probs.items()} if isinstance(emotion_probs, dict) else {},
         }
     except ValueError as e:
+        # Лицо не обнаружено основным детектором — это ожидаемо для плохих фото,
+        # но логируем на info для мониторинга качества загрузок.
+        log.info("%sDeepFace: лицо не обнаружено (detector=%s): %s", _ctx, detector, e)
         raise ValueError(f"DeepFace: лицо не обнаружено — {e}")
     except Exception as e:
         if detector != "opencv":
-            return _analyze_deepface(image_path, detector="opencv")
+            # Fallback на более лёгкий детектор — логируем для отслеживания частоты fallback'ов.
+            log.warning("%sDeepFace: fallback %s → opencv из-за ошибки: %s", _ctx, detector, e)
+            return _analyze_deepface(image_path, detector="opencv", telegram_id=telegram_id)
+        log.error("%sDeepFace: ошибка анализа (detector=opencv): %s", _ctx, e, exc_info=True)
         raise RuntimeError(f"DeepFace: ошибка анализа — {e}")
 
 
@@ -742,23 +754,36 @@ def _skin_stub() -> dict:
 # ---------------------------------------------------------------------------
 # Публичный API
 # ---------------------------------------------------------------------------
-def analyze_face(image_path: str, deepface_detector: str = "retinaface") -> dict:
+def analyze_face(image_path: str, deepface_detector: str = "retinaface",
+                  telegram_id: int | None = None) -> dict:
     """
     Полный анализ лица из фото.
 
     Args:
         image_path: Путь к изображению
         deepface_detector: Детектор для DeepFace ('retinaface', 'opencv', 'ssd', 'mtcnn', 'skip')
+        telegram_id: Telegram ID пользователя — для логирования контекста (опционально)
 
     Returns:
         dict с ключами: deepface, proportions, skin
     """
+    _ctx = f"tg={telegram_id} " if telegram_id else ""
     path = Path(image_path)
     if not path.exists():
+        log.error("%sanalyze_face: изображение не найдено: %s", _ctx, image_path)
         raise FileNotFoundError(f"Изображение не найдено: {image_path}")
 
-    deepface_result = _analyze_deepface(image_path, detector=deepface_detector)
+    t0 = time.monotonic()
+    log.info("%sanalyze_face: старт (detector=%s)", _ctx, deepface_detector)
+
+    deepface_result = _analyze_deepface(image_path, detector=deepface_detector, telegram_id=telegram_id)
     mediapipe_result = _analyze_mediapipe(image_path)
+
+    elapsed = time.monotonic() - t0
+    log.info("%sanalyze_face: успешно за %.2fs (age=%s, gender=%s)",
+             _ctx, elapsed,
+             deepface_result.get("age"),
+             deepface_result.get("gender"))
 
     return {
         "deepface": deepface_result,

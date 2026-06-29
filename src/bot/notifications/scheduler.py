@@ -165,6 +165,9 @@ async def _mark_sent(session, telegram_id: int, event_key: str) -> None:
     try:
         await session.commit()
     except IntegrityError:
+        # Ожидаемо при конкурентной отправке: пуш уже записан другим воркером.
+        # Логируем на debug для отладки идемпотентности.
+        log.debug("_mark_sent: IntegrityError tg=%s event=%s (уже отправлен)", telegram_id, event_key)
         await session.rollback()
 
 

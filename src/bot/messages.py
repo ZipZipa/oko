@@ -9,6 +9,7 @@
 - send_msg() — отправка сообщения с учётом конфигурации
 - edit_msg() — редактирование сообщения с учётом конфигурации
 """
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -16,6 +17,8 @@ from html import escape as _html_escape
 
 from aiogram.types import Message, FSInputFile, InputMediaPhoto
 from aiogram.exceptions import TelegramBadRequest
+
+log = logging.getLogger(__name__)
 
 # Базовая директория для медиафайлов бота
 MEDIA_DIR = Path(__file__).parent / "media"
@@ -836,6 +839,7 @@ async def edit_msg(
             return await message.edit_media(media=media, reply_markup=reply_markup)
         except TelegramBadRequest as e:
             if "message is not modified" in str(e):
+                log.debug("edit_media: message not modified chat=%s msg=%s", message.chat.id, message.message_id)
                 return message
             raise
 
@@ -845,6 +849,7 @@ async def edit_msg(
             return await message.edit_text(text=text, reply_markup=reply_markup, parse_mode="HTML")
         except TelegramBadRequest as e:
             if "message is not modified" in str(e):
+                log.debug("edit_text: message not modified chat=%s msg=%s", message.chat.id, message.message_id)
                 return message
             raise
 
@@ -853,8 +858,9 @@ async def edit_msg(
     bot = message.bot
     try:
         await message.delete()
-    except TelegramBadRequest:
-        pass  # сообщение уже удалено
+    except TelegramBadRequest as e:
+        # Сообщение уже удалено — это нормально при переходах между экранами
+        log.debug("delete: message already gone chat=%s msg=%s (%s)", chat_id, message.message_id, e)
 
     try:
         if not has_photos:
@@ -895,8 +901,11 @@ async def edit_msg(
             )
 
         return message
-    except Exception:
-        # Если отправка с фото не удалась — отправляем хотя бы текстовое сообщение
+    except Exception as e:
+        # Не удалось переотправить сообщение с фото/медиагруппой.
+        # Пытаемся отправить хотя бы текст — иначе пользователь вообще
+        # не получит ответа. Логируем с chat_id для расследования.
+        log.error("edit_msg: переотправка не удалась chat=%s msg_key=%s (%s)", chat_id, msg_key, e, exc_info=True)
         try:
             return await bot.send_message(
                 chat_id=chat_id,
@@ -904,5 +913,8 @@ async def edit_msg(
                 reply_markup=reply_markup,
                 parse_mode="HTML",
             )
-        except Exception:
+        except Exception as e2:
+            # Полный крах отправки — например, ChatNotFound/Forbidden/таймаут сети.
+            # Возвращаем исходное message, чтобы хендлер не упал.
+            log.error("edit_msg: fallback-отправка тоже не удалась chat=%s msg_key=%s (%s)", chat_id, msg_key, e2, exc_info=True)
             return message

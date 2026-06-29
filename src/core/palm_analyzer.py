@@ -3,6 +3,7 @@
 OpenCV + Gabor/Ridge (детекция линий ладони) + анализ кожи.
 На выходе — JSON, совместимый по структуре с face_analyzer.
 """
+import logging
 import os
 
 # GPU отключен — предотвращает краш на VDS без CUDA (идентично face_analyzer)
@@ -12,6 +13,7 @@ os.environ["GLOG_minloglevel"] = "2"
 
 import math
 import threading
+import time
 import urllib.request
 from pathlib import Path
 from typing import Optional
@@ -19,6 +21,8 @@ from typing import Optional
 import cv2
 import numpy as np
 import mediapipe as mp
+
+log = logging.getLogger(__name__)
 
 # MediaPipe Tasks API
 BaseOptions = mp.tasks.BaseOptions
@@ -840,19 +844,25 @@ def _skin_stub() -> dict:
 # ---------------------------------------------------------------------------
 # Публичный API
 # ---------------------------------------------------------------------------
-def analyze_palm(image_path: str) -> dict:
+def analyze_palm(image_path: str, telegram_id: int | None = None) -> dict:
     """
     Полный анализ ладони из фото.
 
     Args:
         image_path: Путь к изображению ладони
+        telegram_id: Telegram ID пользователя — для логирования контекста (опционально)
 
     Returns:
         dict с ключами: proportions, lines, skin
     """
+    _ctx = f"tg={telegram_id} " if telegram_id else ""
     path = Path(image_path)
     if not path.exists():
+        log.error("%sanalyze_palm: изображение не найдено: %s", _ctx, image_path)
         raise FileNotFoundError(f"Изображение не найдено: {image_path}")
+
+    t0 = time.monotonic()
+    log.info("%sanalyze_palm: старт", _ctx)
 
     # 1. Пропорции через MediaPipe HandLandmarker
     hand_result = _analyze_hand_landmarks(image_path)
@@ -870,6 +880,12 @@ def analyze_palm(image_path: str) -> dict:
         hand_result["landmarks_raw"],
         hand_result["image_shape"],
     )
+
+    elapsed = time.monotonic() - t0
+    log.info("%sanalyze_palm: успешно за %.2fs (shape=%s, lines=%s)",
+             _ctx, elapsed,
+             hand_result["proportions"].get("palm_shape"),
+             lines_result.get("detection_available"))
 
     return {
         "proportions": hand_result["proportions"],

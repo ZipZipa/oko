@@ -149,7 +149,8 @@ def _load_reference_blocks(reference: str) -> dict:
 
 
 def _generate_palmistry_block(target: dict, ref_palmistry: dict,
-                              model: str = None) -> dict:
+                              model: str = None,
+                              telegram_id: int | None = None) -> dict:
     """Точечный LLM-вызов: только palmistry_money на основе реальных ладоней."""
     pm_fields = REQUIRED_STRUCTURE["palmistry_money"]
 
@@ -177,7 +178,8 @@ def _generate_palmistry_block(target: dict, ref_palmistry: dict,
     kwargs = {}
     if model:
         kwargs["model"] = model
-    return generate_blocks(SYSTEM_PROMPT, [{"role": "user", "content": user_msg}], validate_fn, **kwargs)
+    return generate_blocks(SYSTEM_PROMPT, [{"role": "user", "content": user_msg}],
+                            validate_fn, telegram_id=telegram_id, **kwargs)
 
 
 def generate(face_data: dict, name: str, birthdate: str,
@@ -187,13 +189,20 @@ def generate(face_data: dict, name: str, birthdate: str,
              palm_data_right: dict = None,
              plan: str = "full",
              reference: str = None,
-             _out_blocks: list = None) -> str:
+             _out_blocks: list = None,
+             telegram_id: int | None = None) -> str:
     """Генерирует money отчёт и возвращает HTML.
 
     reference: путь к JSON-файлу с блоками ИЛИ сырая JSON-строка.
                Если указан — LLM не вызывается.
     _out_blocks: если передан пустой список, в него будет добавлен dict blocks.
+    telegram_id: Telegram ID пользователя — для логирования контекста (опционально).
     """
+    _ctx = f"tg={telegram_id} " if telegram_id else ""
+    log.info("%smoney_report.generate: старт plan=%s reference=%s has_palm=%s",
+             _ctx, plan, bool(reference),
+             palm_data_left is not None and palm_data_right is not None)
+
     target = build_target_input(face_data, name, birthdate, ref_year,
                                 palm_data_left=palm_data_left,
                                 palm_data_right=palm_data_right)
@@ -202,28 +211,34 @@ def generate(face_data: dict, name: str, birthdate: str,
 
     # ── Референс + ладони: перегенерируем только palmistry_money ──
     if reference and has_palm:
+        log.info("%smoney_report: режим reference+palm (точечная генерация palmistry)", _ctx)
         blocks = _load_reference_blocks(reference)
         with open(examples_subdir / "reference_blocks.json", encoding="utf-8") as f:
             ref_ex = json.load(f)
         palm_block = _generate_palmistry_block(
             target, ref_ex.get("palmistry_money", {}), model=model,
+            telegram_id=telegram_id,
         )
         blocks["palmistry_money"] = palm_block["palmistry_money"]
         errors = validate_blocks(blocks)
         if errors:
-            log.warning("Предупреждения валидации (reference + palm): %s", errors)
+            log.warning("%sПредупреждения валидации (reference + palm): %s", _ctx, errors)
         if _out_blocks is not None:
             _out_blocks.append(blocks)
+        log.info("%smoney_report: завершён (reference+palm)", _ctx)
         return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)
 
     # ── Референс без ладоней: только рендеринг ──
     if reference:
+        log.info("%smoney_report: режим reference-only (рендеринг без LLM)", _ctx)
         blocks = _load_reference_blocks(reference)
         errors = validate_blocks(blocks, has_palm=has_palm)
         if errors:
-            log.warning("Предупреждения валидации (reference): %s", errors)
+            log.warning("%sПредупреждения валидации (reference): %s", _ctx, errors)
+        log.info("%smoney_report: завершён (reference-only)", _ctx)
         return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)
 
+    log.info("%smoney_report: режим full LLM", _ctx)
     with open(examples_subdir / "reference_blocks.json", encoding="utf-8") as f:
         ref_blocks = json.load(f)
 
@@ -236,6 +251,7 @@ def generate(face_data: dict, name: str, birthdate: str,
     blocks = generate_blocks(
         SYSTEM_PROMPT, messages,
         lambda b: validate_blocks(b, has_palm=has_palm),
+        telegram_id=telegram_id,
         **kwargs,
     )
 
@@ -246,4 +262,5 @@ def generate(face_data: dict, name: str, birthdate: str,
     if _out_blocks is not None:
         _out_blocks.append(blocks)
 
+    log.info("%smoney_report: завершён (full LLM)", _ctx)
     return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)

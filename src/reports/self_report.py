@@ -200,7 +200,8 @@ def _load_reference_blocks(reference: str) -> dict:
 
 
 def _generate_palm_blocks(target: dict, ref_hand_analysis: dict, ref_chiromancy: dict,
-                          model: str = None) -> dict:
+                          model: str = None,
+                          telegram_id: int | None = None) -> dict:
     """Точечный LLM-вызов: только hand_analysis + chiromancy."""
     ha_fields = REQUIRED_STRUCTURE["hand_analysis"]
     ch_fields = REQUIRED_STRUCTURE["chiromancy"]
@@ -234,7 +235,8 @@ def _generate_palm_blocks(target: dict, ref_hand_analysis: dict, ref_chiromancy:
     kwargs = {}
     if model:
         kwargs["model"] = model
-    return generate_blocks(SYSTEM_PROMPT, [{"role": "user", "content": user_msg}], validate_fn, **kwargs)
+    return generate_blocks(SYSTEM_PROMPT, [{"role": "user", "content": user_msg}],
+                            validate_fn, telegram_id=telegram_id, **kwargs)
 
 
 def generate(face_data: dict, name: str, birthdate: str,
@@ -244,7 +246,8 @@ def generate(face_data: dict, name: str, birthdate: str,
              palm_data_right: dict = None,
              plan: str = "full",
              reference: str = None,
-             _out_blocks: list = None) -> str:
+             _out_blocks: list = None,
+             telegram_id: int | None = None) -> str:
     """Генерирует self отчёт и возвращает HTML.
 
     reference: путь к JSON-файлу с блоками ИЛИ сырая JSON-строка.
@@ -252,7 +255,13 @@ def generate(face_data: dict, name: str, birthdate: str,
                тогда точечно генерируются только hand_analysis и chiromancy).
     _out_blocks: если передан пустой список, в него будет добавлен dict blocks
                  после генерации через LLM (для сохранения в БД).
+    telegram_id: Telegram ID пользователя — для логирования контекста (опционально).
     """
+    _ctx = f"tg={telegram_id} " if telegram_id else ""
+    log.info("%sself_report.generate: старт plan=%s reference=%s has_palm=%s",
+             _ctx, plan, bool(reference),
+             palm_data_left is not None and palm_data_right is not None)
+
     target = build_target_input(face_data, name, birthdate, ref_year,
                                 palm_data_left=palm_data_left,
                                 palm_data_right=palm_data_right)
@@ -261,6 +270,7 @@ def generate(face_data: dict, name: str, birthdate: str,
 
     # ── Референс + ладони: берём готовые блоки, точечно добавляем хиромантию ──
     if reference and has_palm:
+        log.info("%sself_report: режим reference+palm (точечная генерация хиромантии)", _ctx)
         blocks = _load_reference_blocks(reference)
         with open(examples_subdir / "reference_blocks.json", encoding="utf-8") as f:
             ref_ex = json.load(f)
@@ -269,25 +279,30 @@ def generate(face_data: dict, name: str, birthdate: str,
             ref_ex.get("hand_analysis", {}),
             ref_ex.get("chiromancy", {}),
             model=model,
+            telegram_id=telegram_id,
         )
         blocks["hand_analysis"] = palm_blocks["hand_analysis"]
         blocks["chiromancy"] = palm_blocks["chiromancy"]
         errors = validate_blocks(blocks, has_palm=True)
         if errors:
-            log.warning("Предупреждения валидации (reference + palm): %s", errors)
+            log.warning("%sПредупреждения валидации (reference + palm): %s", _ctx, errors)
         if _out_blocks is not None:
             _out_blocks.append(blocks)
+        log.info("%sself_report: завершён (reference+palm)", _ctx)
         return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)
 
     # ── Референс без ладоней: только рендеринг ──
     if reference:
+        log.info("%sself_report: режим reference-only (рендеринг без LLM)", _ctx)
         blocks = _load_reference_blocks(reference)
         errors = validate_blocks(blocks, has_palm=False)
         if errors:
-            log.warning("Предупреждения валидации референса: %s", errors)
+            log.warning("%sПредупреждения валидации референса: %s", _ctx, errors)
+        log.info("%sself_report: завершён (reference-only)", _ctx)
         return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)
 
     # ── Обычный режим: полный LLM ──
+    log.info("%sself_report: режим full LLM", _ctx)
     with open(examples_subdir / "reference_blocks.json", encoding="utf-8") as f:
         ref_blocks = json.load(f)
 
@@ -300,6 +315,7 @@ def generate(face_data: dict, name: str, birthdate: str,
     blocks = generate_blocks(
         SYSTEM_PROMPT, messages,
         lambda b: validate_blocks(b, has_palm=has_palm),
+        telegram_id=telegram_id,
         **kwargs,
     )
 
@@ -311,4 +327,5 @@ def generate(face_data: dict, name: str, birthdate: str,
     if _out_blocks is not None:
         _out_blocks.append(blocks)
 
+    log.info("%sself_report: завершён (full LLM)", _ctx)
     return render_template(templates_dir, TEMPLATE_NAME, target, blocks, plan=plan)

@@ -185,7 +185,7 @@ async def _analyze_and_save_face(bot, file_id: str, telegram_id: int):
             tmp_path = tmp.name
 
         try:
-            face_data = analyze_face(tmp_path)
+            face_data = analyze_face(tmp_path, telegram_id=telegram_id)
         finally:
             os.unlink(tmp_path)
 
@@ -204,11 +204,13 @@ async def _analyze_and_save_face(bot, file_id: str, telegram_id: int):
         log.error("Ошибка анализа/сохранения лица для telegram_id=%s", telegram_id, exc_info=True)
 
 
-async def _analyze_face_return(message: Message, file_id: str, error_msg_key: str = "partner_face_missing") -> dict | None:
+async def _analyze_face_return(message: Message, file_id: str, error_msg_key: str = "partner_face_missing",
+                                 telegram_id: int | None = None) -> dict | None:
     """Скачивает и анализирует лицо.
 
     При ошибке (лицо не обнаружено или сбой) отправляет пользователю сообщение
     с ключом error_msg_key и возвращает None.
+    telegram_id — опциональный контекст для логирования.
     """
     from src.core.face_analyzer import analyze_face
     import os
@@ -223,12 +225,12 @@ async def _analyze_face_return(message: Message, file_id: str, error_msg_key: st
             tmp_path = tmp.name
         try:
             loop = asyncio.get_running_loop()
-            face_data = await loop.run_in_executor(None, lambda: analyze_face(tmp_path))
+            face_data = await loop.run_in_executor(None, lambda: analyze_face(tmp_path, telegram_id=telegram_id))
         finally:
             os.unlink(tmp_path)
         return face_data
     except Exception:
-        log.error("Ошибка анализа лица (file_id=%s)", file_id, exc_info=True)
+        log.error("Ошибка анализа лица (file_id=%s, tg=%s)", file_id, telegram_id, exc_info=True)
         await send_msg(message, error_msg_key, reply_markup=_cancel_keyboard())
         return None
 
@@ -386,7 +388,7 @@ async def process_reg_palm_left(message: Message, state: FSMContext):
     photo: PhotoSize = message.photo[-1]
     processing_msg = await send_msg(message, "palm_left_analyzing")
 
-    palm_data = await _download_and_analyze_palm(message.bot, photo.file_id)
+    palm_data = await _download_and_analyze_palm(message.bot, photo.file_id, telegram_id=message.from_user.id)
 
     if not palm_data:
         try:
@@ -423,7 +425,7 @@ async def process_reg_palm_right(message: Message, state: FSMContext):
     photo: PhotoSize = message.photo[-1]
     processing_msg = await send_msg(message, "palm_right_analyzing")
 
-    palm_data = await _download_and_analyze_palm(message.bot, photo.file_id)
+    palm_data = await _download_and_analyze_palm(message.bot, photo.file_id, telegram_id=message.from_user.id)
 
     if not palm_data:
         try:
@@ -706,7 +708,7 @@ async def process_partner_photo(message: Message, state: FSMContext):
     photo: PhotoSize = message.photo[-1]
     processing_msg = await send_msg(message, "analyzing")
 
-    face_data = await _analyze_face_return(message, photo.file_id, error_msg_key="partner_face_missing")
+    face_data = await _analyze_face_return(message, photo.file_id, error_msg_key="partner_face_missing", telegram_id=message.from_user.id)
 
     async with async_session() as session:
         result = await session.execute(
@@ -757,7 +759,7 @@ async def process_partner_palm_left(message: Message, state: FSMContext):
     photo: PhotoSize = message.photo[-1]
     processing_msg = await send_msg(message, "palm_left_analyzing")
 
-    palm_data = await _download_and_analyze_palm(message.bot, photo.file_id)
+    palm_data = await _download_and_analyze_palm(message.bot, photo.file_id, telegram_id=message.from_user.id)
     state_data = await state.get_data()
 
     if not palm_data:
@@ -796,7 +798,7 @@ async def process_partner_palm_right(message: Message, state: FSMContext):
     photo: PhotoSize = message.photo[-1]
     processing_msg = await send_msg(message, "palm_right_analyzing")
 
-    palm_data = await _download_and_analyze_palm(message.bot, photo.file_id)
+    palm_data = await _download_and_analyze_palm(message.bot, photo.file_id, telegram_id=message.from_user.id)
 
     if not palm_data:
         try:
@@ -1108,7 +1110,8 @@ async def _start_self_report(callback: CallbackQuery, plan: str, state: FSMConte
 
 # ─── Сбор ладоней (FSM для Премиум self) ────────────────────────────────────────
 
-async def _download_and_analyze_palm(bot, file_id: str) -> dict | None:
+async def _download_and_analyze_palm(bot, file_id: str,
+                                       telegram_id: int | None = None) -> dict | None:
     from src.core.palm_analyzer import analyze_palm
     import os
 
@@ -1121,12 +1124,14 @@ async def _download_and_analyze_palm(bot, file_id: str) -> dict | None:
             tmp_path = tmp.name
         try:
             loop = asyncio.get_running_loop()
-            palm_data = await loop.run_in_executor(None, lambda: analyze_palm(tmp_path))
+            palm_data = await loop.run_in_executor(
+                None, lambda: analyze_palm(tmp_path, telegram_id=telegram_id)
+            )
         finally:
             os.unlink(tmp_path)
         return palm_data
     except Exception:
-        log.error("Ошибка анализа ладони (file_id=%s)", file_id, exc_info=True)
+        log.error("Ошибка анализа ладони (file_id=%s, tg=%s)", file_id, telegram_id, exc_info=True)
         return None
 
 
@@ -1135,7 +1140,7 @@ async def process_palm_left(message: Message, state: FSMContext):
     photo: PhotoSize = message.photo[-1]
     processing_msg = await send_msg(message, "palm_left_analyzing")
 
-    palm_data = await _download_and_analyze_palm(message.bot, photo.file_id)
+    palm_data = await _download_and_analyze_palm(message.bot, photo.file_id, telegram_id=message.from_user.id)
 
     if not palm_data:
         try:
@@ -1172,7 +1177,7 @@ async def process_palm_right(message: Message, state: FSMContext):
     photo: PhotoSize = message.photo[-1]
     processing_msg = await send_msg(message, "palm_right_analyzing")
 
-    palm_data = await _download_and_analyze_palm(message.bot, photo.file_id)
+    palm_data = await _download_and_analyze_palm(message.bot, photo.file_id, telegram_id=message.from_user.id)
 
     if not palm_data:
         try:
@@ -1331,8 +1336,20 @@ async def _send_report(message: Message, html: str, caption: str, plan: str,
     except TelegramBadRequest:
         pass  # сообщение уже удалено (например, при переходе фото→текст через edit_msg)
     file = BufferedInputFile(html.encode("utf-8"), filename=filename)
-    sent = await message.answer_document(file, caption=caption, parse_mode="HTML")
-    await message.bot.pin_chat_message(chat_id=sent.chat.id, message_id=sent.message_id, disable_notification=True)
+    try:
+        sent = await message.answer_document(file, caption=caption, parse_mode="HTML")
+    except Exception:
+        # Отчёт сгенерирован, но не отправился (файл слишком большой / сеть / Telegram).
+        # Логируем с telegram_id — иначе пользователь получит «ошибка генерации»
+        # от общего catch в _run_*_report, хотя отчёт на самом деле готов.
+        log.error("_send_report: не удалось отправить документ tg=%s plan=%s",
+                  user.telegram_id, plan, exc_info=True)
+        raise
+    try:
+        await message.bot.pin_chat_message(chat_id=sent.chat.id, message_id=sent.message_id, disable_notification=True)
+    except Exception:
+        # Закрепление не критично — отчёт уже отправлен. Логируем для отладки.
+        log.warning("_send_report: не удалось закрепить отчёт tg=%s", user.telegram_id, exc_info=True)
 
     menu = _packages_menu(above_plan=current_plan, report_prefix=report_prefix)
     if menu.inline_keyboard[:-1]:
@@ -1372,6 +1389,7 @@ async def _run_self_report(message: Message, user: User, plan: str):
                     birthdate=birthdate,
                     plan="demo",
                     _out_blocks=out_blocks,
+                    telegram_id=user.telegram_id,
                 ),
             )
             if out_blocks:
@@ -1401,6 +1419,7 @@ async def _run_self_report(message: Message, user: User, plan: str):
                     palm_data_right=palm_right,
                     reference=user.blocks_json or None,
                     _out_blocks=out_blocks,
+                    telegram_id=user.telegram_id,
                 ),
             )
             if out_blocks:
@@ -1424,6 +1443,7 @@ async def _run_self_report(message: Message, user: User, plan: str):
                     birthdate=birthdate,
                     plan=plan,
                     reference=reference,
+                    telegram_id=user.telegram_id,
                 ),
             )
 
@@ -1478,6 +1498,7 @@ async def _run_money_report(message: Message, user: User, plan: str):
                     birthdate=birthdate,
                     plan="demo",
                     _out_blocks=out_blocks,
+                    telegram_id=user.telegram_id,
                 ),
             )
             if out_blocks:
@@ -1507,6 +1528,7 @@ async def _run_money_report(message: Message, user: User, plan: str):
                     palm_data_right=palm_right,
                     reference=user.money_blocks_json or None,
                     _out_blocks=out_blocks,
+                    telegram_id=user.telegram_id,
                 ),
             )
             if out_blocks:
@@ -1530,6 +1552,7 @@ async def _run_money_report(message: Message, user: User, plan: str):
                     birthdate=birthdate,
                     plan=plan,
                     reference=reference,
+                    telegram_id=user.telegram_id,
                 ),
             )
 
@@ -1613,6 +1636,7 @@ async def _run_couple_report(message: Message, user: User, plan: str):
                     palm_data_b_right=palm_b_right,
                     plan="demo",
                     _out_blocks=out_blocks,
+                    telegram_id=user.telegram_id,
                 ),
             )
             if out_blocks:
@@ -1643,6 +1667,7 @@ async def _run_couple_report(message: Message, user: User, plan: str):
                     palm_data_b_right=palm_b_right,
                     plan=plan,
                     reference=reference,
+                    telegram_id=user.telegram_id,
                 ),
             )
 
@@ -1711,32 +1736,37 @@ async def cmd_refstats(message: Message):
     if ADMIN_IDS and message.from_user.id not in ADMIN_IDS:
         return
 
-    async with async_session() as session:
-        res_users = await session.execute(
-            select(User).where(User.referral_code.isnot(None))
-        )
-        all_users = res_users.scalars().all()
-
-        res_referred = await session.execute(
-            select(User).where(User.referred_by.isnot(None))
-        )
-        referred_users = res_referred.scalars().all()
-
-        code_to_tids: dict[str, list[int]] = defaultdict(list)
-        for ru in referred_users:
-            code_to_tids[ru.referred_by].append(ru.telegram_id)
-
-        referred_tids = [ru.telegram_id for ru in referred_users]
-        if referred_tids:
-            res_pay = await session.execute(
-                select(Payment).where(
-                    Payment.telegram_id.in_(referred_tids),
-                    Payment.status == "succeeded",
-                )
+    try:
+        async with async_session() as session:
+            res_users = await session.execute(
+                select(User).where(User.referral_code.isnot(None))
             )
-            all_payments = res_pay.scalars().all()
-        else:
-            all_payments = []
+            all_users = res_users.scalars().all()
+
+            res_referred = await session.execute(
+                select(User).where(User.referred_by.isnot(None))
+            )
+            referred_users = res_referred.scalars().all()
+
+            code_to_tids: dict[str, list[int]] = defaultdict(list)
+            for ru in referred_users:
+                code_to_tids[ru.referred_by].append(ru.telegram_id)
+
+            referred_tids = [ru.telegram_id for ru in referred_users]
+            if referred_tids:
+                res_pay = await session.execute(
+                    select(Payment).where(
+                        Payment.telegram_id.in_(referred_tids),
+                        Payment.status == "succeeded",
+                    )
+                )
+                all_payments = res_pay.scalars().all()
+            else:
+                all_payments = []
+    except Exception:
+        log.error("cmd_refstats: ошибка БД (admin tg=%s)", message.from_user.id, exc_info=True)
+        await message.answer("Ошибка при сборе статистики. Попробуйте позже.")
+        return
 
     tid_to_payments: dict[int, list] = defaultdict(list)
     for p in all_payments:
@@ -1790,7 +1820,13 @@ async def cmd_funnel(message: Message, command: CommandObject):
             await message.answer("Эта команда доступна только для администраторов.")
             return
 
-    data = await get_user_funnel(target_id)
+    try:
+        data = await get_user_funnel(target_id)
+    except Exception:
+        log.error("cmd_funnel: ошибка получения воронки tg=%s (admin tg=%s)",
+                  target_id, message.from_user.id, exc_info=True)
+        await message.answer("Ошибка при получении данных воронки. Попробуйте позже.")
+        return
     if not data:
         await message.answer("Пользователь не найден.", parse_mode="HTML")
         return
@@ -1803,7 +1839,13 @@ async def cmd_funnelstats(message: Message):
     if ADMIN_IDS and message.from_user.id not in ADMIN_IDS:
         return
 
-    dist = await get_funnel_distribution()
+    try:
+        dist = await get_funnel_distribution()
+    except Exception:
+        log.error("cmd_funnelstats: ошибка получения распределения (admin tg=%s)",
+                  message.from_user.id, exc_info=True)
+        await message.answer("Ошибка при сборе распределения воронки. Попробуйте позже.")
+        return
     await message.answer(format_distribution(dist), parse_mode="HTML")
 
 
@@ -1829,37 +1871,45 @@ async def cb_reset_execute(callback: CallbackQuery, state: FSMContext):
     """Сбрасывает результаты отчётов и запускает регистрацию заново."""
     await state.clear()
 
-    async with async_session() as session:
-        result = await session.execute(
-            select(User).where(User.telegram_id == callback.from_user.id)
-        )
-        user = result.scalar_one_or_none()
-        if user:
-            # Сбрасываем все результаты отчётов, данные ладоней и партнёра
-            user.face_json = None
-            user.palm_left_json = None
-            user.palm_right_json = None
-            user.blocks_json = None
-            user.purchased_plan = None
-            user.report_html = None
-            user.money_blocks_json = None
-            user.money_plan = None
-            user.money_html = None
-            user.partner_name = None
-            user.partner_birth_date = None
-            user.partner_photo_file_id = None
-            user.partner_face_json = None
-            user.partner_palm_left_json = None
-            user.partner_palm_right_json = None
-            user.couple_blocks_json = None
-            user.couple_plan = None
-            user.couple_html = None
-            user.discount_percent = 0
-            # Сбрасываем базовые данные профиля для полной перерегистрации
-            user.name = None
-            user.photo_file_id = None
-            user.birth_date = None
-            await session.commit()
+    try:
+        async with async_session() as session:
+            result = await session.execute(
+                select(User).where(User.telegram_id == callback.from_user.id)
+            )
+            user = result.scalar_one_or_none()
+            if user:
+                # Сбрасываем все результаты отчётов, данные ладоней и партнёра
+                user.face_json = None
+                user.palm_left_json = None
+                user.palm_right_json = None
+                user.blocks_json = None
+                user.purchased_plan = None
+                user.report_html = None
+                user.money_blocks_json = None
+                user.money_plan = None
+                user.money_html = None
+                user.partner_name = None
+                user.partner_birth_date = None
+                user.partner_photo_file_id = None
+                user.partner_face_json = None
+                user.partner_palm_left_json = None
+                user.partner_palm_right_json = None
+                user.couple_blocks_json = None
+                user.couple_plan = None
+                user.couple_html = None
+                user.discount_percent = 0
+                # Сбрасываем базовые данные профиля для полной перерегистрации
+                user.name = None
+                user.photo_file_id = None
+                user.birth_date = None
+                await session.commit()
+    except Exception:
+        # Если commit упадёт на полпути — пользователь получит частичный сброс,
+        # а без логирования это останется незамеченным.
+        log.error("cb_reset_execute: ошибка сброса профиля tg=%s",
+                  callback.from_user.id, exc_info=True)
+        await callback.answer("Ошибка при сбросе. Попробуйте позже.", show_alert=True)
+        return
 
     # Очищаем воронку пушей и перезапускаем её с нуля
     await reset_notification_state(callback.from_user.id)

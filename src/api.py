@@ -55,6 +55,7 @@ def generate_report(
     plan: str = "full",
     reference: str = None,
     _out_blocks: list = None,
+    telegram_id: int = None,
 ) -> str:
     """
     Генерирует HTML отчёта одного из трёх типов.
@@ -65,8 +66,10 @@ def generate_report(
     Для couple — дополнительно face_data_b, name_b, birthdate_b.
     palm_data_left/right — опциональные данные ладони пользователя A.
     palm_data_b_left/right — опциональные данные ладони партнёра (B).
+    telegram_id — опциональный контекст пользователя для логирования.
     """
-    log.info("generate_report: type=%s, name=%s, plan=%s", report_type, name, plan)
+    log.info("generate_report: type=%s, name=%s, plan=%s, tg=%s",
+             report_type, name, plan, telegram_id)
     if report_type == "self":
         return self_report.generate(
             face_data=face_data, name=name, birthdate=birthdate,
@@ -75,6 +78,7 @@ def generate_report(
             palm_data_left=palm_data_left,
             palm_data_right=palm_data_right,
             plan=plan, reference=reference, _out_blocks=_out_blocks,
+            telegram_id=telegram_id,
         )
 
     elif report_type == "money":
@@ -85,6 +89,7 @@ def generate_report(
             palm_data_left=palm_data_left,
             palm_data_right=palm_data_right,
             plan=plan, reference=reference, _out_blocks=_out_blocks,
+            telegram_id=telegram_id,
         )
 
     elif report_type == "couple":
@@ -100,6 +105,7 @@ def generate_report(
             palm_data_b_left=palm_data_b_left,
             palm_data_b_right=palm_data_b_right,
             plan=plan, reference=reference, _out_blocks=_out_blocks,
+            telegram_id=telegram_id,
         )
 
     else:
