@@ -1793,8 +1793,7 @@ async def cmd_reflink(message: Message):
     link = f"https://t.me/{BOT_USERNAME}?start={ref_code}"
     await message.answer(
         f"<b>Ваша реферальная ссылка:</b>\n\n"
-        f"<code>{link}</code>\n\n"
-        f"Поделитесь ею с друзьями — бот покажет, сколько человек зарегистрировалось по вашей ссылке.",
+        f"<code>{link}</code>\n\n",
         parse_mode="HTML",
     )
 
