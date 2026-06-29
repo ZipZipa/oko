@@ -300,6 +300,72 @@ async def cmd_start(message: Message, state: FSMContext, command: CommandObject)
     await state.set_state(RegistrationStates.waiting_for_name)
 
 
+# ─── Callback-кнопки из пушей ───────────────────────────────────────────────────
+
+@router.callback_query(F.data == "start_sale")
+async def cb_start_sale(callback: CallbackQuery, state: FSMContext):
+    """Кнопка «Получить скидку» из пуша — применяет скидку и открывает меню."""
+    user = await get_user(callback.from_user.id)
+    if not user:
+        await callback.answer()
+        return
+
+    await state.clear()
+
+    if (user.discount_percent or 0) < SALE_DISCOUNT_PERCENT:
+        async with async_session() as session:
+            result = await session.execute(
+                select(User).where(User.telegram_id == callback.from_user.id)
+            )
+            u = result.scalar_one_or_none()
+            if u:
+                u.discount_percent = SALE_DISCOUNT_PERCENT
+                await session.commit()
+
+    try:
+        await callback.message.delete()
+    except TelegramBadRequest:
+        pass
+
+    if _is_complete(user):
+        await send_msg(callback.message, "sale_applied", reply_markup=_main_menu())
+        await log_event(callback.from_user.id, ENTERED_MENU)
+    elif not user.name:
+        await send_msg(callback.message, "start_returning_no_name")
+        await state.set_state(RegistrationStates.waiting_for_name)
+    elif not user.face_json:
+        await send_msg(callback.message, "start_returning_no_photo", name=user.name)
+        await state.set_state(RegistrationStates.waiting_for_photo)
+    elif not user.birth_date:
+        await send_msg(callback.message, "start_returning_no_birthdate", name=user.name)
+        await state.set_state(RegistrationStates.waiting_for_birth_date)
+    await callback.answer()
+
+
+@router.callback_query(F.data == "start_continue")
+async def cb_start_continue(callback: CallbackQuery, state: FSMContext):
+    """Кнопка «Перейти в ОКО» из пуша — открывает главное меню."""
+    user = await get_user(callback.from_user.id)
+    if not user:
+        await callback.answer()
+        return
+
+    await state.clear()
+
+    try:
+        await callback.message.delete()
+    except TelegramBadRequest:
+        pass
+
+    if _is_complete(user):
+        await send_msg(callback.message, "choose_section", reply_markup=_main_menu())
+        await log_event(callback.from_user.id, ENTERED_MENU)
+    else:
+        await send_msg(callback.message, "start_new")
+        await state.set_state(RegistrationStates.waiting_for_name)
+    await callback.answer()
+
+
 # ─── Регистрация ────────────────────────────────────────────────────────────────
 
 @router.message(RegistrationStates.waiting_for_name, F.text)
@@ -1698,7 +1764,10 @@ async def _run_couple_report(message: Message, user: User, plan: str):
 
 @router.message(Command("reflink"))
 async def cmd_reflink(message: Message):
-    """Выдаёт пользователю его реферальную ссылку."""
+    """Выдаёт пользователю его реферальную ссылку (только для администраторов)."""
+    if ADMIN_IDS and message.from_user.id not in ADMIN_IDS:
+        return
+
     if not BOT_USERNAME:
         await message.answer(
             "⚠️ Реферальная система не настроена — добавьте <code>BOT_USERNAME</code> в .env",
@@ -1808,17 +1877,16 @@ async def cmd_refstats(message: Message):
 
 @router.message(Command("funnel"))
 async def cmd_funnel(message: Message, command: CommandObject):
-    """Карточка воронки пользователя.
+    """Карточка воронки пользователя (только для администраторов).
 
     Без аргументов — по себе. Админ может указать id: /funnel <telegram_id>.
     """
+    if ADMIN_IDS and message.from_user.id not in ADMIN_IDS:
+        return
+
     target_id = message.from_user.id
     if command.args and command.args.strip().isdigit():
-        if ADMIN_IDS and message.from_user.id in ADMIN_IDS:
-            target_id = int(command.args.strip())
-        else:
-            await message.answer("Эта команда доступна только для администраторов.")
-            return
+        target_id = int(command.args.strip())
 
     try:
         data = await get_user_funnel(target_id)

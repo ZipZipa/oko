@@ -17,7 +17,6 @@ from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from src.bot.config import BOT_USERNAME
 from src.bot.db import async_session, User, Payment
 from src.bot.db.models import UserEvent, NotificationLog
 from src.bot.messages import MESSAGES
@@ -49,18 +48,6 @@ def _as_utc(dt: datetime | None) -> datetime | None:
 
 # ─── Клавиатуры ───────────────────────────────────────────────────────────────
 
-def _bot_url() -> str | None:
-    if not BOT_USERNAME:
-        return None
-    return f"https://t.me/{BOT_USERNAME}?start=continue"
-
-
-def _sale_url() -> str | None:
-    if not BOT_USERNAME:
-        return None
-    return f"https://t.me/{BOT_USERNAME}?start=sale"
-
-
 def _push_kb(msg_key: str, confirmation_url: str | None = None) -> InlineKeyboardMarkup | None:
     """Клавиатура пуша на основе флага sale в конфиге сообщения.
 
@@ -74,13 +61,9 @@ def _push_kb(msg_key: str, confirmation_url: str | None = None) -> InlineKeyboar
     if confirmation_url and not sale_active:
         rows.append([InlineKeyboardButton(text="Перейти к оплате", url=confirmation_url)])
     if sale_active:
-        url = _sale_url()
-        if url:
-            rows.append([InlineKeyboardButton(text="Получить скидку", url=url)])
+        rows.append([InlineKeyboardButton(text="Получить скидку", callback_data="start_sale")])
     else:
-        url = _bot_url()
-        if url:
-            rows.append([InlineKeyboardButton(text="Перейти в ОКО", url=url)])
+        rows.append([InlineKeyboardButton(text="Перейти в ОКО", callback_data="start_continue")])
     return InlineKeyboardMarkup(inline_keyboard=rows) if rows else None
 
 
