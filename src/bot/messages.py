@@ -344,13 +344,13 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
     "partner_data_received": MessageConfig(
         key="partner_data_received",
-        text="Данные партнёра получены <tg-emoji emoji-id=\"5395526217191416774\">🤩</tg-emoji>\n\nЗапускаю анализ совместимости <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>",
+        text="Данные партнёра получены <tg-emoji emoji-id=\"5395526217191416774\">🤩</tg-emoji>\n\nЗапускаю анализ совместимости <tg-emoji emoji-id=\"5308033876491247752\">🟠</tg-emoji>",
     ),
 
     # ── Анализ (статусы) ──────────────────────────────────────────────────────
     "analyzing": MessageConfig(
         key="analyzing",
-        text="Запускаю анализ. Это займет некоторое время <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>",
+        text="Запускаю анализ. Это займет некоторое время <tg-emoji emoji-id=\"5308033876491247752\">🟠</tg-emoji>",
     ),
 
     # ── Ладони при регистрации ────────────────────────────────────────────────
@@ -424,11 +424,11 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
     "palm_left_analyzing": MessageConfig(
         key="palm_left_analyzing",
-        text="Анализирую левую ладонь <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>",
+        text="Анализирую левую ладонь <tg-emoji emoji-id=\"5308033876491247752\">🟠</tg-emoji>",
     ),
     "palm_right_analyzing": MessageConfig(
         key="palm_right_analyzing",
-        text="Анализирую правую ладонь <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>",
+        text="Анализирую правую ладонь <tg-emoji emoji-id=\"5308033876491247752\">🟠</tg-emoji>",
     ),
     "palm_not_detected": MessageConfig(
         key="palm_not_detected",
@@ -450,7 +450,7 @@ MESSAGES: dict[str, MessageConfig] = {
         key="palm_both_accepted",
         text=(
             "<tg-emoji emoji-id=\"5222154218701352505\">✔️</tg-emoji>Линии ладоней успешно считаны\n\n"
-            "Начинаю глубокий анализ <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>"
+            "Начинаю глубокий анализ <tg-emoji emoji-id=\"5308033876491247752\">🟠</tg-emoji>"
         ),
     ),
     "palm_photo_invalid": MessageConfig(
@@ -466,7 +466,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "{report} · {plan}\n\n"
             "Сумма: <b>{price} ₽</b>\n\n"
             "Нажми кнопку ниже, чтобы перейти к оплате.\n"
-            "После оплаты нажми «<tg-emoji emoji-id=\"5206607081334906820\">✅</tg-emoji> Я оплатил».\n\n"
+            "После оплаты нажми «<tg-emoji emoji-id=\"5451651836203264085\">✅</tg-emoji> Я оплатил».\n\n"
             "<blockquote expandable>"
             "Данная ссылка действительна в течение 10 минут.\n"
             "После оплаты вам будет предоставлен персонализированный доступ к услугам и материалам внутри бота согласно выбранному тарифу.\n"
@@ -481,7 +481,7 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
     "payment_success": MessageConfig(
         key="payment_success",
-        text="<tg-emoji emoji-id=\"5222154218701352505\">✔️</tg-emoji> Оплата прошла успешно! Запускаю генерацию отчёта <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>",
+        text="<tg-emoji emoji-id=\"5222154218701352505\">✔️</tg-emoji> Оплата прошла успешно! Запускаю генерацию отчёта <tg-emoji emoji-id=\"5308033876491247752\">🟠</tg-emoji>",
     ),
     "payment_pending": MessageConfig(
         key="payment_pending",
@@ -515,7 +515,7 @@ MESSAGES: dict[str, MessageConfig] = {
     "reset_done": MessageConfig(
         key="reset_done",
         text=(
-            "<tg-emoji emoji-id=\"5206607081334906820\">✅</tg-emoji> <b>Данные сброшены</b>\n\n"
+            "<tg-emoji emoji-id=\"5451651836203264085\">✅</tg-emoji> <b>Данные сброшены</b>\n\n"
             "Все результаты отчётов удалены. Начнём заново!"
         ),
     ),

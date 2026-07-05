@@ -43,10 +43,10 @@ router = Router()
 
 def _main_menu() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Портрет личности", callback_data="menu_self", icon_custom_emoji_id="5256059072788054036")],
-        [InlineKeyboardButton(text="Совместимость пары", callback_data="menu_couple", icon_custom_emoji_id="5256059072788054036")],
-        [InlineKeyboardButton(text="Денежная карта",    callback_data="menu_money", icon_custom_emoji_id="5256059072788054036")],
-        [InlineKeyboardButton(text="Начать заново",  callback_data="reset_confirm", icon_custom_emoji_id="5339077943056413575")],
+        [InlineKeyboardButton(text="Портрет личности", callback_data="menu_self", icon_custom_emoji_id="5359794223887443699")],
+        [InlineKeyboardButton(text="Совместимость пары", callback_data="menu_couple", icon_custom_emoji_id="5359794223887443699")],
+        [InlineKeyboardButton(text="Денежная карта",    callback_data="menu_money", icon_custom_emoji_id="5359794223887443699")],
+        [InlineKeyboardButton(text="Начать заново",  callback_data="reset_confirm", icon_custom_emoji_id="5337121636992690373")],
     ])
 
 
@@ -139,9 +139,9 @@ def _packages_menu(above_plan: str = "demo", report_prefix: str = "self") -> Inl
         if _PLAN_LEVEL[key] > current_level:
             name = _PACKAGE_NAMES[key]
             if key == "full":
-                rows.append([InlineKeyboardButton(text=name, callback_data=f"pkg_{report_prefix}_{key}", icon_custom_emoji_id="5307923023385342441")])
+                rows.append([InlineKeyboardButton(text=name, callback_data=f"pkg_{report_prefix}_{key}", icon_custom_emoji_id="5359794223887443699")])
             else:
-                rows.append([InlineKeyboardButton(text=name, callback_data=f"pkg_{report_prefix}_{key}", icon_custom_emoji_id="5256191422205280320")])
+                rows.append([InlineKeyboardButton(text=name, callback_data=f"pkg_{report_prefix}_{key}", icon_custom_emoji_id="5359303914715896215")])
     rows.append([InlineKeyboardButton(text="← В меню", callback_data="back_to_main")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
@@ -1297,8 +1297,8 @@ async def process_palm_right_invalid(message: Message):
 def _payment_keyboard(yoo_payment_id: str, confirmation_url: str) -> InlineKeyboardMarkup:
     """Клавиатура для оплаты YooKassa — единая для всех флоу."""
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="Перейти к оплате", url=confirmation_url, icon_custom_emoji_id="5337238593247131255")],
-        [InlineKeyboardButton(text="Я оплатил", callback_data=f"check_{yoo_payment_id}", icon_custom_emoji_id="5206607081334906820")],
+        [InlineKeyboardButton(text="Перейти к оплате", url=confirmation_url, icon_custom_emoji_id="5327957121675839348")],
+        [InlineKeyboardButton(text="Я оплатил", callback_data=f"check_{yoo_payment_id}", icon_custom_emoji_id="5451651836203264085")],
         [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
     ])
 
