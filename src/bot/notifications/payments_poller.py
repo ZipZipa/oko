@@ -37,6 +37,9 @@ async def poll_pending_payments() -> None:
     now = datetime.now(timezone.utc)
     for payment in pending:
         created = payment.created_at or now
+        # SQLite хранит DateTime без tzinfo, поэтому приведём к aware UTC.
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=timezone.utc)
         if now - created < _MIN_AGE:
             continue
 
