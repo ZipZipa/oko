@@ -15,6 +15,7 @@ from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.types import (
     Message, PhotoSize, CallbackQuery,
     InlineKeyboardMarkup, InlineKeyboardButton, BufferedInputFile,
+    LinkPreviewOptions,
 )
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
@@ -1348,18 +1349,20 @@ async def _create_payment_and_show(callback_or_msg, user: User, report_type: str
 
         markup = _payment_keyboard(yoo_payment.id, confirmation_url)
 
+        _no_preview = LinkPreviewOptions(is_disabled=True)
+
         if isinstance(callback_or_msg, CallbackQuery):
             msg = callback_or_msg.message
             try:
                 if msg.photo:
                     await msg.edit_caption(caption=text, reply_markup=markup, parse_mode="HTML")
                 else:
-                    await msg.edit_text(text=text, reply_markup=markup, parse_mode="HTML")
+                    await msg.edit_text(text=text, reply_markup=markup, parse_mode="HTML", link_preview_options=_no_preview)
             except TelegramBadRequest:
                 # Сообщение могло быть удалено/устареть — отправляем новое
-                await msg.answer(text=text, reply_markup=markup, parse_mode="HTML")
+                await msg.answer(text=text, reply_markup=markup, parse_mode="HTML", link_preview_options=_no_preview)
         else:
-            await callback_or_msg.answer(text=text, reply_markup=markup, parse_mode="HTML")
+            await callback_or_msg.answer(text=text, reply_markup=markup, parse_mode="HTML", link_preview_options=_no_preview)
 
     except Exception as e:
         log.error("Ошибка создания платежа (_create_payment_and_show): %s", e, exc_info=True)
