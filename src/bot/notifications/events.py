@@ -9,7 +9,7 @@ import logging
 from datetime import datetime, timezone
 from sqlalchemy import select, delete
 
-from src.bot.db import async_session
+from src.bot.db import async_session, User
 from src.bot.notifications.models import UserEvent, NotificationLog
 
 log = logging.getLogger(__name__)
@@ -164,7 +164,23 @@ async def mark_purchase_completed(
     plan: str,
     payment_id: str,
 ) -> None:
-    """Зафиксировать успешную покупку (идемпотентно по payment_id)."""
+    """Зафиксировать успешную покупку (идемпотентно по payment_id).
+
+    Сбрасывает discount_percent — скидка из пуша единоразовая,
+    действует до первой успешной покупки.
+    """
+    try:
+        async with async_session() as session:
+            result = await session.execute(
+                select(User).where(User.telegram_id == telegram_id)
+            )
+            u = result.scalar_one_or_none()
+            if u and u.discount_percent:
+                u.discount_percent = 0
+                await session.commit()
+    except Exception:
+        log.error("mark_purchase_completed: discount reset failed tg=%s", telegram_id, exc_info=True)
+
     await log_event_once(
         telegram_id, PURCHASE_COMPLETED,
         report_type=report_type, plan=plan, payment_id=payment_id,
