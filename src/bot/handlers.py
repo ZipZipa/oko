@@ -98,7 +98,11 @@ _PLAN_LEVEL = {"demo": 0, "base": 1, "extended": 2, "full": 3}
 # ── Лейблы пакетов (текст берётся из MESSAGES) ──────────────────────────────────
 _PACKAGE_NAMES = {"base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
 
-_BASE_PRICES = {"base": 490, "extended": 990, "full": 1490}
+_BASE_PRICES = {
+    "self":   {"base": 490, "extended": 990, "full": 1490},
+    "money":  {"base": 390, "extended": 790, "full": 1190},
+    "couple": {"base": 490, "extended": 990, "full": 1490},
+}
 
 SALE_DISCOUNT_PERCENT = 15  # скидка по кнопке «Получить скидку»
 
@@ -110,9 +114,9 @@ _UPGRADE_DISCOUNTS = {
 }
 
 
-def _get_discounted_price(current_plan: str, target_plan: str, sale_percent: int = 0) -> int:
+def _get_discounted_price(report_type: str, current_plan: str, target_plan: str, sale_percent: int = 0) -> int:
     """Цена с учётом скидки за уже купленный пакет и активной скидки sale."""
-    base_price = _BASE_PRICES.get(target_plan, 0)
+    base_price = _BASE_PRICES.get(report_type, {}).get(target_plan, 0)
     discount_pct = _UPGRADE_DISCOUNTS.get((current_plan, target_plan), 0)
     total_pct = min(discount_pct + sale_percent, 95)
     if total_pct:
@@ -148,7 +152,7 @@ def _packages_menu(above_plan: str = "demo", report_prefix: str = "self") -> Inl
 
 
 def _package_detail_menu(report_prefix: str, plan_key: str, current_plan: str = "demo", sale_percent: int = 0) -> InlineKeyboardMarkup:
-    price = _get_discounted_price(current_plan, plan_key, sale_percent)
+    price = _get_discounted_price(report_prefix, current_plan, plan_key, sale_percent)
     buy_text = f"Купить · {price} ₽"
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=buy_text, callback_data=f"buy_{report_prefix}_{plan_key}")],
@@ -687,8 +691,8 @@ async def cb_package_detail(callback: CallbackQuery):
     markup = _package_detail_menu(report_prefix, plan_key, current_plan, sale_percent)
 
     if discount_pct or sale_percent:
-        price = _get_discounted_price(current_plan, plan_key, sale_percent)
-        base_price = _BASE_PRICES[plan_key]
+        price = _get_discounted_price(report_prefix, current_plan, plan_key, sale_percent)
+        base_price = _BASE_PRICES[report_prefix][plan_key]
         text = MESSAGES[msg_key].text
         text = text.replace(f"— {base_price} ₽", f"— <s>{base_price} ₽</s> {price} ₽", 1)
         try:
@@ -1310,7 +1314,7 @@ async def _create_payment_and_show(callback_or_msg, user: User, report_type: str
         plan_field = {"self": "purchased_plan", "money": "money_plan", "couple": "couple_plan"}[report_type]
         current_plan = getattr(user, plan_field, None) or "demo"
         sale_percent = user.discount_percent or 0
-        price = _get_discounted_price(current_plan, plan_key, sale_percent)
+        price = _get_discounted_price(report_type, current_plan, plan_key, sale_percent)
         amount_str = f"{price}.00"
 
         yoo_payment = await asyncio.get_running_loop().run_in_executor(
