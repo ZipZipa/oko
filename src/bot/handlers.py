@@ -144,9 +144,9 @@ def _packages_menu(above_plan: str = "demo", report_prefix: str = "self") -> Inl
         if _PLAN_LEVEL[key] > current_level:
             name = _PACKAGE_NAMES[key]
             if key == "full":
-                rows.append([InlineKeyboardButton(text=name, callback_data=f"pkg_{report_prefix}_{key}", icon_custom_emoji_id="5359794223887443699")])
-            else:
                 rows.append([InlineKeyboardButton(text=name, callback_data=f"pkg_{report_prefix}_{key}", icon_custom_emoji_id="5359303914715896215")])
+            else:
+                rows.append([InlineKeyboardButton(text=name, callback_data=f"pkg_{report_prefix}_{key}", icon_custom_emoji_id="5359794223887443699")])
     rows.append([InlineKeyboardButton(text="← В меню", callback_data="back_to_main")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
