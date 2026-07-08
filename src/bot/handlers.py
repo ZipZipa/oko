@@ -259,7 +259,7 @@ async def cmd_start(message: Message, state: FSMContext, command: CommandObject)
                     u.discount_percent = SALE_DISCOUNT_PERCENT
                     await session.commit()
         if _is_complete(user):
-            await send_msg(message, "sale_applied", reply_markup=_main_menu())
+            await send_msg(message, "sale_applied", reply_markup=_main_menu(), discount=SALE_DISCOUNT_PERCENT)
             await log_event(message.from_user.id, ENTERED_MENU)
             return
         # профиль не завершён — скидка сохранена, продолжаем регистрацию
@@ -307,24 +307,32 @@ async def cmd_start(message: Message, state: FSMContext, command: CommandObject)
 
 # ─── Callback-кнопки из пушей ───────────────────────────────────────────────────
 
-@router.callback_query(F.data == "start_sale")
+@router.callback_query(F.data.startswith("start_sale"))
 async def cb_start_sale(callback: CallbackQuery, state: FSMContext):
-    """Кнопка «Получить скидку» из пуша — применяет скидку и открывает меню."""
+    """Кнопка «Получить скидку» из пуша — применяет скидку и открывает меню.
+
+    callback_data: start_sale (старый формат, 15%) или start_sale_{N} (новый).
+    """
     user = await get_user(callback.from_user.id)
     if not user:
         await callback.answer()
         return
 
+    # Парсим процент скидки из callback_data: start_sale_15, start_sale_30 и т.д.
+    # Старый формат "start_sale" без суффикса → default 15%
+    parts = callback.data.split("_")
+    discount = int(parts[-1]) if len(parts) == 3 and parts[-1].isdigit() else SALE_DISCOUNT_PERCENT
+
     await state.clear()
 
-    if (user.discount_percent or 0) < SALE_DISCOUNT_PERCENT:
+    if (user.discount_percent or 0) < discount:
         async with async_session() as session:
             result = await session.execute(
                 select(User).where(User.telegram_id == callback.from_user.id)
             )
             u = result.scalar_one_or_none()
             if u:
-                u.discount_percent = SALE_DISCOUNT_PERCENT
+                u.discount_percent = discount
                 await session.commit()
 
     try:
@@ -333,7 +341,7 @@ async def cb_start_sale(callback: CallbackQuery, state: FSMContext):
         pass
 
     if _is_complete(user):
-        await send_msg(callback.message, "sale_applied", reply_markup=_main_menu())
+        await send_msg(callback.message, "sale_applied", reply_markup=_main_menu(), discount=discount)
         await log_event(callback.from_user.id, ENTERED_MENU)
     elif not user.name:
         await send_msg(callback.message, "start_returning_no_name")

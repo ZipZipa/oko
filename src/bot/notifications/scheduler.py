@@ -61,7 +61,8 @@ def _push_kb(msg_key: str, confirmation_url: str | None = None) -> InlineKeyboar
     if confirmation_url and not sale_active:
         rows.append([InlineKeyboardButton(text="Перейти к оплате", url=confirmation_url)])
     if sale_active:
-        rows.append([InlineKeyboardButton(text="Получить скидку", callback_data="start_sale")])
+        discount = MESSAGES[msg_key].discount
+        rows.append([InlineKeyboardButton(text="Получить скидку", callback_data=f"start_sale_{discount}")])
     else:
         rows.append([InlineKeyboardButton(text="Перейти в ОКО", callback_data="start_continue")])
     return InlineKeyboardMarkup(inline_keyboard=rows) if rows else None

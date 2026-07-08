@@ -39,6 +39,7 @@ class MessageConfig:
     text: str
     photos: list[str] = field(default_factory=list)  # имена файлов из MEDIA_DIR
     sale: bool = False
+    discount: int = 15  # процент скидки для sale-пушей (по умолчанию 15)
     delay_minutes: int | None = None
 
     @property
@@ -612,6 +613,7 @@ MESSAGES: dict[str, MessageConfig] = {
         key="push_e4_3_self",
         text="<tg-emoji emoji-id=\"5287589604529027869\">⏳</tg-emoji> Последняя возможность открыть свой анализ на специальных условиях.",
         sale=True,
+        discount=30,
         delay_minutes=2880,
         photos=["notify/30_percent.jpeg"]
     ),
@@ -645,6 +647,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "Мы сохранили для тебя скидку."
         ),
         sale=True,
+        discount=30,
         delay_minutes=2880,
         photos=["notify/30_percent.jpeg"]
     ),
@@ -678,6 +681,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "Мы оставили для тебя специальную цену."
         ),
         sale=True,
+        discount=30,
         delay_minutes=2880,
         photos=["notify/30_percent.jpeg"]
     ),
@@ -709,6 +713,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "И скидка на твой разбор всё ещё активна."
         ),
         sale=True,
+        discount=30,
         delay_minutes=1440,
         photos=["notify/30_percent.jpeg"]
     ),
@@ -825,7 +830,7 @@ MESSAGES: dict[str, MessageConfig] = {
     "sale_applied": MessageConfig(
         key="sale_applied",
         text=(
-            "<b><tg-emoji emoji-id=\"5411432860500385979\">🤩</tg-emoji> Скидка 15% применена!</b>\n\n"
+            "<b><tg-emoji emoji-id=\"5411432860500385979\">🤩</tg-emoji> Скидка {discount}% применена!</b>\n\n"
             "Теперь все пакеты доступны дешевле. Выбери свой разбор:"
         ),
     ),
