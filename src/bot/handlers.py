@@ -1928,6 +1928,61 @@ async def cmd_funnelstats(message: Message):
     await message.answer(format_distribution(dist), parse_mode="HTML")
 
 
+@router.message(Command("photo"))
+async def cmd_photo(message: Message, command: CommandObject):
+    """Отправляет фото пользователя по его telegram_id (только для администраторов).
+
+    Использование: /photo <telegram_id>
+    """
+    if ADMIN_IDS and message.from_user.id not in ADMIN_IDS:
+        return
+
+    if not command.args or not command.args.strip().isdigit():
+        await message.answer("Использование: <code>/photo <telegram_id></code>", parse_mode="HTML")
+        return
+
+    target_id = int(command.args.strip())
+
+    try:
+        user = await get_user(target_id)
+    except Exception:
+        log.error("cmd_photo: ошибка получения пользователя tg=%s (admin tg=%s)",
+                  target_id, message.from_user.id, exc_info=True)
+        await message.answer("Ошибка при получении данных пользователя. Попробуйте позже.")
+        return
+
+    if not user:
+        await message.answer("Пользователь не найден.", parse_mode="HTML")
+        return
+
+    name = user.name or "—"
+
+    if not user.photo_file_id:
+        await message.answer(
+            f"У пользователя <b>{name}</b> (id: <code>{target_id}</code>) нет фото.",
+            parse_mode="HTML",
+        )
+        return
+
+    caption = f"👤 <b>{name}</b>\nID: <code>{target_id}</code>"
+
+    try:
+        await message.bot.send_photo(
+            chat_id=message.chat.id,
+            photo=user.photo_file_id,
+            caption=caption,
+            parse_mode="HTML",
+        )
+    except TelegramBadRequest:
+        await message.answer(
+            f"Не удалось отправить фото пользователя <b>{name}</b> (id: <code>{target_id}</code>). "
+            f"Возможно, файл недоступен.",
+            parse_mode="HTML",
+        )
+        log.error("cmd_photo: не удалось отправить фото tg=%s (admin tg=%s)",
+                  target_id, message.from_user.id, exc_info=True)
+
+
 # ─── Сброс данных ────────────────────────────────────────────────────────────────
 
 @router.callback_query(F.data == "reset_confirm")
