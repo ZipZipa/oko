@@ -188,3 +188,59 @@ reports_unified/
 3. **Хиромантия в couple и money — без фото ладоней.** Анализ идёт через черты лица. В системных промптах есть жёсткий запрет выдумывать линии.
 
 4. **Скоры внешности нормированы эмпирически.** Для академической точности нужен референсный датасет (FFHQ) с расчётом перцентилей.
+
+## Деплой
+
+### Основной инстанс
+
+```bash
+sudo bash deploy/setup.sh
+```
+
+Скрипт клонирует репозиторий в `/opt/oko`, создаёт venv, устанавливает зависимости,
+формирует `.env` и регистрирует systemd-сервис `oko-bot`.
+
+### Дополнительный инстанс (test, staging и т.д.)
+
+```bash
+sudo bash deploy/deploy-instance.sh test
+```
+
+Скрипт создаёт **отдельный** инстанс бота с собственной конфигурацией и БД,
+используя общую кодовую базу и venv. Что изолируется:
+
+| Ресурс | Основной | Дополнительный |
+|--------|----------|----------------|
+| `.env` | `/opt/oko/.env` | `/opt/oko/.env-test` |
+| БД (SQLite) | `oko_bot.db` | `oko_bot_test.db` |
+| systemd-сервис | `oko-bot` | `oko-bot-test` |
+| Логи | `journalctl -u oko-bot` | `journalctl -u oko-bot-test` |
+
+**Важно:** каждый инстанс должен использовать **токен другого бота** от @BotFather
+(Telegram не позволяет двум процессам работать с одним токеном одновременно).
+
+При использовании PostgreSQL укажите отдельную базу в `DATABASE_URL`:
+
+```
+DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/oko_test
+```
+
+Управление инстансом:
+
+```bash
+journalctl -u oko-bot-test -f      # логи
+systemctl status oko-bot-test       # статус
+systemctl restart oko-bot-test      # рестарт
+systemctl stop oko-bot-test         # стоп
+```
+
+Удаление инстанса:
+
+```bash
+systemctl stop oko-bot-test
+systemctl disable oko-bot-test
+rm /etc/systemd/system/oko-bot-test.service
+rm /opt/oko/.env-test
+rm /opt/oko/oko_bot_test.db   # если используется SQLite
+systemctl daemon-reload
+```
