@@ -1983,6 +1983,76 @@ async def cmd_photo(message: Message, command: CommandObject):
                   target_id, message.from_user.id, exc_info=True)
 
 
+@router.message(Command("profile"))
+async def cmd_profile(message: Message, command: CommandObject):
+    """Отправляет карточку профиля пользователя по telegram_id (только админы).
+
+    Использование: /profile <telegram_id>
+    """
+    if ADMIN_IDS and message.from_user.id not in ADMIN_IDS:
+        return
+
+    if not command.args or not command.args.strip().isdigit():
+        await message.answer("Использование: <code>/profile <telegram_id></code>", parse_mode="HTML")
+        return
+
+    target_id = int(command.args.strip())
+
+    try:
+        user = await get_user(target_id)
+    except Exception:
+        log.error("cmd_profile: ошибка получения пользователя tg=%s (admin tg=%s)",
+                  target_id, message.from_user.id, exc_info=True)
+        await message.answer("Ошибка при получении данных пользователя. Попробуйте позже.")
+        return
+
+    if not user:
+        await message.answer("Пользователь не найден.", parse_mode="HTML")
+        return
+
+    def _yes_no(val) -> str:
+        return "✅" if val else "❌"
+
+    def _plan_label(val) -> str:
+        return {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}.get(val or "demo", val or "—")
+
+    birth = user.birth_date.strftime("%d.%m.%Y") if user.birth_date else "—"
+
+    lines = [
+        f"👤 <b>Профиль пользователя</b>\n",
+        f"<b>Имя:</b> {user.name or '—'}",
+        f"<b>Telegram ID:</b> <code>{user.telegram_id}</code>",
+        f"<b>Дата рождения:</b> {birth}",
+        f"<b>Скидка:</b> {user.discount_percent}%",
+        f"<b>Заблокирован:</b> {'да' if user.is_blocked else 'нет'}",
+        f"",
+        f"<b>Данные профиля:</b>",
+        f"  Фото: {_yes_no(user.photo_file_id)}",
+        f"  Лицо (анализ): {_yes_no(user.face_json)}",
+        f"  Ладонь Л: {_yes_no(user.palm_left_json)}",
+        f"  Ладонь П: {_yes_no(user.palm_right_json)}",
+        f"",
+        f"<b>Партнёр:</b>",
+        f"  Имя: {user.partner_name or '—'}",
+        f"  Дата рождения: {user.partner_birth_date.strftime('%d.%m.%Y') if user.partner_birth_date else '—'}",
+        f"  Фото: {_yes_no(user.partner_photo_file_id)}",
+        f"  Лицо: {_yes_no(user.partner_face_json)}",
+        f"  Ладонь Л: {_yes_no(user.partner_palm_left_json)}",
+        f"  Ладонь П: {_yes_no(user.partner_palm_right_json)}",
+        f"",
+        f"<b>Отчёты:</b>",
+        f"  Self: {_plan_label(user.purchased_plan)} (блоки: {_yes_no(user.blocks_json)})",
+        f"  Money: {_plan_label(user.money_plan)} (блоки: {_yes_no(user.money_blocks_json)})",
+        f"  Couple: {_plan_label(user.couple_plan)} (блоки: {_yes_no(user.couple_blocks_json)})",
+        f"",
+        f"<b>Реферал:</b>",
+        f"  Код: <code>{user.referral_code or '—'}</code>",
+        f"  Приглашён: <code>{user.referred_by or '—'}</code>",
+    ]
+
+    await message.answer("\n".join(lines), parse_mode="HTML")
+
+
 # ─── Сброс данных ────────────────────────────────────────────────────────────────
 
 @router.callback_query(F.data == "reset_confirm")
