@@ -1779,10 +1779,7 @@ async def _run_couple_report(message: Message, user: User, plan: str):
 
 @router.message(Command("reflink"))
 async def cmd_reflink(message: Message):
-    """Выдаёт пользователю его реферальную ссылку (только для администраторов)."""
-    if ADMIN_IDS and message.from_user.id not in ADMIN_IDS:
-        return
-
+    """Выдаёт пользователю его реферальную ссылку."""
     if not BOT_USERNAME:
         await message.answer(
             "⚠️ Реферальная система не настроена — добавьте <code>BOT_USERNAME</code> в .env",
