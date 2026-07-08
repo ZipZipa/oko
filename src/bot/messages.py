@@ -201,14 +201,14 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
     "max_package": MessageConfig(
         key="max_package",
-        text="У тебя уже <b>максимальный пакет</b> 🏆",
+        text="У тебя уже <b>максимальный пакет</b> <tg-emoji emoji-id=\"5465433346874050537\">🤩</tg-emoji>",
     ),
 
     # ── Пакеты: Self ──────────────────────────────────────────────────────────
     "pkg_self_base": MessageConfig(
         key="pkg_self_base",
         text=(
-            "<b>Базовый · Портрет личности</b>\n\n"
+            "<b>Базовый <tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> Портрет личности</b>\n\n"
             "Большинство людей не знают, кем они являются на самом деле.\n\n"
             "Этот отчёт — первый честный взгляд на себя.\n\n"
         ),
@@ -217,7 +217,7 @@ MESSAGES: dict[str, MessageConfig] = {
     "pkg_self_extended": MessageConfig(
         key="pkg_self_extended",
         text=(
-            "<b>Расширенный · Портрет личности</b>\n\n"
+            "<b>Расширенный <tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> Портрет личности</b>\n\n"
             "Почему одни и те же ситуации повторяются снова и снова?\n\n"
             "Здесь — ответ и выход.\n\n"
         ),
@@ -226,7 +226,7 @@ MESSAGES: dict[str, MessageConfig] = {
     "pkg_self_full": MessageConfig(
         key="pkg_self_full",
         text=(
-            "<b>Премиум · Портрет личности</b>\n\n"
+            "<b>Премиум <tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> Портрет личности</b>\n\n"
             "То, что ты чувствуешь, но не можешь объяснить — здесь это получит имя и объяснение."
         ),
         photos=["self/full.jpeg"]
@@ -236,7 +236,7 @@ MESSAGES: dict[str, MessageConfig] = {
     "pkg_money_base": MessageConfig(
         key="pkg_money_base",
         text=(
-            "<b>Базовый · Денежная карта</b>\n"
+            "<b>Базовый <tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> Денежная карта</b>\n"
             "Деньги не приходят случайно — и не уходят тоже."
             "Узнай, что стоит между тобой и другим уровнем."
         ),
@@ -245,7 +245,7 @@ MESSAGES: dict[str, MessageConfig] = {
     "pkg_money_extended": MessageConfig(
         key="pkg_money_extended",
         text=(
-            "<b>Расширенный · Денежная карта</b>\n\n"
+            "<b>Расширенный <tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> Денежная карта</b>\n\n"
             "Ты работаешь — а результат не тот."
             "Здесь видно где утечка и как это исправить."
         ),
@@ -254,7 +254,7 @@ MESSAGES: dict[str, MessageConfig] = {
     "pkg_money_full": MessageConfig(
         key="pkg_money_full",
         text=(
-            "<b>Премиум · Денежная карта</b>\n\n"
+            "<b>Премиум <tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> Денежная карта</b>\n\n"
             "Полная карта твоих денег: блоки, потенциал, лучшие годы для роста. Ничего не скрыто."
         ),
         photos=["money/full.jpeg"]
@@ -264,7 +264,7 @@ MESSAGES: dict[str, MessageConfig] = {
     "pkg_couple_base": MessageConfig(
         key="pkg_couple_base",
         text=(
-            "<b>Базовый · Совместимость</b>\n\n"
+            "<b>Базовый <tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> Совместимость</b>\n\n"
             "Что он/она на самом деле чувствует к тебе — и есть ли у этого будущее."
         ),
         photos=["couple/base.jpeg"]
@@ -272,7 +272,7 @@ MESSAGES: dict[str, MessageConfig] = {
     "pkg_couple_extended": MessageConfig(
         key="pkg_couple_extended",
         text=(
-            "<b>Расширенный · Совместимость</b>\n\n"
+            "<b>Расширенный <tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> Совместимость</b>\n\n"
             "Притяжение — это одно."
             "Совместимость — совсем другое. Разберём вашу пару глубже."
         ),
@@ -281,7 +281,7 @@ MESSAGES: dict[str, MessageConfig] = {
     "pkg_couple_full": MessageConfig(
         key="pkg_couple_full",
         text=(
-            "<b>Премиум · Совместимость</b>\n\n"
+            "<b>Премиум <tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> Совместимость</b>\n\n"
             "Любовь, деньги, дети, верность — всё про вашу пару."
             "Полная правда без иллюзий."
         ),
@@ -344,13 +344,13 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
     "partner_data_received": MessageConfig(
         key="partner_data_received",
-        text="Данные партнёра получены <tg-emoji emoji-id=\"5395526217191416774\">🤩</tg-emoji>\n\nЗапускаю анализ совместимости <tg-emoji emoji-id=\"5308033876491247752\">🟠</tg-emoji>",
+        text="Данные партнёра получены <tg-emoji emoji-id=\"5395526217191416774\">🤩</tg-emoji>\n\nЗапускаю анализ совместимости <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>",
     ),
 
     # ── Анализ (статусы) ──────────────────────────────────────────────────────
     "analyzing": MessageConfig(
         key="analyzing",
-        text="Запускаю анализ. Это займет некоторое время <tg-emoji emoji-id=\"5308033876491247752\">🟠</tg-emoji>",
+        text="Запускаю анализ. Это займет некоторое время <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>",
     ),
 
     # ── Ладони при регистрации ────────────────────────────────────────────────
@@ -424,11 +424,11 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
     "palm_left_analyzing": MessageConfig(
         key="palm_left_analyzing",
-        text="Анализирую левую ладонь <tg-emoji emoji-id=\"5308033876491247752\">🟠</tg-emoji>",
+        text="Анализирую левую ладонь <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>",
     ),
     "palm_right_analyzing": MessageConfig(
         key="palm_right_analyzing",
-        text="Анализирую правую ладонь <tg-emoji emoji-id=\"5308033876491247752\">🟠</tg-emoji>",
+        text="Анализирую правую ладонь <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>",
     ),
     "palm_not_detected": MessageConfig(
         key="palm_not_detected",
@@ -450,7 +450,7 @@ MESSAGES: dict[str, MessageConfig] = {
         key="palm_both_accepted",
         text=(
             "<tg-emoji emoji-id=\"5222154218701352505\">✔️</tg-emoji>Линии ладоней успешно считаны\n\n"
-            "Начинаю глубокий анализ <tg-emoji emoji-id=\"5308033876491247752\">🟠</tg-emoji>"
+            "Начинаю глубокий анализ <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>"
         ),
     ),
     "palm_photo_invalid": MessageConfig(
@@ -466,7 +466,7 @@ MESSAGES: dict[str, MessageConfig] = {
             "{report} · {plan}\n\n"
             "Сумма: <b>{price} ₽</b>\n\n"
             "Нажми кнопку ниже, чтобы перейти к оплате.\n"
-            "После оплаты нажми «<tg-emoji emoji-id=\"5451651836203264085\">✅</tg-emoji> Я оплатил».\n\n"
+            "После оплаты нажми «<tg-emoji emoji-id=\"5206607081334906820\">✅</tg-emoji> Я оплатил».\n\n"
             "<blockquote expandable>"
             "Данная ссылка действительна в течение 10 минут.\n"
             "После оплаты вам будет предоставлен персонализированный доступ к услугам и материалам внутри бота согласно выбранному тарифу.\n"
@@ -481,7 +481,7 @@ MESSAGES: dict[str, MessageConfig] = {
     ),
     "payment_success": MessageConfig(
         key="payment_success",
-        text="<tg-emoji emoji-id=\"5222154218701352505\">✔️</tg-emoji> Оплата прошла успешно! Запускаю генерацию отчёта <tg-emoji emoji-id=\"5308033876491247752\">🟠</tg-emoji>",
+        text="<tg-emoji emoji-id=\"5222154218701352505\">✔️</tg-emoji> Оплата прошла успешно! Запускаю генерацию отчёта <tg-emoji emoji-id=\"5256172434154866918\">🟠</tg-emoji>",
     ),
     "payment_pending": MessageConfig(
         key="payment_pending",
@@ -515,7 +515,7 @@ MESSAGES: dict[str, MessageConfig] = {
     "reset_done": MessageConfig(
         key="reset_done",
         text=(
-            "<tg-emoji emoji-id=\"5451651836203264085\">✅</tg-emoji> <b>Данные сброшены</b>\n\n"
+            "<tg-emoji emoji-id=\"5206607081334906820\">✅</tg-emoji> <b>Данные сброшены</b>\n\n"
             "Все результаты отчётов удалены. Начнём заново!"
         ),
     ),
@@ -538,178 +538,296 @@ MESSAGES: dict[str, MessageConfig] = {
     # E1: Зашёл → ничего не начал
     "push_e1_1": MessageConfig(
         key="push_e1_1",
-        text="👁️ Твой персональный анализ ещё не начат.",
+        text=(
+            "<tg-emoji emoji-id=\"523794818783826219\">👁️</tg-emoji> Твой первый разбор полностью бесплатный.\n\n"
+            "А вдруг там есть ответ, который ты давно ищешь, почему бы не попробовать?"
+        ),
         delay_minutes=15,
     ),
     "push_e1_2": MessageConfig(
         key="push_e1_2",
-        text="Ответы о тебе всё ещё ждут тебя в ОКО.",
+        text="<tg-emoji emoji-id=\"5300783271615965880\">🤩</tg-emoji> Ответы о тебе всё ещё ждут тебя в ОКО.",
+        sale=True,
         delay_minutes=1440,
     ),
     # E2: Начал анализ → бросил на заполнении данных
     "push_e2_1": MessageConfig(
         key="push_e2_1",
-        text="Ты почти начал анализ. Остался последний шаг.",
+        text=(
+            "<tg-emoji emoji-id=\"5231418772396479402\">🗝️</tg-emoji> Мы уже начали подготовку твоего анализа.\n\n"
+            "Остался последний шаг, чтобы открыть результаты.\n\n"
+            "Продолжить →"
+        ),
         delay_minutes=30,
     ),
     "push_e2_2": MessageConfig(
         key="push_e2_2",
-        text="Дополни данные и получи свой персональный разбор.",
+        text="<tg-emoji emoji-id=\"5348460861755262251\">✍️</tg-emoji> Дополни данные и получи свой персональный разбор.",
+        sale=True,
         delay_minutes=720,
     ),
     # E3: Начал совместимость → не ввёл партнёра
     "push_e3_1": MessageConfig(
         key="push_e3_1",
-        text="Для анализа пары не хватает данных второго человека.",
+        text=(
+            "<tg-emoji emoji-id=\"5294369012837293421\">🤩</tg-emoji> Не хватает данных второго человека.\n\n"
+            "После их добавления система покажет:\n\n"
+            "<tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> силу притяжения;\n"
+            "<tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> скрытые конфликты;\n"
+            "<tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> перспективу отношений."
+        ),
         delay_minutes=30,
     ),
     "push_e3_2": MessageConfig(
         key="push_e3_2",
-        text="Добавь данные партнёра и узнай, что происходит между вами на самом деле.",
+        text="<tg-emoji emoji-id=\"5348460861755262251\">✍️</tg-emoji> Добавь данные партнёра и узнай, что происходит между вами на самом деле.",
+        sale=True,
         delay_minutes=1440,
     ),
     # E4: Получил демо → не купил
     # self
     "push_e4_1_self": MessageConfig(
         key="push_e4_1_self",
-        text="Ты увидел только часть анализа личности.",
+        text=(
+            "<b>Ваш анализ открыт на 15%</b>\n\n"
+            "Закрыты ещё 85%, среди которых:\n\n"
+            "<tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> повторяющийся жизненный сценарий;\n"
+            "<tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> главный внутренний конфликт;\n"
+            "<tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> скрытый талант;\n"
+            "<tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> ключевой урок жизни."
+        ),
         delay_minutes=20,
     ),
     "push_e4_2_self": MessageConfig(
         key="push_e4_2_self",
-        text="Самые важные выводы о тебе остались закрыты.",
+        text=(
+            "<tg-emoji emoji-id=\"5231418772396479402\">🗝️</tg-emoji> Самая интересная часть твоего анализа пока закрыта.\n\n"
+            "И сейчас открыть полный разбор можно со <b>скидкой</b>."
+        ),
         sale=True,
         delay_minutes=720,
+        photos=["notify/15_percent.jpeg"]
     ),
     "push_e4_3_self": MessageConfig(
         key="push_e4_3_self",
-        text="Полный разбор личности всё ещё доступен.",
+        text="<tg-emoji emoji-id=\"5287589604529027869\">⏳</tg-emoji> Последняя возможность открыть свой анализ на специальных условиях.",
         sale=True,
         delay_minutes=2880,
+        photos=["notify/30_percent.jpeg"]
     ),
     # money
     "push_e4_1_money": MessageConfig(
         key="push_e4_1_money",
-        text="Ты увидел только часть денежного анализа.",
+        text=(
+            "<b><tg-emoji emoji-id=\"5366543795057881388\">🤑</tg-emoji> Ты увидел только начало.</b>\n\n"
+            "Остались скрыты:\n\n"
+            "<tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> главный денежный блок;\n"
+            "<tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> период роста доходов;\n"
+            "<tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> сильная сфера заработка;\n"
+            "<tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> причины финансовых откатов."
+        ),
         delay_minutes=20,
     ),
     "push_e4_2_money": MessageConfig(
         key="push_e4_2_money",
-        text="Самые важные выводы о твоих деньгах остались закрыты.",
+        text=(
+            "<tg-emoji emoji-id=\"5398016516539066222\">🤩</tg-emoji>  Есть одна причина, почему деньги идут именно так.\n\n"
+            "И сейчас полный разбор можно открыть со скидкой."
+        ),
         sale=True,
         delay_minutes=720,
+        photos=["notify/15_percent.jpeg"]
     ),
     "push_e4_3_money": MessageConfig(
         key="push_e4_3_money",
-        text="Полный денежный разбор всё ещё доступен.",
+        text=(
+            "<tg-emoji emoji-id=\"5300783271615965880\">🤩</tg-emoji> Иногда человек годами не замечает то, что мешает ему расти.\n\n"
+            "Мы сохранили для тебя скидку."
+        ),
         sale=True,
         delay_minutes=2880,
+        photos=["notify/30_percent.jpeg"]
     ),
     # couple
     "push_e4_1_couple": MessageConfig(
         key="push_e4_1_couple",
-        text="Ты увидел только часть анализа совместимости.",
+        text=(
+            "<tg-emoji emoji-id=\"5325752648106808552\">🤩</tg-emoji> Ты увидел лишь часть картины.</b>\n\n"
+            "Закрыты ответы:\n\n"
+            "<tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> что чувствует партнёр;\n"
+            "<tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> что мешает отношениям;\n"
+            "<tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> есть ли будущее;\n"
+            "<tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> почему вас так тянет друг к другу."
+        ),
         delay_minutes=20,
     ),
     "push_e4_2_couple": MessageConfig(
         key="push_e4_2_couple",
-        text="Самые важные выводы о вашей паре остались закрыты.",
+        text=(
+            "<tg-emoji emoji-id=\"5300783271615965880\">🤩</tg-emoji>Есть один ответ о вашей паре, который ты пока не видел.\n\n"
+            "И сейчас его можно открыть со скидкой."
+        ),
         sale=True,
         delay_minutes=720,
+        photos=["notify/15_percent.jpeg"]
     ),
     "push_e4_3_couple": MessageConfig(
         key="push_e4_3_couple",
-        text="Полный разбор совместимости всё ещё доступен.",
+        text=(
+            "<tg-emoji emoji-id=\"5409321428807870994\">🔐</tg-emoji> Иногда один вывод меняет взгляд на отношения полностью.\n\n"
+            "Мы оставили для тебя специальную цену."
+        ),
         sale=True,
         delay_minutes=2880,
+        photos=["notify/30_percent.jpeg"]
     ),
     # E5: Нажал оплатить → не оплатил
     "push_e5_1": MessageConfig(
         key="push_e5_1",
-        text="Оплата не завершена. Твой анализ уже готов.",
+        text=(
+            "<b><tg-emoji emoji-id=\"5463394229545896620\">🤩</tg-emoji> Похоже, что-то отвлекло тебя.</b>\n\n"
+            "Твой анализ уже готов.\n\n"
+            "Остался один шаг."
+        ),
         delay_minutes=15,
+        photos=["notify/one_more.jpeg"]
     ),
     "push_e5_2": MessageConfig(
         key="push_e5_2",
-        text="Остался один шаг до полного доступа.",
+        text=(
+            "<tg-emoji emoji-id=\"5429398721584457173\">📂</tg-emoji> Твой анализ уже готов.\n\n"
+            "Осталось только открыть его, тем более сейчас действует скидка."
+        ),
         sale=True,
         delay_minutes=180,
+        photos=["notify/15_percent.jpeg"]
     ),
     "push_e5_3": MessageConfig(
         key="push_e5_3",
-        text="Заверши оплату и открой свой разбор.",
+        text=(
+            "<tg-emoji emoji-id=\"5398016516539066222\">🤩</tg-emoji> Ты остановился буквально перед самым интересным.\n\n"
+            "И скидка на твой разбор всё ещё активна."
+        ),
         sale=True,
         delay_minutes=1440,
+        photos=["notify/30_percent.jpeg"]
     ),
     # E6: Купил один продукт → не купил остальные
     "push_e6_self": MessageConfig(
         key="push_e6_self",
-        text="Теперь узнай, как твои особенности влияют на деньги и отношения.",
+        text=(
+            "<b><tg-emoji emoji-id=\"5366543795057881388\">🤑</tg-emoji> Ты узнал, кто ты.</b>\n\n"
+            "Теперь посмотри, как эти качества влияют на деньги и отношения."
+        ),
+        sale=True,
         delay_minutes=1440,
     ),
     "push_e6_money": MessageConfig(
         key="push_e6_money",
-        text="Теперь узнай, какие отношения усиливают или ослабляют твой путь.",
+        text=(
+            "<b><tg-emoji emoji-id=\"5325752648106808552\">🤩</tg-emoji> Финансы редко существуют отдельно от личности и отношений.</b>\n\n"
+            "Посмотри картину целиком."
+        ),
+        sale=True,
         delay_minutes=1440,
     ),
     "push_e6_couple": MessageConfig(
         key="push_e6_couple",
-        text="Теперь узнай, почему именно такие люди появляются в твоей жизни.",
+        text=(
+            "<b><tg-emoji emoji-id=\"5409321428807870994\">🔐</tg-emoji> Ответы о партнёре часто начинаются с ответов о себе.</b>\n\n"
+            "Открой свой полный портрет личности."
+        ),
+        sale=True,
         delay_minutes=1440,
     ),
     # E7: Купил базовый/расширенный → не купил премиум
     # self
     "push_e7_1_self": MessageConfig(
         key="push_e7_1_self",
-        text="Ты открыл только часть анализа личности.",
+        text="<tg-emoji emoji-id=\"5325752648106808552\">🤩</tg-emoji> Ты уже очень близко к той части анализа, которую люди потом пересылают друзьям.",
         delay_minutes=120,
+        photos=["notify/one_more.jpeg"]
     ),
     "push_e7_2_self": MessageConfig(
         key="push_e7_2_self",
-        text="Самые глубокие выводы о тебе доступны в Премиум.",
+        text=(
+            "<tg-emoji emoji-id=\"5409321428807870994\">🔐</tg-emoji> Ты увидел многое.\n\n"
+            "Но самое личное мы показываем только в Премиуме.\n\n"
+            "Для тебя действует специальная цена."
+        ),
         sale=True,
         delay_minutes=1440,
+        photos=["notify/15_percent.jpeg"]
     ),
     # money
     "push_e7_1_money": MessageConfig(
         key="push_e7_1_money",
-        text="Ты открыл только часть денежного анализа.",
+        text=(
+            "<tg-emoji emoji-id=\"5325752648106808552\">🤩</tg-emoji> Ты увидел только часть своего денежного пути.\n\n"
+            "Самое интересное осталось впереди."
+        ),
         delay_minutes=120,
+        photos=["notify/fomo.jpeg"]
     ),
     "push_e7_2_money": MessageConfig(
         key="push_e7_2_money",
-        text="Самые глубокие выводы о твоих деньгах доступны в Премиум.",
+        text=(
+            "<tg-emoji emoji-id=\"5300783271615965880\">🤩</tg-emoji> Есть вещи, которые могут полностью изменить взгляд на твой финансовый путь.\n\n"
+            "Для тебя действует специальная цена."
+        ),
         sale=True,
         delay_minutes=1440,
+        photos=["notify/15_percent.jpeg"]
     ),
     # couple
     "push_e7_1_couple": MessageConfig(
         key="push_e7_1_couple",
-        text="Ты открыл только часть анализа совместимости.",
+        text=(
+            "<tg-emoji emoji-id=\"5231418772396479402\">🗝️</tg-emoji> Ты увидел многое о вашей паре.\n\n"
+            "Но самое важное ещё впереди."
+        ),
         delay_minutes=120,
+        photos=["notify/more_power.jpeg"]
     ),
     "push_e7_2_couple": MessageConfig(
         key="push_e7_2_couple",
-        text="Самые глубокие выводы о вашей паре доступны в Премиум.",
+        text=(
+            "<tg-emoji emoji-id=\"5368371230627888635\">💔</tg-emoji> Если узнавать всю правду о ваших отношениях, то именно сейчас.\n\n"
+            "Самые глубокие ответы о вашей паре находятся именно в Премиуме."
+        ),
         sale=True,
         delay_minutes=1440,
+        photos=["notify/15_percent.jpeg"]
     ),
     # E8: Давно не заходил
     "push_e8_1": MessageConfig(
         key="push_e8_1",
-        text="Твои разборы всё ещё ждут тебя.",
+        text=(
+            "<b><tg-emoji emoji-id=\"5429398721584457173\">📂</tg-emoji> Твои персональные разборы всё ещё ждут тебя.</b>\n\n"
+            "Иногда один инсайт приходит именно в нужный момент."
+        ),
+        sale=True,
         delay_minutes=10080,
+        photos=["notify/more_power.jpeg"]
     ),
     "push_e8_2": MessageConfig(
         key="push_e8_2",
-        text="Возможно, сейчас именно то время, чтобы посмотреть на свою жизнь иначе.",
+        text=(
+            "<b><tg-emoji emoji-id=\"5300783271615965880\">🤩</tg-emoji> За это время многое могло измениться.</b>\n\n"
+            "Возможно, сейчас именно тот момент, чтобы посмотреть на свою жизнь иначе."
+        ),
+        sale=True,
         delay_minutes=43200,
+        photos=["notify/fomo.jpeg"]
     ),
 
     # ── Скидка ────────────────────────────────────────────────────────────────
     "sale_applied": MessageConfig(
         key="sale_applied",
-        text="🎁 <b>Скидка 15% применена!</b>\n\nТеперь все пакеты доступны дешевле. Выбери свой разбор:",
+        text=(
+            "<b><tg-emoji emoji-id=\"5411432860500385979\">🤩</tg-emoji> Скидка 15% применена!</b>\n\n"
+            "Теперь все пакеты доступны дешевле. Выбери свой разбор:"
+        ),
     ),
 }
 
