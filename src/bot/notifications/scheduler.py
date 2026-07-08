@@ -64,7 +64,7 @@ def _push_kb(msg_key: str, confirmation_url: str | None = None) -> InlineKeyboar
         discount = MESSAGES[msg_key].discount
         rows.append([InlineKeyboardButton(text="Получить скидку", callback_data=f"start_sale_{discount}")])
     else:
-        rows.append([InlineKeyboardButton(text="Перейти в ОКО", callback_data="start_continue")])
+        rows.append([InlineKeyboardButton(text="Продолжить", callback_data="start_continue")])
     return InlineKeyboardMarkup(inline_keyboard=rows) if rows else None
 
 

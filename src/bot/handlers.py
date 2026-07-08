@@ -270,14 +270,14 @@ async def cmd_start(message: Message, state: FSMContext, command: CommandObject)
             await send_msg(message, "choose_section", reply_markup=_main_menu())
             await log_event(message.from_user.id, ENTERED_MENU)
         elif not user.name:
-            await send_msg(message, "start_returning_no_name")
             await state.set_state(RegistrationStates.waiting_for_name)
+            await send_msg(message, "start_returning_no_name")
         elif not user.face_json:
-            await send_msg(message, "start_returning_no_photo", name=user.name)
             await state.set_state(RegistrationStates.waiting_for_photo)
+            await send_msg(message, "start_returning_no_photo", name=user.name)
         elif not user.birth_date:
-            await send_msg(message, "start_returning_no_birthdate", name=user.name)
             await state.set_state(RegistrationStates.waiting_for_birth_date)
+            await send_msg(message, "start_returning_no_birthdate", name=user.name)
         return
 
     ref_arg = command.args  # deep link payload, e.g. /start REF_CODE
@@ -344,14 +344,14 @@ async def cb_start_sale(callback: CallbackQuery, state: FSMContext):
         await send_msg(callback.message, "sale_applied", reply_markup=_main_menu(), discount=discount)
         await log_event(callback.from_user.id, ENTERED_MENU)
     elif not user.name:
-        await send_msg(callback.message, "start_returning_no_name")
         await state.set_state(RegistrationStates.waiting_for_name)
+        await send_msg(callback.message, "start_returning_no_name")
     elif not user.face_json:
-        await send_msg(callback.message, "start_returning_no_photo", name=user.name)
         await state.set_state(RegistrationStates.waiting_for_photo)
+        await send_msg(callback.message, "start_returning_no_photo", name=user.name)
     elif not user.birth_date:
-        await send_msg(callback.message, "start_returning_no_birthdate", name=user.name)
         await state.set_state(RegistrationStates.waiting_for_birth_date)
+        await send_msg(callback.message, "start_returning_no_birthdate", name=user.name)
     await callback.answer()
 
 
@@ -373,9 +373,15 @@ async def cb_start_continue(callback: CallbackQuery, state: FSMContext):
     if _is_complete(user):
         await send_msg(callback.message, "choose_section", reply_markup=_main_menu())
         await log_event(callback.from_user.id, ENTERED_MENU)
-    else:
-        await send_msg(callback.message, "start_new")
+    elif not user.name:
         await state.set_state(RegistrationStates.waiting_for_name)
+        await send_msg(callback.message, "start_returning_no_name")
+    elif not user.face_json:
+        await state.set_state(RegistrationStates.waiting_for_photo)
+        await send_msg(callback.message, "start_returning_no_photo", name=user.name)
+    elif not user.birth_date:
+        await state.set_state(RegistrationStates.waiting_for_birth_date)
+        await send_msg(callback.message, "start_returning_no_birthdate", name=user.name)
     await callback.answer()
 
 
