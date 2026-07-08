@@ -2021,7 +2021,7 @@ async def cmd_profile(message: Message, command: CommandObject):
     lines = [
         f"👤 <b>Профиль пользователя</b>\n",
         f"<b>Имя:</b> {user.name or '—'}",
-        f"<b>Telegram ID:</b> <code>{user.telegram_id}</code>",
+        f"<b>Telegram ID:</b> <a href=\"tg://user?id={user.telegram_id}\">{user.telegram_id}</a>",
         f"<b>Дата рождения:</b> {birth}",
         f"<b>Скидка:</b> {user.discount_percent}%",
         f"<b>Заблокирован:</b> {'да' if user.is_blocked else 'нет'}",
