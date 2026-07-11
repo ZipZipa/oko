@@ -1546,7 +1546,7 @@ async def _run_self_report(message: Message, user: User, plan: str):
                     await session.commit()
 
         _plan_label = {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
-        caption = f"<b>Портрет личности</b> · {_plan_label.get(plan, plan)} готов! <tg-emoji emoji-id=\"5337019240677388490\">📚</tg-emoji>"
+        caption = f"<b>Портрет личности</b> · {_plan_label.get(plan, plan)} готов! <tg-emoji emoji-id=\"5370688099196101085\">�</tg-emoji>"
         filename = f"Портрет личности {_plan_label.get(plan, plan)}.html"
         await _send_report(message, html, caption, plan, "self", filename)
 
@@ -1655,7 +1655,7 @@ async def _run_money_report(message: Message, user: User, plan: str):
                     await session.commit()
 
         _plan_label = {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
-        caption = f"<b>Денежная карта</b> · {_plan_label.get(plan, plan)} готова! <tg-emoji emoji-id=\"5337019240677388490\">📚</tg-emoji>"
+        caption = f"<b>Денежная карта</b> · {_plan_label.get(plan, plan)} готова! <tg-emoji emoji-id=\"5370688099196101085\">�</tg-emoji>"
         filename = f"Денежная карта {_plan_label.get(plan, plan)}.html"
         await _send_report(message, html, caption, plan, "money", filename)
 
@@ -1770,7 +1770,7 @@ async def _run_couple_report(message: Message, user: User, plan: str):
                     await session.commit()
 
         _plan_label = {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
-        caption = f"<b>Совместимость пары</b> · {_plan_label.get(plan, plan)} готова! <tg-emoji emoji-id=\"5337019240677388490\">📚</tg-emoji>"
+        caption = f"<b>Совместимость пары</b> · {_plan_label.get(plan, plan)} готова! <tg-emoji emoji-id=\"5370688099196101085\">�</tg-emoji>"
         filename = f"Совместимость {user.name} и {user.partner_name} {_plan_label.get(plan, plan)}.html"
         await _send_report(message, html, caption, plan, "couple", filename)
 
