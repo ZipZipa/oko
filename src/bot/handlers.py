@@ -1362,10 +1362,16 @@ async def _create_payment_and_show(callback_or_msg, user: User, report_type: str
         _plan_label = {"base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
         _report_label = {"self": "Портрет личности", "money": "Денежная карта", "couple": "Совместимость пары"}
 
+        base_price = _BASE_PRICES.get(report_type, {}).get(plan_key, 0)
+        if price < base_price:
+            sum_line = f"Сумма со скидкой: <b>{price} ₽</b> <s>{base_price} ₽</s>"
+        else:
+            sum_line = f"Сумма: <b>{price} ₽</b>"
+
         text = MESSAGES["payment_created"].text.format(
             report=_report_label.get(report_type, ""),
             plan=_plan_label.get(plan_key, ""),
-            price=price,
+            sum_line=sum_line,
         )
 
         markup = _payment_keyboard(yoo_payment.id, confirmation_url)

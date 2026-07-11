@@ -465,7 +465,7 @@ MESSAGES: dict[str, MessageConfig] = {
         text=(
             "💳 <b>Оплата</b>\n\n"
             "{report} · {plan}\n\n"
-            "Сумма: <b>{price} ₽</b>\n\n"
+            "{sum_line}\n\n"
             "Нажми кнопку ниже, чтобы перейти к оплате.\n"
             "После оплаты нажми «<tg-emoji emoji-id=\"5451651836203264085\">✔️</tg-emoji> Я оплатил».\n\n"
             "<blockquote expandable>"
