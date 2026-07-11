@@ -153,7 +153,10 @@ def _packages_menu(above_plan: str = "demo", report_prefix: str = "self") -> Inl
 
 def _package_detail_menu(report_prefix: str, plan_key: str, current_plan: str = "demo", sale_percent: int = 0) -> InlineKeyboardMarkup:
     price = _get_discounted_price(report_prefix, current_plan, plan_key, sale_percent)
-    buy_text = f"Купить · {price} ₽"
+    base_price = _BASE_PRICES.get(report_prefix, {}).get(plan_key, 0)
+    has_discount = price < base_price
+    buy_label = "Купить со скидкой" if has_discount else "Купить"
+    buy_text = f"{buy_label} · {price} ₽"
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=buy_text, callback_data=f"buy_{report_prefix}_{plan_key}")],
         [InlineKeyboardButton(text="← Назад к пакетам", callback_data=f"show_packages_{report_prefix}")],
