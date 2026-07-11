@@ -5,7 +5,6 @@ import json
 import logging
 import secrets
 import tempfile
-from collections import defaultdict
 from datetime import datetime, timezone
 
 log = logging.getLogger(__name__)
@@ -35,6 +34,13 @@ from src.bot.notifications.events import (
 from src.bot.notifications.funnel import (
     get_user_funnel, get_funnel_distribution,
     format_user_card, format_distribution,
+)
+from src.bot.notifications.analytics import (
+    get_revenue_summary, format_revenue,
+    get_overview_stats, format_overview,
+    get_conversion_funnel, format_conversion,
+    get_push_stats, format_push_stats,
+    get_referral_summary, format_referral,
 )
 
 router = Router()
@@ -1555,7 +1561,7 @@ async def _run_self_report(message: Message, user: User, plan: str):
                     await session.commit()
 
         _plan_label = {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
-        caption = f"<b>Портрет личности</b> · {_plan_label.get(plan, plan)} готов! <tg-emoji emoji-id=\"5370688099196101085\">�</tg-emoji>"
+        caption = f"<b>Портрет личности</b> · {_plan_label.get(plan, plan)} готов! <tg-emoji emoji-id=\"5370688099196101085\">📁</tg-emoji>"
         filename = f"Портрет личности {_plan_label.get(plan, plan)}.html"
         await _send_report(message, html, caption, plan, "self", filename)
 
@@ -1664,7 +1670,7 @@ async def _run_money_report(message: Message, user: User, plan: str):
                     await session.commit()
 
         _plan_label = {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
-        caption = f"<b>Денежная карта</b> · {_plan_label.get(plan, plan)} готова! <tg-emoji emoji-id=\"5370688099196101085\">�</tg-emoji>"
+        caption = f"<b>Денежная карта</b> · {_plan_label.get(plan, plan)} готова! <tg-emoji emoji-id=\"5370688099196101085\">📁</tg-emoji>"
         filename = f"Денежная карта {_plan_label.get(plan, plan)}.html"
         await _send_report(message, html, caption, plan, "money", filename)
 
@@ -1779,7 +1785,7 @@ async def _run_couple_report(message: Message, user: User, plan: str):
                     await session.commit()
 
         _plan_label = {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
-        caption = f"<b>Совместимость пары</b> · {_plan_label.get(plan, plan)} готова! <tg-emoji emoji-id=\"5370688099196101085\">�</tg-emoji>"
+        caption = f"<b>Совместимость пары</b> · {_plan_label.get(plan, plan)} готова! <tg-emoji emoji-id=\"5370688099196101085\">📁</tg-emoji>"
         filename = f"Совместимость {user.name} и {user.partner_name} {_plan_label.get(plan, plan)}.html"
         await _send_report(message, html, caption, plan, "couple", filename)
 
@@ -1832,73 +1838,13 @@ async def cmd_refstats(message: Message):
         return
 
     try:
-        async with async_session() as session:
-            res_users = await session.execute(
-                select(User).where(User.referral_code.isnot(None))
-            )
-            all_users = res_users.scalars().all()
-
-            res_referred = await session.execute(
-                select(User).where(User.referred_by.isnot(None))
-            )
-            referred_users = res_referred.scalars().all()
-
-            code_to_tids: dict[str, list[int]] = defaultdict(list)
-            for ru in referred_users:
-                code_to_tids[ru.referred_by].append(ru.telegram_id)
-
-            referred_tids = [ru.telegram_id for ru in referred_users]
-            if referred_tids:
-                res_pay = await session.execute(
-                    select(Payment).where(
-                        Payment.telegram_id.in_(referred_tids),
-                        Payment.status == "succeeded",
-                    )
-                )
-                all_payments = res_pay.scalars().all()
-            else:
-                all_payments = []
+        data = await get_referral_summary()
     except Exception:
         log.error("cmd_refstats: ошибка БД (admin tg=%s)", message.from_user.id, exc_info=True)
         await message.answer("Ошибка при сборе статистики. Попробуйте позже.")
         return
 
-    tid_to_payments: dict[int, list] = defaultdict(list)
-    for p in all_payments:
-        tid_to_payments[p.telegram_id].append(p)
-
-    active: list[tuple] = [
-        (u, code_to_tids[u.referral_code])
-        for u in all_users
-        if code_to_tids.get(u.referral_code)
-    ]
-
-    if not active:
-        await message.answer(
-            "<b>Реферальная статистика</b>\n\nПока никто не пришёл по реферальным ссылкам.",
-            parse_mode="HTML",
-        )
-        return
-
-    active.sort(key=lambda x: -len(x[1]))
-
-    lines = ["<b>Реферальная статистика</b>\n"]
-    for user, tids in active:
-        payments = [p for tid in tids for p in tid_to_payments.get(tid, [])]
-        total_amount = sum(float(p.amount) for p in payments)
-        name = user.name or "—"
-        lines.append(
-            f"👤 <b>{name}</b> (id: <code>{user.telegram_id}</code>)\n"
-            f"   Код: <code>{user.referral_code}</code>\n"
-            f"   Приглашено: {len(tids)} чел.\n"
-            f"   Платежей: {len(payments)} · {total_amount:.0f} ₽\n"
-        )
-
-    total_referred = len(referred_users)
-    total_paid = sum(float(p.amount) for p in all_payments)
-    lines.append(f"\n<b>Итого:</b> {total_referred} реф. пользователей · {total_paid:.0f} ₽")
-
-    await message.answer("\n".join(lines), parse_mode="HTML")
+    await message.answer(format_referral(data), parse_mode="HTML")
 
 
 @router.message(Command("funnel"))
@@ -1929,18 +1875,74 @@ async def cmd_funnel(message: Message, command: CommandObject):
 
 @router.message(Command("funnelstats"))
 async def cmd_funnelstats(message: Message):
-    """Распределение всех пользователей по стадиям воронки (только админы)."""
+    """Воронка конверсии + распределение пользователей по стадиям (только админы)."""
     if ADMIN_IDS and message.from_user.id not in ADMIN_IDS:
         return
 
     try:
+        steps = await get_conversion_funnel()
         dist = await get_funnel_distribution()
     except Exception:
-        log.error("cmd_funnelstats: ошибка получения распределения (admin tg=%s)",
+        log.error("cmd_funnelstats: ошибка получения воронки (admin tg=%s)",
                   message.from_user.id, exc_info=True)
-        await message.answer("Ошибка при сборе распределения воронки. Попробуйте позже.")
+        await message.answer("Ошибка при сборе воронки. Попробуйте позже.")
         return
-    await message.answer(format_distribution(dist), parse_mode="HTML")
+
+    await message.answer(
+        format_conversion(steps) + "\n\n" + format_distribution(dist),
+        parse_mode="HTML",
+    )
+
+
+@router.message(Command("revenue"))
+async def cmd_revenue(message: Message):
+    """Выручка: периоды, продукты, планы, конверсия оплаты (только админы)."""
+    if ADMIN_IDS and message.from_user.id not in ADMIN_IDS:
+        return
+
+    try:
+        data = await get_revenue_summary()
+    except Exception:
+        log.error("cmd_revenue: ошибка сбора выручки (admin tg=%s)",
+                  message.from_user.id, exc_info=True)
+        await message.answer("Ошибка при сборе выручки. Попробуйте позже.")
+        return
+
+    await message.answer(format_revenue(data), parse_mode="HTML")
+
+
+@router.message(Command("stats"))
+async def cmd_stats(message: Message):
+    """Топ-метрики: пользователи, активность, платящие, выручка (только админы)."""
+    if ADMIN_IDS and message.from_user.id not in ADMIN_IDS:
+        return
+
+    try:
+        data = await get_overview_stats()
+    except Exception:
+        log.error("cmd_stats: ошибка сбора обзора (admin tg=%s)",
+                  message.from_user.id, exc_info=True)
+        await message.answer("Ошибка при сборе обзора. Попробуйте позже.")
+        return
+
+    await message.answer(format_overview(data), parse_mode="HTML")
+
+
+@router.message(Command("pushstats"))
+async def cmd_pushstats(message: Message):
+    """Эффективность пушей: получатели → конверсия в покупку (только админы)."""
+    if ADMIN_IDS and message.from_user.id not in ADMIN_IDS:
+        return
+
+    try:
+        data = await get_push_stats()
+    except Exception:
+        log.error("cmd_pushstats: ошибка сбора статистики пушей (admin tg=%s)",
+                  message.from_user.id, exc_info=True)
+        await message.answer("Ошибка при сборе статистики пушей. Попробуйте позже.")
+        return
+
+    await message.answer(format_push_stats(data), parse_mode="HTML")
 
 
 @router.message(Command("photo"))
@@ -2063,6 +2065,33 @@ async def cmd_profile(message: Message, command: CommandObject):
         f"<b>Реферал:</b>",
         f"  Код: <code>{user.referral_code or '—'}</code>",
         f"  Приглашён: <code>{user.referred_by or '—'}</code>",
+    ]
+
+    await message.answer("\n".join(lines), parse_mode="HTML")
+
+
+@router.message(Command("help"))
+async def cmd_help(message: Message):
+    """Список админских команд с описанием (только для администраторов)."""
+    if ADMIN_IDS and message.from_user.id not in ADMIN_IDS:
+        return
+
+    lines = [
+        "<b>🛠 Команды администратора</b>\n",
+        "<b>Аналитика</b>",
+        "<code>/stats</code> — обзор: пользователи, активность, платящие, выручка 30д",
+        "<code>/revenue</code> — выручка по периодам, продуктам, планам + конверсия оплаты",
+        "<code>/funnelstats</code> — воронка конверсии и распределение по стадиям",
+        "<code>/pushstats</code> — эффективность пушей: получатели → покупки",
+        "<code>/refstats</code> — реферальная статистика: кто привёл, конверсия, выручка",
+        "",
+        "<b>По конкретному пользователю</b>",
+        "<code>/funnel [telegram_id]</code> — карточка воронки (без id — по себе)",
+        "<code>/profile &lt;telegram_id&gt;</code> — карточка профиля: данные, отчёты, реферал",
+        "<code>/photo &lt;telegram_id&gt;</code> — фото пользователя по его telegram_id",
+        "",
+        "<b>Реферальное</b>",
+        "<code>/reflink</code> — ваша личная реферальная ссылка",
     ]
 
     await message.answer("\n".join(lines), parse_mode="HTML")
