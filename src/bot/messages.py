@@ -540,7 +540,7 @@ MESSAGES: dict[str, MessageConfig] = {
     "push_e1_1": MessageConfig(
         key="push_e1_1",
         text=(
-            "<tg-emoji emoji-id=\"523794818783826219\">👁️</tg-emoji> Твой первый разбор полностью бесплатный.\n\n"
+            "<tg-emoji emoji-id=\"5237948187838262194\">👁️</tg-emoji> Твой первый разбор полностью бесплатный.\n\n"
             "А вдруг там есть ответ, который ты давно ищешь, почему бы не попробовать?"
         ),
         delay_minutes=15,
@@ -654,7 +654,7 @@ MESSAGES: dict[str, MessageConfig] = {
     "push_e4_1_couple": MessageConfig(
         key="push_e4_1_couple",
         text=(
-            "<tg-emoji emoji-id=\"5325752648106808552\">🤩</tg-emoji> Ты увидел лишь часть картины.</b>\n\n"
+            "<tg-emoji emoji-id=\"5325752648106808552\">🤩</tg-emoji> Ты увидел лишь часть картины.\n\n"
             "Закрыты ответы:\n\n"
             "<tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> что чувствует партнёр;\n"
             "<tg-emoji emoji-id=\"5339383856397034273\">🔴</tg-emoji> что мешает отношениям;\n"
