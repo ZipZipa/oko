@@ -862,6 +862,80 @@ def _resolve_photo_paths(msg_key: str, photos: list[str] | None = None) -> list[
     return MESSAGES[msg_key].photo_paths
 
 
+# ─── Кеш file_id ────────────────────────────────────────────────────────────────
+# Картинки в media/ статичные. После первой загрузки Telegram возвращает
+# file_id — дальше шлём по нему: запрос в сотни байт вместо аплоада файла.
+# Кеш в памяти, наполняется заново после рестарта бота.
+
+_file_id_cache: dict[str, str] = {}
+
+
+def _photo_input(path) -> str | FSInputFile:
+    """file_id из кеша или FSInputFile для первой загрузки."""
+    return _file_id_cache.get(str(path)) or FSInputFile(str(path))
+
+
+def _remember_file_id(path, sent) -> None:
+    if isinstance(sent, Message) and sent.photo:
+        _file_id_cache[str(path)] = sent.photo[-1].file_id
+
+
+def _forget_file_ids(*paths) -> None:
+    for p in paths:
+        _file_id_cache.pop(str(p), None)
+
+
+def _is_bad_file_id_error(e: TelegramBadRequest) -> bool:
+    """Telegram отверг именно file_id (а не chat_id, caption и т.п.)."""
+    msg = str(e).lower()
+    return "file identifier" in msg or "file reference" in msg or "wrong remote file" in msg
+
+
+async def send_photo_cached(bot, chat_id: int, path, **kwargs) -> Message:
+    """send_photo по кешированному file_id с fallback на загрузку файла.
+
+    Если Telegram отверг file_id (протух, сменился токен бота и т.п.) —
+    сбрасываем кеш и повторяем отправку самим файлом.
+    """
+    photo = _photo_input(path)
+    try:
+        sent = await bot.send_photo(chat_id=chat_id, photo=photo, **kwargs)
+    except TelegramBadRequest as e:
+        if not isinstance(photo, str) or not _is_bad_file_id_error(e):
+            raise
+        log.warning("send_photo_cached: file_id отвергнут, переотправляю файлом (%s)", path)
+        _forget_file_ids(path)
+        sent = await bot.send_photo(chat_id=chat_id, photo=FSInputFile(str(path)), **kwargs)
+    _remember_file_id(path, sent)
+    return sent
+
+
+def _build_media_group(paths, caption: str | None, use_cache: bool = True) -> list[InputMediaPhoto]:
+    return [
+        InputMediaPhoto(
+            media=_photo_input(p) if use_cache else FSInputFile(str(p)),
+            caption=caption if i == 0 else None,
+            parse_mode="HTML" if i == 0 else None,
+        )
+        for i, p in enumerate(paths)
+    ]
+
+
+async def send_media_group_cached(bot, chat_id: int, paths, caption: str | None) -> list[Message]:
+    """send_media_group по кешированным file_id с fallback на загрузку файлов."""
+    try:
+        return_messages = await bot.send_media_group(chat_id=chat_id, media=_build_media_group(paths, caption))
+    except TelegramBadRequest as e:
+        if not _is_bad_file_id_error(e) or not any(str(p) in _file_id_cache for p in paths):
+            raise
+        log.warning("send_media_group_cached: file_id отвергнут, переотправляю файлами (chat=%s)", chat_id)
+        _forget_file_ids(*paths)
+        return_messages = await bot.send_media_group(chat_id=chat_id, media=_build_media_group(paths, caption, use_cache=False))
+    for p, sent in zip(paths, return_messages):
+        _remember_file_id(p, sent)
+    return return_messages
+
+
 async def send_msg(
     message: Message,
     msg_key: str,
@@ -893,24 +967,15 @@ async def send_msg(
         )
 
     if len(paths) == 1:
-        photo = FSInputFile(str(paths[0]))
-        return await message.answer_photo(
-            photo=photo,
+        return await send_photo_cached(
+            message.bot, message.chat.id, paths[0],
             caption=text,
             reply_markup=reply_markup,
             parse_mode="HTML",
         )
 
     # 2+ фото — медиагруппа
-    media_list: list[InputMediaPhoto] = []
-    for i, p in enumerate(paths):
-        media_list.append(InputMediaPhoto(
-            media=FSInputFile(str(p)),
-            caption=text if i == 0 else None,
-            parse_mode="HTML" if i == 0 else None,
-        ))
-
-    await message.answer_media_group(media=media_list)
+    await send_media_group_cached(message.bot, message.chat.id, paths, text)
 
     # reply_markup не поддерживается для медиагрупп —
     # отправляем отдельное сообщение с клавиатурой
@@ -964,17 +1029,25 @@ async def edit_msg(
     # Простой случай: 1 фото → 1 фото — обновляем медиа и подпись
     if has_photos and len(paths) == 1 and message_has_photo:
         media = InputMediaPhoto(
-            media=FSInputFile(str(paths[0])),
+            media=_photo_input(paths[0]),
             caption=text,
             parse_mode="HTML",
         )
         try:
-            return await message.edit_media(media=media, reply_markup=reply_markup)
+            edited = await message.edit_media(media=media, reply_markup=reply_markup)
         except TelegramBadRequest as e:
             if _is_expected_edit_error(e):
                 log.warning("edit_media: %s chat=%s msg=%s", e, message.chat.id, message.message_id)
                 return message
-            raise
+            if not isinstance(media.media, str) or not _is_bad_file_id_error(e):
+                raise
+            # Кешированный file_id отвергнут — сбрасываем и повторяем файлом
+            log.warning("edit_media: file_id отвергнут, повторяю файлом (%s)", paths[0])
+            _forget_file_ids(paths[0])
+            media = InputMediaPhoto(media=FSInputFile(str(paths[0])), caption=text, parse_mode="HTML")
+            edited = await message.edit_media(media=media, reply_markup=reply_markup)
+        _remember_file_id(paths[0], edited)
+        return edited
 
     # Простой случай: текст → текст
     if not has_photos and not message_has_photo:
@@ -1005,25 +1078,15 @@ async def edit_msg(
             )
 
         if len(paths) == 1:
-            photo = FSInputFile(str(paths[0]))
-            return await bot.send_photo(
-                chat_id=chat_id,
-                photo=photo,
+            return await send_photo_cached(
+                bot, chat_id, paths[0],
                 caption=text,
                 reply_markup=reply_markup,
                 parse_mode="HTML",
             )
 
         # 2+ фото — медиагруппа
-        media_list: list[InputMediaPhoto] = []
-        for i, p in enumerate(paths):
-            media_list.append(InputMediaPhoto(
-                media=FSInputFile(str(p)),
-                caption=text if i == 0 else None,
-                parse_mode="HTML" if i == 0 else None,
-            ))
-
-        await bot.send_media_group(chat_id=chat_id, media=media_list)
+        await send_media_group_cached(bot, chat_id, paths, text)
 
         # reply_markup не поддерживается для медиагрупп
         if reply_markup:

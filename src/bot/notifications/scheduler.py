@@ -12,14 +12,14 @@ from datetime import datetime, timezone, timedelta
 from html import escape as _html_escape
 
 from aiogram import Bot
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile, InputMediaPhoto
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.exceptions import TelegramForbiddenError, TelegramBadRequest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from src.bot.db import async_session, User, Payment
 from src.bot.db.models import UserEvent, NotificationLog
-from src.bot.messages import MESSAGES
+from src.bot.messages import MESSAGES, send_photo_cached, send_media_group_cached
 from src.bot.notifications.events import (
     REGISTRATION_STARTED, PROFILE_COMPLETED, ENTERED_MENU,
     COUPLE_PARTNER_STARTED, COUPLE_PARTNER_COMPLETED,
@@ -96,23 +96,14 @@ async def _send_push(
     photo_paths = config.photo_paths
     try:
         if len(photo_paths) == 1:
-            await bot.send_photo(
-                telegram_id,
-                photo=FSInputFile(str(photo_paths[0])),
+            await send_photo_cached(
+                bot, telegram_id, photo_paths[0],
                 caption=text,
                 parse_mode="HTML",
                 reply_markup=reply_markup,
             )
         elif len(photo_paths) >= 2:
-            media = [
-                InputMediaPhoto(
-                    media=FSInputFile(str(p)),
-                    caption=text if i == 0 else None,
-                    parse_mode="HTML" if i == 0 else None,
-                )
-                for i, p in enumerate(photo_paths)
-            ]
-            await bot.send_media_group(telegram_id, media=media)
+            await send_media_group_cached(bot, telegram_id, photo_paths, text)
             if reply_markup:
                 await bot.send_message(telegram_id, "↑", reply_markup=reply_markup)
         else:
