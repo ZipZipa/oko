@@ -79,6 +79,7 @@ async def _mark_blocked(telegram_id: int) -> None:
             user = result.scalar_one_or_none()
             if user and not user.is_blocked:
                 user.is_blocked = True
+                user.blocked_at = datetime.now(timezone.utc)
                 await session.commit()
     except Exception:
         log.error("_mark_blocked failed tg=%s", telegram_id, exc_info=True)

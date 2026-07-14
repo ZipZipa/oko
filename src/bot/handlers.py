@@ -20,7 +20,7 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from sqlalchemy import select
 
-from src.bot.config import BOT_USERNAME, ADMIN_IDS
+from src.bot.config import BOT_USERNAME, ADMIN_IDS, BASE_PRICES
 from src.bot.db import async_session, User, Payment
 from src.bot.states import RegistrationStates, PalmStates, PartnerStates
 from src.bot.messages import send_msg, edit_msg, MESSAGES
@@ -29,7 +29,7 @@ from src.bot.notifications.events import (
     log_event, log_event_once, mark_purchase_completed, reset_notification_state,
     REGISTRATION_STARTED, PROFILE_COMPLETED, ENTERED_MENU,
     COUPLE_PARTNER_STARTED, COUPLE_PARTNER_COMPLETED,
-    DEMO_SHOWN, PAYMENT_INITIATED, PURCHASE_COMPLETED,
+    DEMO_SHOWN, PRICING_VIEWED, PAYMENT_INITIATED, PURCHASE_COMPLETED,
 )
 from src.bot.notifications.funnel import (
     get_user_funnel, get_funnel_distribution,
@@ -39,6 +39,8 @@ from src.bot.notifications.analytics import (
     get_revenue_summary, format_revenue,
     get_overview_stats, format_overview,
     get_conversion_funnel, format_conversion,
+    get_product_funnel, format_product_funnel,
+    get_step_timings, format_step_timings,
     get_push_stats, format_push_stats,
     get_referral_summary, format_referral,
 )
@@ -104,11 +106,7 @@ _PLAN_LEVEL = {"demo": 0, "base": 1, "extended": 2, "full": 3}
 # ── Лейблы пакетов (текст берётся из MESSAGES) ──────────────────────────────────
 _PACKAGE_NAMES = {"base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
 
-_BASE_PRICES = {
-    "self":   {"base": 490, "extended": 990, "full": 1490},
-    "money":  {"base": 390, "extended": 790, "full": 1190},
-    "couple": {"base": 490, "extended": 990, "full": 1490},
-}
+_BASE_PRICES = BASE_PRICES  # определены в config.py — общие с аналитикой
 
 SALE_DISCOUNT_PERCENT = 15  # скидка по кнопке «Получить скидку»
 
@@ -709,6 +707,9 @@ async def cb_package_detail(callback: CallbackQuery):
     plan_field = {"self": "purchased_plan", "money": "money_plan", "couple": "couple_plan"}[report_prefix]
     current_plan = getattr(user, plan_field, None) or "demo" if user else "demo"
     sale_percent = (user.discount_percent if user else 0) or 0
+
+    await log_event(callback.from_user.id, PRICING_VIEWED,
+                    report_type=report_prefix, plan=plan_key)
 
     discount_pct = _UPGRADE_DISCOUNTS.get((current_plan, plan_key), 0)
     markup = _package_detail_menu(report_prefix, plan_key, current_plan, sale_percent)
@@ -1874,13 +1875,22 @@ async def cmd_funnel(message: Message, command: CommandObject):
 
 
 @router.message(Command("funnelstats"))
-async def cmd_funnelstats(message: Message):
-    """Воронка конверсии + распределение пользователей по стадиям (только админы)."""
+async def cmd_funnelstats(message: Message, command: CommandObject):
+    """Воронка конверсии + распределение пользователей по стадиям (только админы).
+
+    /funnelstats — за всё время, /funnelstats 7 — события за последние 7 дней.
+    """
     if ADMIN_IDS and message.from_user.id not in ADMIN_IDS:
         return
 
+    days = None
+    if command.args and command.args.strip().isdigit():
+        days = int(command.args.strip()) or None
+
     try:
-        steps = await get_conversion_funnel()
+        steps = await get_conversion_funnel(days)
+        products = await get_product_funnel(days)
+        timings = await get_step_timings(days)
         dist = await get_funnel_distribution()
     except Exception:
         log.error("cmd_funnelstats: ошибка получения воронки (admin tg=%s)",
@@ -1889,7 +1899,10 @@ async def cmd_funnelstats(message: Message):
         return
 
     await message.answer(
-        format_conversion(steps) + "\n\n" + format_distribution(dist),
+        format_conversion(steps, days)
+        + "\n\n" + format_product_funnel(products)
+        + "\n\n" + format_step_timings(timings)
+        + "\n\n" + format_distribution(dist),
         parse_mode="HTML",
     )
 
@@ -2081,7 +2094,7 @@ async def cmd_help(message: Message):
         "<b>Аналитика</b>",
         "<code>/stats</code> — обзор: пользователи, активность, платящие, выручка 30д",
         "<code>/revenue</code> — выручка по периодам, продуктам, планам + конверсия оплаты",
-        "<code>/funnelstats</code> — воронка конверсии и распределение по стадиям",
+        "<code>/funnelstats</code> — воронка конверсии и распределение по стадиям (<code>/funnelstats 7</code> — за 7 дней)",
         "<code>/pushstats</code> — эффективность пушей: получатели → покупки",
         "<code>/refstats</code> — реферальная статистика: кто привёл, конверсия, выручка",
         "",

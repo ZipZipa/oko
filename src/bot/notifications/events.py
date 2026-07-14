@@ -85,6 +85,7 @@ ENTERED_MENU = "entered_menu"                          # E1: зашёл в гл�
 COUPLE_PARTNER_STARTED = "couple_partner_started"      # E3: начал совместимость
 COUPLE_PARTNER_COMPLETED = "couple_partner_completed"  # E3 отмена
 DEMO_SHOWN = "demo_shown"                              # E4: получил демо
+PRICING_VIEWED = "pricing_viewed"                      # открыл карточку пакета с ценой
 PAYMENT_INITIATED = "payment_initiated"                # E5: нажал оплатить
 PURCHASE_COMPLETED = "purchase_completed"              # E4 отмена / E6 / E7
 PROFILE_RESET = "profile_reset"                        # сброс данных
@@ -190,7 +191,8 @@ async def mark_purchase_completed(
 async def reset_notification_state(telegram_id: int) -> None:
     """Полная очистка состояния пушей для пользователя (при сбросе данных).
 
-    Удаляет все user_events и notification_log, затем логирует свежий
+    Удаляет все user_events и notification_log, затем логирует маркер
+    profile_reset (след для аналитики, что история была очищена) и свежий
     registration_started — это перезапускает воронку E2.
     """
     try:
@@ -204,4 +206,5 @@ async def reset_notification_state(telegram_id: int) -> None:
             await session.commit()
     except Exception:
         log.error("reset_notification_state failed tg=%s", telegram_id, exc_info=True)
+    await log_event(telegram_id, PROFILE_RESET)
     await log_event(telegram_id, REGISTRATION_STARTED)

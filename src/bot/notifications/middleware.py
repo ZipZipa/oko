@@ -37,6 +37,7 @@ class ActivityMiddleware(BaseMiddleware):
                         user.last_activity_at = datetime.now(timezone.utc)
                         if user.is_blocked:
                             user.is_blocked = False
+                            user.blocked_at = None
                         await session.execute(
                             delete(NotificationLog).where(
                                 NotificationLog.telegram_id == tg_id,

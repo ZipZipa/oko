@@ -50,6 +50,7 @@ class User(Base):
     # notifications
     last_activity_at = Column(DateTime, nullable=True)
     is_blocked = Column(Boolean, nullable=False, default=False, server_default="0")
+    blocked_at = Column(DateTime, nullable=True)
 
     # sale
     discount_percent = Column(Integer, nullable=False, default=0, server_default="0")
