@@ -925,6 +925,17 @@ async def send_msg(
     return message
 
 
+_EXPECTED_EDIT_ERRORS = (
+    "message is not modified",           # контент не изменился
+    "canceled by new edit message request",  # пользователь быстро тыкает кнопки
+)
+
+
+def _is_expected_edit_error(e: TelegramBadRequest) -> bool:
+    msg = str(e)
+    return any(marker in msg for marker in _EXPECTED_EDIT_ERRORS)
+
+
 async def edit_msg(
     message: Message,
     msg_key: str,
@@ -960,8 +971,8 @@ async def edit_msg(
         try:
             return await message.edit_media(media=media, reply_markup=reply_markup)
         except TelegramBadRequest as e:
-            if "message is not modified" in str(e):
-                log.debug("edit_media: message not modified chat=%s msg=%s", message.chat.id, message.message_id)
+            if _is_expected_edit_error(e):
+                log.warning("edit_media: %s chat=%s msg=%s", e, message.chat.id, message.message_id)
                 return message
             raise
 
@@ -970,8 +981,8 @@ async def edit_msg(
         try:
             return await message.edit_text(text=text, reply_markup=reply_markup, parse_mode="HTML")
         except TelegramBadRequest as e:
-            if "message is not modified" in str(e):
-                log.debug("edit_text: message not modified chat=%s msg=%s", message.chat.id, message.message_id)
+            if _is_expected_edit_error(e):
+                log.warning("edit_text: %s chat=%s msg=%s", e, message.chat.id, message.message_id)
                 return message
             raise
 

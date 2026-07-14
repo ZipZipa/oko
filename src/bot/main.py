@@ -11,6 +11,7 @@ from src.bot.db import init_db
 from src.bot.handlers import router
 from src.bot.notifications.scheduler import notification_loop
 from src.bot.notifications.middleware import ActivityMiddleware
+from src.bot.retry import RetryRequestMiddleware
 
 load_dotenv()
 
@@ -58,6 +59,7 @@ async def main():
     await init_db()
 
     bot = Bot(token=token)
+    bot.session.middleware(RetryRequestMiddleware())
     dp = Dispatcher()
     dp.include_router(router)
     dp.message.outer_middleware(ActivityMiddleware())

@@ -16,7 +16,7 @@ from aiogram.types import (
     InlineKeyboardMarkup, InlineKeyboardButton, BufferedInputFile,
     LinkPreviewOptions,
 )
-from aiogram.exceptions import TelegramBadRequest
+from aiogram.exceptions import TelegramAPIError, TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from sqlalchemy import select
 
@@ -46,6 +46,24 @@ from src.bot.notifications.analytics import (
 )
 
 router = Router()
+
+
+async def safe_answer(callback: CallbackQuery, *args, **kwargs) -> None:
+    """callback.answer(), не падающий на протухших callback query.
+
+    Telegram отвечает «query is too old», если answer() вызван спустя
+    десятки секунд после нажатия кнопки (хендлер ждал сеть/LLM) или если
+    query уже отвечен. Это не ошибка обработчика — глотаем с warning.
+    """
+    try:
+        await callback.answer(*args, **kwargs)
+    except TelegramBadRequest as e:
+        msg = str(e).lower()
+        if "query is too old" in msg or "query id is invalid" in msg:
+            log.warning("callback.answer: query протух tg=%s data=%s",
+                        callback.from_user.id, callback.data)
+        else:
+            raise
 
 
 # ─── Меню ───────────────────────────────────────────────────────────────────────
@@ -308,8 +326,10 @@ async def cmd_start(message: Message, state: FSMContext, command: CommandObject)
         await session.commit()
 
     await log_event(message.from_user.id, REGISTRATION_STARTED)
-    await send_msg(message, "start_new")
+    # Стейт ставим до отправки: если send упадёт по сети, пользователь
+    # всё равно останется в правильном состоянии диалога
     await state.set_state(RegistrationStates.waiting_for_name)
+    await send_msg(message, "start_new")
 
 
 # ─── Callback-кнопки из пушей ───────────────────────────────────────────────────
@@ -322,7 +342,7 @@ async def cb_start_sale(callback: CallbackQuery, state: FSMContext):
     """
     user = await get_user(callback.from_user.id)
     if not user:
-        await callback.answer()
+        await safe_answer(callback)
         return
 
     # Парсим процент скидки из callback_data: start_sale_15, start_sale_30 и т.д.
@@ -359,7 +379,7 @@ async def cb_start_sale(callback: CallbackQuery, state: FSMContext):
     elif not user.birth_date:
         await state.set_state(RegistrationStates.waiting_for_birth_date)
         await send_msg(callback.message, "start_returning_no_birthdate", name=user.name)
-    await callback.answer()
+    await safe_answer(callback)
 
 
 @router.callback_query(F.data == "start_continue")
@@ -367,7 +387,7 @@ async def cb_start_continue(callback: CallbackQuery, state: FSMContext):
     """Кнопка «Перейти в ОКО» из пуша — открывает главное меню."""
     user = await get_user(callback.from_user.id)
     if not user:
-        await callback.answer()
+        await safe_answer(callback)
         return
 
     await state.clear()
@@ -389,7 +409,7 @@ async def cb_start_continue(callback: CallbackQuery, state: FSMContext):
     elif not user.birth_date:
         await state.set_state(RegistrationStates.waiting_for_birth_date)
         await send_msg(callback.message, "start_returning_no_birthdate", name=user.name)
-    await callback.answer()
+    await safe_answer(callback)
 
 
 # ─── Регистрация ────────────────────────────────────────────────────────────────
@@ -410,8 +430,8 @@ async def process_name(message: Message, state: FSMContext):
             user.name = name
             await session.commit()
 
-    await send_msg(message, "photo_received")
     await state.set_state(RegistrationStates.waiting_for_photo)
+    await send_msg(message, "photo_received")
 
 
 @router.message(RegistrationStates.waiting_for_name)
@@ -436,8 +456,8 @@ async def process_photo(message: Message, state: FSMContext):
         _analyze_and_save_face(message.bot, photo.file_id, message.from_user.id)
     )
 
-    await send_msg(message, "name_saved")
     await state.set_state(RegistrationStates.waiting_for_birth_date)
+    await send_msg(message, "name_saved")
 
 
 @router.message(RegistrationStates.waiting_for_photo)
@@ -581,7 +601,7 @@ async def cb_menu_self(callback: CallbackQuery):
                 [InlineKeyboardButton(text="← В меню", callback_data="back_to_main")],
             ]),
         )
-    await callback.answer()
+    await safe_answer(callback)
 
 
 @router.callback_query(F.data == "menu_money")
@@ -590,7 +610,7 @@ async def cb_menu_money(callback: CallbackQuery):
 
     if not user or not _is_complete(user):
         await edit_msg(callback.message, "incomplete_profile")
-        await callback.answer()
+        await safe_answer(callback)
         return
 
     if user and user.money_blocks_json:
@@ -603,7 +623,7 @@ async def cb_menu_money(callback: CallbackQuery):
                 [InlineKeyboardButton(text="← В меню", callback_data="back_to_main")],
             ]),
         )
-    await callback.answer()
+    await safe_answer(callback)
 
 
 @router.callback_query(F.data == "menu_couple")
@@ -612,7 +632,7 @@ async def cb_menu_couple(callback: CallbackQuery, state: FSMContext):
 
     if not user or not _is_complete(user):
         await edit_msg(callback.message, "incomplete_profile")
-        await callback.answer()
+        await safe_answer(callback)
         return
 
     if user and user.couple_blocks_json:
@@ -625,7 +645,7 @@ async def cb_menu_couple(callback: CallbackQuery, state: FSMContext):
                 [InlineKeyboardButton(text="← В меню", callback_data="back_to_main")],
             ]),
         )
-    await callback.answer()
+    await safe_answer(callback)
 
 
 # ─── Пакеты ─────────────────────────────────────────────────────────────────────
@@ -644,7 +664,7 @@ async def cb_back_to_main(callback: CallbackQuery, state: FSMContext):
                 await _edit_to_packages(callback.message, user, pending_report)
             except Exception:
                 await send_msg(callback.message, "choose_section", reply_markup=_main_menu())
-            await callback.answer()
+            await safe_answer(callback)
             return
 
     try:
@@ -652,11 +672,12 @@ async def cb_back_to_main(callback: CallbackQuery, state: FSMContext):
     except Exception:
         await send_msg(callback.message, "choose_section", reply_markup=_main_menu())
     await log_event(callback.from_user.id, ENTERED_MENU)
-    await callback.answer()
+    await safe_answer(callback)
 
 
 @router.callback_query(F.data == "skip_palms")
 async def cb_skip_palms(callback: CallbackQuery, state: FSMContext):
+    await safe_answer(callback)
     data = await state.get_data()
     await state.clear()
 
@@ -674,12 +695,10 @@ async def cb_skip_palms(callback: CallbackQuery, state: FSMContext):
         except TelegramBadRequest:
             pass
         await send_msg(callback.message, "partner_palm_needed_premium", reply_markup=_skip_partner_palms_keyboard())
-        await callback.answer()
         return
 
     # После сбора/пропуска ладоней — создаём платёж
     await _create_payment_and_show(callback, user, report_type, pending_plan)
-    await callback.answer()
 
 
 @router.callback_query(F.data.in_({"show_packages_self", "show_packages_money", "show_packages_couple"}))
@@ -687,20 +706,20 @@ async def cb_show_packages(callback: CallbackQuery):
     prefix = callback.data.removeprefix("show_packages_")
     user = await get_user(callback.from_user.id)
     await _edit_to_packages(callback.message, user, prefix)
-    await callback.answer()
+    await safe_answer(callback)
 
 
 @router.callback_query(F.data.startswith("pkg_"))
 async def cb_package_detail(callback: CallbackQuery):
+    # Отвечаем сразу: дальше edit'ы с загрузкой фото, при медленной сети query протухнет
+    await safe_answer(callback)
     # pkg_self_base | pkg_money_extended | pkg_couple_full
     parts = callback.data.split("_", 2)
     if len(parts) != 3:
-        await callback.answer()
         return
     _, report_prefix, plan_key = parts
     msg_key = _PACKAGE_MSG_KEYS.get((report_prefix, plan_key))
     if not msg_key:
-        await callback.answer()
         return
 
     user = await get_user(callback.from_user.id)
@@ -725,11 +744,11 @@ async def cb_package_detail(callback: CallbackQuery):
             else:
                 await callback.message.edit_text(text=text, reply_markup=markup, parse_mode="HTML")
         except TelegramBadRequest as e:
-            if "message is not modified" not in str(e):
+            msg = str(e)
+            if "message is not modified" not in msg and "canceled by new edit" not in msg:
                 raise
     else:
         await edit_msg(callback.message, msg_key, reply_markup=markup)
-    await callback.answer()
 
 
 # ─── Сбор данных партнёра (FSM для couple) ──────────────────────────────────────
@@ -941,6 +960,7 @@ async def process_partner_palm_right_invalid(message: Message, state: FSMContext
 @router.callback_query(F.data == "skip_partner_palms")
 async def cb_skip_partner_palms(callback: CallbackQuery, state: FSMContext):
     """Пропуск ладоней партнёра."""
+    await safe_answer(callback)
     data = await state.get_data()
     await state.clear()
 
@@ -958,7 +978,6 @@ async def cb_skip_partner_palms(callback: CallbackQuery, state: FSMContext):
             pass
         status_msg = await send_msg(callback.message, "partner_data_received")
         asyncio.create_task(_run_couple_report(status_msg, user, "demo"))
-    await callback.answer()
 
 
 @router.callback_query(F.data == "skip_registration_palms")
@@ -972,7 +991,7 @@ async def cb_skip_registration_palms(callback: CallbackQuery, state: FSMContext)
     await send_msg(callback.message, "registration_palm_skipped")
     await send_msg(callback.message, "choose_section", reply_markup=_main_menu())
     await log_event(callback.from_user.id, ENTERED_MENU)
-    await callback.answer()
+    await safe_answer(callback)
 
 
 # ─── Запуск отчётов ──────────────────────────────────────────────────────────────
@@ -984,13 +1003,12 @@ async def cb_run_self_demo(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == "run_money_demo")
 async def cb_run_money_demo(callback: CallbackQuery):
+    await safe_answer(callback)
     user = await get_user(callback.from_user.id)
     if not user or not _is_complete(user):
         await edit_msg(callback.message, "incomplete_profile")
-        await callback.answer()
         return
     status_msg = await edit_msg(callback.message, "analyzing")
-    await callback.answer()
     asyncio.create_task(_run_money_report(status_msg, user, "demo"))
 
 
@@ -1005,22 +1023,22 @@ async def cb_start_couple_demo(callback: CallbackQuery, state: FSMContext):
             [InlineKeyboardButton(text="← Отмена", callback_data="back_to_main")],
         ]),
     )
-    await callback.answer()
+    await safe_answer(callback)
 
 
 @router.callback_query(F.data.startswith("buy_"))
 async def cb_buy(callback: CallbackQuery, state: FSMContext):
+    # Отвечаем сразу: дальше создание платежа в YooKassa, это секунды
+    await safe_answer(callback)
     # buy_self_base | buy_money_extended | buy_couple_full
     parts = callback.data.split("_", 2)
     if len(parts) != 3:
-        await callback.answer()
         return
     _, report_prefix, plan_key = parts
 
     user = await get_user(callback.from_user.id)
     if not user or not _is_complete(user):
         await edit_msg(callback.message, "incomplete_profile")
-        await callback.answer()
         return
 
     # Для full-пакетов нужна проверка ладоней — спрашиваем до оплаты (с возможностью пропуска)
@@ -1033,7 +1051,6 @@ async def cb_buy(callback: CallbackQuery, state: FSMContext):
                 callback.message, "palm_needed_self" if report_prefix == "self" else "palm_needed_money",
                 reply_markup=_premium_palms_keyboard(),
             )
-            await callback.answer()
             return
 
     # Для couple full — проверяем ладони пользователя и партнёра (с возможностью пропуска)
@@ -1044,18 +1061,15 @@ async def cb_buy(callback: CallbackQuery, state: FSMContext):
             await state.set_state(PalmStates.waiting_for_palm_left)
             await state.update_data(pending_plan=plan_key, pending_report_type=report_prefix, need_partner_palms=not has_partner_palms)
             await edit_msg(callback.message, "palm_needed_couple", reply_markup=_premium_palms_keyboard())
-            await callback.answer()
             return
         if not has_partner_palms:
             await state.set_state(PartnerStates.waiting_for_partner_palm_left)
             await state.update_data(pending_plan=plan_key, pending_report_type=report_prefix)
             await edit_msg(callback.message, "partner_palm_needed_premium", reply_markup=_premium_partner_palms_keyboard())
-            await callback.answer()
             return
 
     # Создаём платёж через общий хелпер
     await _create_payment_and_show(callback, user, report_prefix, plan_key)
-    await callback.answer()
 
 
 @router.callback_query(F.data.startswith("check_"))
@@ -1070,11 +1084,11 @@ async def cb_check_payment(callback: CallbackQuery, state: FSMContext):
         payment_record = result.scalar_one_or_none()
 
     if not payment_record:
-        await callback.answer("Платёж не найден", show_alert=True)
+        await safe_answer(callback, "Платёж не найден", show_alert=True)
         return
 
     if payment_record.status == "succeeded":
-        await callback.answer("Оплата подтверждена! ✅", show_alert=False)
+        await safe_answer(callback, "Оплата подтверждена! ✅", show_alert=False)
         # Обновляем сообщение — убираем кнопки оплаты
         try:
             await callback.message.edit_reply_markup(reply_markup=None)
@@ -1098,7 +1112,7 @@ async def cb_check_payment(callback: CallbackQuery, state: FSMContext):
 
         user = await get_user(callback.from_user.id)
         if not user:
-            await callback.answer()
+            await safe_answer(callback)
             return
 
         report_prefix = payment_record.report_type
@@ -1121,7 +1135,7 @@ async def cb_check_payment(callback: CallbackQuery, state: FSMContext):
         )
     except Exception as exc:
         log.error("Ошибка проверки платежа %s: %s", payment_id, exc, exc_info=True)
-        await callback.answer(f"Ошибка проверки: {exc}", show_alert=True)
+        await safe_answer(callback, f"Ошибка проверки: {exc}", show_alert=True)
         return
 
     new_status = yoo_payment.status
@@ -1143,7 +1157,7 @@ async def cb_check_payment(callback: CallbackQuery, state: FSMContext):
             callback.from_user.id,
             payment_record.report_type, payment_record.plan, payment_id,
         )
-        await callback.answer("Оплата подтверждена! ✅", show_alert=False)
+        await safe_answer(callback, "Оплата подтверждена! ✅", show_alert=False)
         try:
             await callback.message.edit_reply_markup(reply_markup=None)
         except TelegramBadRequest:
@@ -1151,7 +1165,7 @@ async def cb_check_payment(callback: CallbackQuery, state: FSMContext):
 
         user = await get_user(callback.from_user.id)
         if not user:
-            await callback.answer()
+            await safe_answer(callback)
             return
 
         report_prefix = payment_record.report_type
@@ -1165,7 +1179,7 @@ async def cb_check_payment(callback: CallbackQuery, state: FSMContext):
         elif report_prefix == "couple":
             asyncio.create_task(_run_couple_report(status_msg, user, plan_key))
     elif new_status == "canceled":
-        await callback.answer("Платёж отменён ❌", show_alert=True)
+        await safe_answer(callback, "Платёж отменён ❌", show_alert=True)
         try:
             await callback.message.edit_reply_markup(reply_markup=InlineKeyboardMarkup(inline_keyboard=[
                 [InlineKeyboardButton(text="← В меню", callback_data="back_to_main")],
@@ -1174,15 +1188,15 @@ async def cb_check_payment(callback: CallbackQuery, state: FSMContext):
             pass
     else:
         # pending_waiting_for_capture / pending и др.
-        await callback.answer("Платёж ещё не завершён, попробуйте чуть позже", show_alert=True)
+        await safe_answer(callback, "Платёж ещё не завершён, попробуйте чуть позже", show_alert=True)
 
 
 async def _start_self_report(callback: CallbackQuery, plan: str, state: FSMContext):
+    await safe_answer(callback)
     user = await get_user(callback.from_user.id)
 
     if not user or not _is_complete(user):
         await edit_msg(callback.message, "incomplete_profile")
-        await callback.answer()
         return
 
     if plan == "full":
@@ -1194,11 +1208,9 @@ async def _start_self_report(callback: CallbackQuery, plan: str, state: FSMConte
                 callback.message, "palm_needed_self",
                 reply_markup=_premium_palms_keyboard(),
             )
-            await callback.answer()
             return
 
     status_msg = await edit_msg(callback.message, "analyzing")
-    await callback.answer()
 
     asyncio.create_task(_run_self_report(status_msg, user, plan))
 
@@ -1466,6 +1478,16 @@ async def _send_report(message: Message, html: str, caption: str, plan: str,
 
 # ─── Генерация self отчёта ───────────────────────────────────────────────────────
 
+async def _notify_report_error(message: Message, kind: str, telegram_id: int, e: Exception):
+    """Сообщает пользователю об ошибке отчёта; сама отправка тоже может упасть по сети."""
+    err_text = MESSAGES["report_error"].text.format(error=html_mod.escape(str(e)))
+    try:
+        await message.answer(err_text, parse_mode="HTML")
+    except TelegramAPIError:
+        log.error("%s отчёт: не удалось отправить сообщение об ошибке tg=%s",
+                  kind, telegram_id, exc_info=True)
+
+
 async def _run_self_report(message: Message, user: User, plan: str):
     from src.api import generate_report
 
@@ -1566,11 +1588,15 @@ async def _run_self_report(message: Message, user: User, plan: str):
         filename = f"Портрет личности {_plan_label.get(plan, plan)}.html"
         await _send_report(message, html, caption, plan, "self", filename)
 
+    except TelegramAPIError as e:
+        # Сеть/API Telegram: генерация могла пройти успешно, упала отправка
+        log.error("self отчёт: ошибка Telegram на этапе отправки (не генерации): telegram_id=%s, plan=%s",
+                  user.telegram_id, plan, exc_info=True)
+        await _notify_report_error(message, "self", user.telegram_id, e)
     except Exception as e:
         log.error("Ошибка генерации self отчёта: telegram_id=%s, plan=%s",
                   user.telegram_id, plan, exc_info=True)
-        err_text = MESSAGES["report_error"].text.format(error=html_mod.escape(str(e)))
-        await message.answer(err_text, parse_mode="HTML")
+        await _notify_report_error(message, "self", user.telegram_id, e)
 
 
 # ─── Генерация money отчёта ──────────────────────────────────────────────────────
@@ -1675,11 +1701,15 @@ async def _run_money_report(message: Message, user: User, plan: str):
         filename = f"Денежная карта {_plan_label.get(plan, plan)}.html"
         await _send_report(message, html, caption, plan, "money", filename)
 
+    except TelegramAPIError as e:
+        # Сеть/API Telegram: генерация могла пройти успешно, упала отправка
+        log.error("money отчёт: ошибка Telegram на этапе отправки (не генерации): telegram_id=%s, plan=%s",
+                  user.telegram_id, plan, exc_info=True)
+        await _notify_report_error(message, "money", user.telegram_id, e)
     except Exception as e:
         log.error("Ошибка генерации money отчёта: telegram_id=%s, plan=%s",
                   user.telegram_id, plan, exc_info=True)
-        err_text = MESSAGES["report_error"].text.format(error=html_mod.escape(str(e)))
-        await message.answer(err_text, parse_mode="HTML")
+        await _notify_report_error(message, "money", user.telegram_id, e)
 
 
 # ─── Генерация couple отчёта ─────────────────────────────────────────────────────
@@ -1790,11 +1820,15 @@ async def _run_couple_report(message: Message, user: User, plan: str):
         filename = f"Совместимость {user.name} и {user.partner_name} {_plan_label.get(plan, plan)}.html"
         await _send_report(message, html, caption, plan, "couple", filename)
 
+    except TelegramAPIError as e:
+        # Сеть/API Telegram: генерация могла пройти успешно, упала отправка
+        log.error("couple отчёт: ошибка Telegram на этапе отправки (не генерации): telegram_id=%s, plan=%s",
+                  user.telegram_id, plan, exc_info=True)
+        await _notify_report_error(message, "couple", user.telegram_id, e)
     except Exception as e:
         log.error("Ошибка генерации couple отчёта: telegram_id=%s, plan=%s",
                   user.telegram_id, plan, exc_info=True)
-        err_text = MESSAGES["report_error"].text.format(error=html_mod.escape(str(e)))
-        await message.answer(err_text, parse_mode="HTML")
+        await _notify_report_error(message, "couple", user.telegram_id, e)
 
 
 # ─── Реферальные команды ─────────────────────────────────────────────────────────
@@ -2124,7 +2158,7 @@ async def cb_reset_confirm(callback: CallbackQuery, state: FSMContext):
         await edit_msg(callback.message, "reset_confirm", reply_markup=markup)
     except Exception:
         await send_msg(callback.message, "reset_confirm", reply_markup=markup)
-    await callback.answer()
+    await safe_answer(callback)
 
 
 @router.callback_query(F.data == "reset_execute")
@@ -2169,7 +2203,7 @@ async def cb_reset_execute(callback: CallbackQuery, state: FSMContext):
         # а без логирования это останется незамеченным.
         log.error("cb_reset_execute: ошибка сброса профиля tg=%s",
                   callback.from_user.id, exc_info=True)
-        await callback.answer("Ошибка при сбросе. Попробуйте позже.", show_alert=True)
+        await safe_answer(callback, "Ошибка при сбросе. Попробуйте позже.", show_alert=True)
         return
 
     # Очищаем воронку пушей и перезапускаем её с нуля
@@ -2180,7 +2214,7 @@ async def cb_reset_execute(callback: CallbackQuery, state: FSMContext):
     except TelegramBadRequest:
         pass
 
+    await state.set_state(RegistrationStates.waiting_for_name)
     await send_msg(callback.message, "reset_done")
     await send_msg(callback.message, "start_new")
-    await state.set_state(RegistrationStates.waiting_for_name)
-    await callback.answer()
+    await safe_answer(callback)
