@@ -583,6 +583,8 @@ async def _edit_to_packages(message: Message, user: User, report_prefix: str):
     menu = _packages_menu(above_plan=purchased, report_prefix=report_prefix)
     if menu.inline_keyboard[:-1]:
         pkg_msg_key = {"self": "choose_package_self", "money": "choose_package_money", "couple": "choose_package_couple"}[report_prefix]
+        if purchased != "demo":
+            pkg_msg_key += "_paid"  # тизер про демо-файл неуместен после покупки
         await edit_msg(message, pkg_msg_key, reply_markup=menu)
     else:
         await edit_msg(message, "max_package", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -1484,6 +1486,8 @@ async def _send_report(message: Message, html: str, caption: str, plan: str,
     menu = _packages_menu(above_plan=current_plan, report_prefix=report_prefix)
     if menu.inline_keyboard[:-1]:
         pkg_msg_key = {"self": "choose_package_self", "money": "choose_package_money", "couple": "choose_package_couple"}[report_prefix]
+        if current_plan != "demo":
+            pkg_msg_key += "_paid"  # после платного отчёта — апгрейд, а не тизер демо
         await send_msg(message, pkg_msg_key, reply_markup=menu)
     else:
         await send_msg(message, "max_package", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
@@ -1599,7 +1603,13 @@ async def _run_self_report(message: Message, user: User, plan: str):
                     await session.commit()
 
         _plan_label = {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
-        caption = f"<b>Портрет личности</b> · {_plan_label.get(plan, plan)} готов! <tg-emoji emoji-id=\"5370688099196101085\">📁</tg-emoji>"
+        if plan == "demo":
+            caption = (
+                "<b>Портрет личности</b> · демо-разбор готов <tg-emoji emoji-id=\"5370688099196101085\">📁</tg-emoji>\n"
+                "Открой файл — первые разделы твоего анализа уже расшифрованы."
+            )
+        else:
+            caption = f"<b>Портрет личности</b> · {_plan_label.get(plan, plan)} готов! <tg-emoji emoji-id=\"5370688099196101085\">📁</tg-emoji>"
         filename = f"Портрет личности {_plan_label.get(plan, plan)}.html"
         await _send_report(message, html, caption, plan, "self", filename)
 
@@ -1712,7 +1722,13 @@ async def _run_money_report(message: Message, user: User, plan: str):
                     await session.commit()
 
         _plan_label = {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
-        caption = f"<b>Денежная карта</b> · {_plan_label.get(plan, plan)} готова! <tg-emoji emoji-id=\"5370688099196101085\">📁</tg-emoji>"
+        if plan == "demo":
+            caption = (
+                "<b>Денежная карта</b> · демо-разбор готов <tg-emoji emoji-id=\"5370688099196101085\">📁</tg-emoji>\n"
+                "Открой файл — первые разделы твоей карты уже расшифрованы."
+            )
+        else:
+            caption = f"<b>Денежная карта</b> · {_plan_label.get(plan, plan)} готова! <tg-emoji emoji-id=\"5370688099196101085\">📁</tg-emoji>"
         filename = f"Денежная карта {_plan_label.get(plan, plan)}.html"
         await _send_report(message, html, caption, plan, "money", filename)
 
@@ -1831,7 +1847,13 @@ async def _run_couple_report(message: Message, user: User, plan: str):
                     await session.commit()
 
         _plan_label = {"demo": "Демо", "base": "Базовый", "extended": "Расширенный", "full": "Премиум"}
-        caption = f"<b>Совместимость пары</b> · {_plan_label.get(plan, plan)} готова! <tg-emoji emoji-id=\"5370688099196101085\">📁</tg-emoji>"
+        if plan == "demo":
+            caption = (
+                "<b>Совместимость пары</b> · демо-разбор готов <tg-emoji emoji-id=\"5370688099196101085\">📁</tg-emoji>\n"
+                "Открой файл — первые разделы вашего разбора уже расшифрованы."
+            )
+        else:
+            caption = f"<b>Совместимость пары</b> · {_plan_label.get(plan, plan)} готова! <tg-emoji emoji-id=\"5370688099196101085\">📁</tg-emoji>"
         filename = f"Совместимость {user.name} и {user.partner_name} {_plan_label.get(plan, plan)}.html"
         await _send_report(message, html, caption, plan, "couple", filename)
 
