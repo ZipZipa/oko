@@ -87,6 +87,7 @@ COUPLE_PARTNER_COMPLETED = "couple_partner_completed"  # E3 отмена
 DEMO_SHOWN = "demo_shown"                              # E4: получил демо
 PRICING_VIEWED = "pricing_viewed"                      # открыл карточку пакета с ценой
 PAYMENT_INITIATED = "payment_initiated"                # E5: нажал оплатить
+PAYMENT_CHECK_CLICKED = "payment_check_clicked"        # нажал «Проверить оплату» — был на странице оплаты
 PURCHASE_COMPLETED = "purchase_completed"              # E4 отмена / E6 / E7
 PROFILE_RESET = "profile_reset"                        # сброс данных
 

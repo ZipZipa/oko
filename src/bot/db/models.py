@@ -69,6 +69,9 @@ class Payment(Base):
     confirmation_url = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     paid_at = Column(DateTime, nullable=True)
+    # Причина отмены из YooKassa (cancellation_details.reason),
+    # например expired_on_confirmation — истёк срок без оплаты
+    cancellation_reason = Column(String(60), nullable=True)
 
 
 class UserEvent(Base):

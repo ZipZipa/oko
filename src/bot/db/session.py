@@ -48,6 +48,14 @@ async def init_db() -> None:
                 # Логируем на debug — если придёт другая ошибка (например, БД заблокирована),
                 # её будет видно в логах.
                 log.debug("init_db: колонка уже существует (%s): %s", col.split()[0], e)
+        payment_cols = [
+            "cancellation_reason VARCHAR(60)",
+        ]
+        for col in payment_cols:
+            try:
+                await conn.execute(text(f"ALTER TABLE payments ADD COLUMN {col}"))
+            except Exception as e:
+                log.debug("init_db: колонка уже существует (%s): %s", col.split()[0], e)
 
 
 async def get_session() -> AsyncSession:

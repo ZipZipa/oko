@@ -16,7 +16,7 @@ from src.bot.db.models import User, Payment, UserEvent, NotificationLog
 from src.bot.config import BASE_PRICES
 from src.bot.notifications.events import (
     REGISTRATION_STARTED, PROFILE_COMPLETED, ENTERED_MENU,
-    DEMO_SHOWN, PRICING_VIEWED, PAYMENT_INITIATED,
+    DEMO_SHOWN, PRICING_VIEWED, PAYMENT_INITIATED, PAYMENT_CHECK_CLICKED,
 )
 
 _MST = timezone(timedelta(hours=3))
@@ -114,6 +114,16 @@ async def get_revenue_summary() -> dict:
     """Выручка по периодам, продуктам и планам + конверсия оплаты."""
     async with async_session() as session:
         payments = (await session.execute(select(Payment))).scalars().all()
+        reg_rows = (await session.execute(
+            select(UserEvent.telegram_id, UserEvent.created_at)
+            .where(UserEvent.event_type == REGISTRATION_STARTED)
+        )).all()
+        checked_ids = set((await session.execute(
+            select(UserEvent.payment_id).where(
+                UserEvent.event_type == PAYMENT_CHECK_CLICKED,
+                UserEvent.payment_id.isnot(None),
+            )
+        )).scalars().all())
 
     b = _period_bounds()
     succeeded = [p for p in payments if p.status == "succeeded"]
@@ -148,6 +158,43 @@ async def get_revenue_summary() -> dict:
     abandoned = [p for p in payments if p.status != "succeeded"]
     abandoned_sum = sum(_amount(p) for p in abandoned)
 
+    # Брошенные платежи: разрез по продуктам, повторные попытки, причины отмены
+    ab_by_report: dict[str, dict] = defaultdict(lambda: {"sum": 0.0, "count": 0})
+    ab_reasons: dict[str, int] = defaultdict(int)
+    ab_checked = 0
+    for p in abandoned:
+        ab_by_report[p.report_type]["sum"] += _amount(p)
+        ab_by_report[p.report_type]["count"] += 1
+        if p.cancellation_reason:
+            ab_reasons[p.cancellation_reason] += 1
+        if p.yookassa_id in checked_ids:
+            ab_checked += 1
+
+    pay_by_user: dict[int, list] = defaultdict(list)
+    for p in payments:
+        pay_by_user[p.telegram_id].append(p)
+    ab_users = {p.telegram_id for p in abandoned}
+    ab_retried = sum(1 for tid in ab_users if len(pay_by_user[tid]) > 1)
+    ab_recovered = sum(
+        1 for tid in ab_users
+        if any(p.status == "succeeded" for p in pay_by_user[tid])
+    )
+
+    # Время от регистрации до покупки
+    reg_at: dict[int, datetime] = {}
+    for tid, created in reg_rows:
+        c = _as_utc_naive(created)
+        if c is not None and (tid not in reg_at or c < reg_at[tid]):
+            reg_at[tid] = c
+    ttp: list[float] = []
+    for p in succeeded:
+        r = reg_at.get(p.telegram_id)
+        ts = _paid_at(p)
+        if r is not None and ts is not None and ts >= r:
+            ttp.append((ts - r).total_seconds())
+    ttp_median = _median(ttp)
+    ttp_fast = sum(1 for s in ttp if s < 1800)
+
     # Покупки со скидкой: оплачено меньше базовой цены пакета
     disc_count = 0
     disc_rev = 0.0
@@ -172,6 +219,14 @@ async def get_revenue_summary() -> dict:
         "succeeded": succeeded_n,
         "abandoned": len(abandoned),
         "abandoned_sum": abandoned_sum,
+        "ab_by_report": dict(ab_by_report),
+        "ab_reasons": dict(ab_reasons),
+        "ab_checked": ab_checked,
+        "ab_retried": ab_retried,
+        "ab_recovered": ab_recovered,
+        "ttp_median": ttp_median,
+        "ttp_fast": ttp_fast,
+        "ttp_total": len(ttp),
         "disc_count": disc_count,
         "disc_rev": disc_rev,
         "disc_lost": disc_lost,
@@ -202,9 +257,30 @@ def format_revenue(d: dict) -> str:
     lines.append("")
     lines.append(
         f"<b>Конверсия оплаты:</b> {d['succeeded']}/{d['initiated']} "
-        f"({_pct(d['succeeded'], d['initiated'])})"
+        f"({_pct(d['succeeded'], d['initiated'])}) "
+        f"<i>— платёж создаётся при нажатии «Купить · цена»</i>"
     )
+    if d.get("ttp_total"):
+        lines.append(
+            f"<b>Время до покупки:</b> медиана {_fmt_dur(d['ttp_median'])} от регистрации "
+            f"· в первые 30 мин: {d['ttp_fast']} из {d['ttp_total']}"
+        )
     lines.append(f"<b>Брошено платежей:</b> {d['abandoned']} на {_rub(d['abandoned_sum'])}")
+    if d["abandoned"]:
+        bits = [
+            f"{REPORT_LABELS.get(rt, rt)} {v['count']} ({_rub(v['sum'])})"
+            for rt in ("self", "money", "couple")
+            for v in [d["ab_by_report"].get(rt)] if v
+        ]
+        if bits:
+            lines.append(f"  по продуктам: {' · '.join(bits)}")
+        lines.append(
+            f"  открывали «Проверить оплату»: {d['ab_checked']} из {d['abandoned']} "
+            f"· создали новый платёж: {d['ab_retried']} · в итоге купили: {d['ab_recovered']}"
+        )
+        if d["ab_reasons"]:
+            reasons = " · ".join(f"{r}: {n}" for r, n in sorted(d["ab_reasons"].items(), key=lambda x: -x[1]))
+            lines.append(f"  причины отмены (YooKassa): {reasons}")
     if d.get("disc_count"):
         lines.append(
             f"<b>Со скидкой:</b> {d['disc_count']} из {d['succeeded']} покупок "
@@ -292,14 +368,15 @@ def format_overview(d: dict) -> str:
 
 # "paid" — виртуальный шаг: считается из payments (источник правды),
 # а не из событий, т.к. сброс профиля удаляет user_events.
+# Названия шагов = реальные кнопки/экраны бота, чтобы админ мог их матчить с UI.
 _FUNNEL_STEPS = [
-    (REGISTRATION_STARTED, "Начал регистрацию"),
-    (PROFILE_COMPLETED, "Заполнил профиль"),
-    (ENTERED_MENU, "Вошёл в меню"),
-    (DEMO_SHOWN, "Получил демо"),
-    (PRICING_VIEWED, "Посмотрел цену"),
-    (PAYMENT_INITIATED, "Нажал оплатить"),
-    ("paid", "Оплатил"),
+    (REGISTRATION_STARTED, "Нажал /start"),
+    (PROFILE_COMPLETED, "Заполнил профиль (имя+фото+дата)"),
+    (ENTERED_MENU, "Открыл главное меню"),
+    (DEMO_SHOWN, "Получил демо (+список пакетов под ним)"),
+    (PRICING_VIEWED, "Открыл карточку пакета"),
+    (PAYMENT_INITIATED, "Нажал «Купить · цена»"),
+    ("paid", "Оплатил в ЮKassa"),
 ]
 
 
@@ -342,7 +419,7 @@ def format_conversion(steps: list[tuple[str, str, int]], days: int | None = None
         prev = count
     if steps and top:
         final = steps[-1][2]
-        lines.append(f"\n<b>Сквозная конверсия:</b> {_pct(final, top)} (регистрация → оплата)")
+        lines.append(f"\n<b>Сквозная конверсия:</b> {_pct(final, top)} (/start → оплата)")
     return "\n".join(lines)
 
 
@@ -403,9 +480,9 @@ async def get_step_timings(days: int | None = None) -> dict:
 
 def format_step_timings(d: dict) -> str:
     labels = [
-        ("reg_to_demo", "регистрация → демо"),
-        ("demo_to_pay_click", "демо → нажал оплатить"),
-        ("pay_click_to_paid", "нажал оплатить → оплатил"),
+        ("reg_to_demo", "/start → демо"),
+        ("demo_to_pay_click", "демо → «Купить»"),
+        ("pay_click_to_paid", "«Купить» → оплата в ЮKassa"),
     ]
     lines = ["⏱ <b>Медианное время между шагами</b>\n"]
     for key, label in labels:
@@ -474,7 +551,7 @@ async def get_product_funnel(days: int | None = None) -> dict:
 def format_product_funnel(d: dict) -> str:
     lines = [
         "🧭 <b>Воронка по продуктам</b>",
-        "<i>уникальные пользователи: демо → цена → нажал оплатить → оплатил</i>\n",
+        "<i>уникальные пользователи: демо → открыл карточку пакета → нажал «Купить» → оплатил</i>\n",
     ]
     if not d:
         lines.append("Событий по продуктам пока нет.")
@@ -485,9 +562,9 @@ def format_product_funnel(d: dict) -> str:
             continue
         lines.append(
             f"<b>{REPORT_LABELS.get(rt, rt)}</b>: "
-            f"демо {p['demo']} → цена {p['pricing']} ({_pct(p['pricing'], p['demo'])}) "
-            f"→ оплата {p['pay_clicked']} ({_pct(p['pay_clicked'], p['pricing'])}) "
-            f"→ купил {p['paid']} ({_pct(p['paid'], p['pay_clicked'])})"
+            f"демо {p['demo']} → карточка {p['pricing']} ({_pct(p['pricing'], p['demo'])}) "
+            f"→ «Купить» {p['pay_clicked']} ({_pct(p['pay_clicked'], p['pricing'])}) "
+            f"→ оплатил {p['paid']} ({_pct(p['paid'], p['pay_clicked'])})"
         )
         if p["pay_clicked"]:
             plan_bits = [
@@ -496,12 +573,47 @@ def format_product_funnel(d: dict) -> str:
                 for n in [p["plans"].get(pl)] if n
             ]
             detail = " · ".join(plan_bits) if plan_bits else "план не зафиксирован"
-            lines.append(f"   нажимали: {detail} · попыток {p['pay_attempts']}")
+            lines.append(f"   нажимали «Купить»: {detail} · попыток {p['pay_attempts']}")
     for rt in d:
         if rt not in ("self", "money", "couple"):
             p = d[rt]
-            lines.append(f"<b>{rt}</b>: демо {p['demo']} → оплата {p['pay_clicked']} → купил {p['paid']}")
+            lines.append(f"<b>{rt}</b>: демо {p['demo']} → «Купить» {p['pay_clicked']} → оплатил {p['paid']}")
     return "\n".join(lines)
+
+
+# ─── 3в. Потребление демо ─────────────────────────────────────────────────────────
+
+async def get_demo_consumption() -> dict:
+    """Сколько разных демо берёт один пользователь (глубина потребления)."""
+    async with async_session() as session:
+        rows = (await session.execute(
+            select(UserEvent.telegram_id, UserEvent.report_type)
+            .where(UserEvent.event_type == DEMO_SHOWN)
+        )).all()
+
+    per_user: dict[int, set] = defaultdict(set)
+    for tid, rt in rows:
+        per_user[tid].add(rt or "—")
+
+    depth: dict[int, int] = defaultdict(int)
+    for rts in per_user.values():
+        depth[len(rts)] += 1
+
+    total = len(per_user)
+    multi = sum(n for k, n in depth.items() if k >= 2)
+    return {"depth": dict(depth), "total": total, "multi": multi}
+
+
+def format_demo_consumption(d: dict) -> str:
+    if not d["total"]:
+        return "🎁 <b>Потребление демо</b>\n\nДемо пока никто не получал."
+    bits = " · ".join(f"{k} демо: <b>{d['depth'][k]}</b>" for k in sorted(d["depth"]))
+    return (
+        "🎁 <b>Потребление демо</b>\n\n"
+        f"{bits}\n"
+        f"Взяли больше одного: {d['multi']} ({_pct(d['multi'], d['total'])}) — "
+        f"<i>интерес к формату есть, вопрос в клике по пакету под демо</i>"
+    )
 
 
 # ─── 4. Эффективность пушей ───────────────────────────────────────────────────────
@@ -575,7 +687,7 @@ async def get_push_stats() -> dict:
     return result
 
 
-def format_push_stats(d: dict) -> str:
+def format_push_stats(d: dict, retention: dict | None = None) -> str:
     lines = [
         "📨 <b>Эффективность пушей</b>",
         "<i>получатели → купили в течение 48 ч · 🚫 заблокировали в течение 24 ч</i>\n",
@@ -594,6 +706,169 @@ def format_push_stats(d: dict) -> str:
         if v.get("blocked"):
             line += f" · 🚫 {v['blocked']}"
         lines.append(line)
+    if retention is not None:
+        r1 = retention["returned"][1]
+        base = retention["ret_base"]
+        lines.append(
+            f"\n<i>Контекст: активных спустя сутки после регистрации — {r1} "
+            f"({_pct(r1, base)}). Это потолок досягаемости отложенных пушей.</i>"
+        )
+    return "\n".join(lines)
+
+
+# ─── 4б. Удержание и отток ────────────────────────────────────────────────────────
+
+async def get_retention_stats() -> dict:
+    """Возвраты после регистрации, скорость покупки и анализ блокировок.
+
+    Точка отсчёта пользователя — его самое раннее событие в user_events
+    (после сброса профиля история начинается заново — принимаем это допущение).
+    """
+    async with async_session() as session:
+        users = (await session.execute(select(User))).scalars().all()
+        ev_rows = (await session.execute(
+            select(UserEvent.telegram_id, UserEvent.event_type, UserEvent.created_at)
+        )).all()
+        purchases = (await session.execute(
+            select(Payment).where(Payment.status == "succeeded")
+        )).scalars().all()
+        logs = (await session.execute(
+            select(NotificationLog.telegram_id, NotificationLog.sent_at)
+        )).all()
+
+    reg_at: dict[int, datetime] = {}
+    has_demo: set[int] = set()
+    has_profile: set[int] = set()
+    for tid, et, created in ev_rows:
+        c = _as_utc_naive(created)
+        if c is None:
+            continue
+        if tid not in reg_at or c < reg_at[tid]:
+            reg_at[tid] = c
+        if et == DEMO_SHOWN:
+            has_demo.add(tid)
+        elif et == PROFILE_COMPLETED:
+            has_profile.add(tid)
+
+    # Возвраты: последняя активность спустя ≥N дней после первого события
+    returned = {1: 0, 3: 0, 7: 0}
+    ret_base = 0
+    for u in users:
+        r = reg_at.get(u.telegram_id)
+        la = _as_utc_naive(u.last_activity_at)
+        if r is None or la is None:
+            continue
+        ret_base += 1
+        age_days = (la - r).total_seconds() / 86400
+        for d in returned:
+            if age_days >= d:
+                returned[d] += 1
+
+    # Покупки по времени от регистрации
+    buy_buckets = {"<30м": 0, "30м–24ч": 0, ">24ч": 0}
+    ttp: list[float] = []
+    for p in purchases:
+        r = reg_at.get(p.telegram_id)
+        ts = _paid_ts(p)
+        if r is None or ts is None or ts < r:
+            continue
+        sec = (ts - r).total_seconds()
+        ttp.append(sec)
+        if sec < 1800:
+            buy_buckets["<30м"] += 1
+        elif sec < 86400:
+            buy_buckets["30м–24ч"] += 1
+        else:
+            buy_buckets[">24ч"] += 1
+
+    # Блокировки: когда, на какой стадии, связаны ли с пушами
+    sends_by_user: dict[int, list[datetime]] = defaultdict(list)
+    for tid, sent_at in logs:
+        s = _as_utc_naive(sent_at)
+        if s is not None:
+            sends_by_user[tid].append(s)
+
+    blk_total = 0
+    blk_when = {"<1ч": 0, "1–24ч": 0, "1–7д": 0, ">7д": 0, "неизвестно": 0}
+    blk_stage = {"после демо": 0, "профиль без демо": 0, "на регистрации": 0}
+    blk_after_push = 0
+    for u in users:
+        if not u.is_blocked:
+            continue
+        blk_total += 1
+        tid = u.telegram_id
+        if tid in has_demo:
+            blk_stage["после демо"] += 1
+        elif tid in has_profile:
+            blk_stage["профиль без демо"] += 1
+        else:
+            blk_stage["на регистрации"] += 1
+        ba = _as_utc_naive(u.blocked_at)
+        r = reg_at.get(tid)
+        if ba is None or r is None:
+            blk_when["неизвестно"] += 1
+            continue
+        sec = (ba - r).total_seconds()
+        if sec < 3600:
+            blk_when["<1ч"] += 1
+        elif sec < 86400:
+            blk_when["1–24ч"] += 1
+        elif sec < 7 * 86400:
+            blk_when["1–7д"] += 1
+        else:
+            blk_when[">7д"] += 1
+        if any(s <= ba <= s + _PUSH_BLOCK_WINDOW for s in sends_by_user.get(tid, [])):
+            blk_after_push += 1
+
+    return {
+        "ret_base": ret_base,
+        "returned": returned,
+        "buy_buckets": buy_buckets,
+        "ttp_median": _median(ttp),
+        "purchases_n": len(ttp),
+        "blk_total": blk_total,
+        "blk_when": blk_when,
+        "blk_stage": blk_stage,
+        "blk_after_push": blk_after_push,
+        "total_users": len(users),
+    }
+
+
+def format_retention(d: dict) -> str:
+    base = d["ret_base"]
+    lines = [
+        "🔄 <b>Удержание и отток</b>\n",
+        "<b>Вернулись после регистрации:</b>",
+        f"  спустя 1+ день: {d['returned'][1]} ({_pct(d['returned'][1], base)})"
+        f" · 3+ дня: {d['returned'][3]} ({_pct(d['returned'][3], base)})"
+        f" · 7+ дней: {d['returned'][7]} ({_pct(d['returned'][7], base)})",
+        "",
+    ]
+    if d["purchases_n"]:
+        bb = d["buy_buckets"]
+        lines.append(
+            f"<b>Покупки по времени от регистрации:</b> "
+            f"&lt;30 мин: {bb['<30м']} · 30 мин–24 ч: {bb['30м–24ч']} · &gt;24 ч: {bb['>24ч']}"
+        )
+        lines.append(f"  медиана: {_fmt_dur(d['ttp_median'])}")
+    else:
+        lines.append("<b>Покупок пока нет.</b>")
+    lines.append("")
+
+    lines.append(f"<b>Блокировки:</b> {d['blk_total']} ({_pct(d['blk_total'], d['total_users'])} от всех)")
+    bw = d["blk_when"]
+    known = [f"{k}: {bw[k]}" for k in ("<1ч", "1–24ч", "1–7д", ">7д") if bw[k]]
+    when_str = " · ".join(known) if known else "—"
+    if bw["неизвестно"]:
+        when_str += f" · неизвестно: {bw['неизвестно']}"
+    lines.append(f"  когда (от регистрации): {when_str}")
+    stage_str = " · ".join(f"{k}: {v}" for k, v in d["blk_stage"].items() if v) or "—"
+    lines.append(f"  на какой стадии: {stage_str}")
+    known_total = d["blk_total"] - bw["неизвестно"]
+    lines.append(
+        f"  в течение 24 ч после пуша: {d['blk_after_push']}"
+        + (f" из {known_total} с известным временем" if known_total else "")
+    )
     return "\n".join(lines)
 
 

@@ -20,15 +20,16 @@ from src.bot.notifications.events import (
 _PLAN_ORDER = {"base": 1, "extended": 2, "full": 3}
 _MST = timezone(timedelta(hours=3))
 
+# Названия стадий = где пользователь остановился в терминах экранов бота
 STAGE_LABELS = {
     "new": "Новый",
-    "registering": "На регистрации",
-    "menu_idle": "В меню, без действия",
-    "couple_pending": "Ввод данных партнёра",
-    "demo_seen": "Демо получено",
-    "paying": "Ожидает оплаты",
+    "registering": "На регистрации (профиль не заполнен)",
+    "menu_idle": "В меню, демо не брал",
+    "couple_pending": "Начал ввод партнёра, не закончил",
+    "demo_seen": "Получил демо, дальше не пошёл",
+    "paying": "Нажал «Купить», не оплатил",
     "bought": "Купил",
-    "inactive": "Неактивен",
+    "inactive": "Неактивен 7+ дней",
     "unknown_activity": "Нет данных активности",
     "blocked": "Заблокировал бота",
 }
@@ -236,11 +237,48 @@ def format_user_card(d: dict) -> str:
     return "\n".join(lines)
 
 
-def format_distribution(dist: list[tuple[str, int]]) -> str:
+async def get_buyers_summary() -> dict:
+    """Покупатели из payments (источник правды) — независимо от стадии.
+
+    Стадия bought перекрывается blocked/inactive, поэтому «Купил» в
+    распределении может быть меньше реального числа покупателей.
+    """
+    async with async_session() as session:
+        buyer_ids = set((await session.execute(
+            select(Payment.telegram_id).where(Payment.status == "succeeded")
+        )).scalars().all())
+        if buyer_ids:
+            buyers = (await session.execute(
+                select(User).where(User.telegram_id.in_(buyer_ids))
+            )).scalars().all()
+        else:
+            buyers = []
+
+    now = datetime.now(timezone.utc)
+    blocked = sum(1 for u in buyers if u.is_blocked)
+    inactive = 0
+    for u in buyers:
+        if u.is_blocked:
+            continue
+        la = _as_utc(u.last_activity_at)
+        if la is not None and (now - la).days >= 7:
+            inactive += 1
+    return {"total": len(buyer_ids), "blocked": blocked, "inactive": inactive}
+
+
+def format_distribution(dist: list[tuple[str, int]], buyers: dict | None = None) -> str:
     total = sum(c for _, c in dist)
     lines = ["<b>Воронка — распределение по стадиям</b>\n"]
     for stage, count in dist:
         pct = (count / total * 100) if total else 0
         lines.append(f"• {STAGE_LABELS.get(stage, stage)}: <b>{count}</b> ({pct:.0f}%)")
     lines.append(f"\n<b>Всего:</b> {total}")
+    if buyers is not None and buyers["total"]:
+        extra = []
+        if buyers["blocked"]:
+            extra.append(f"заблокировали: {buyers['blocked']}")
+        if buyers["inactive"]:
+            extra.append(f"неактивны ≥7 дн.: {buyers['inactive']}")
+        suffix = f" · из них {', '.join(extra)}" if extra else ""
+        lines.append(f"<b>Покупателей всего (по платежам):</b> {buyers['total']}{suffix}")
     return "\n".join(lines)

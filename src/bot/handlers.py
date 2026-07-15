@@ -29,10 +29,11 @@ from src.bot.notifications.events import (
     log_event, log_event_once, mark_purchase_completed, reset_notification_state,
     REGISTRATION_STARTED, PROFILE_COMPLETED, ENTERED_MENU,
     COUPLE_PARTNER_STARTED, COUPLE_PARTNER_COMPLETED,
-    DEMO_SHOWN, PRICING_VIEWED, PAYMENT_INITIATED, PURCHASE_COMPLETED,
+    DEMO_SHOWN, PRICING_VIEWED, PAYMENT_INITIATED, PAYMENT_CHECK_CLICKED,
+    PURCHASE_COMPLETED,
 )
 from src.bot.notifications.funnel import (
-    get_user_funnel, get_funnel_distribution,
+    get_user_funnel, get_funnel_distribution, get_buyers_summary,
     format_user_card, format_distribution,
 )
 from src.bot.notifications.analytics import (
@@ -41,7 +42,9 @@ from src.bot.notifications.analytics import (
     get_conversion_funnel, format_conversion,
     get_product_funnel, format_product_funnel,
     get_step_timings, format_step_timings,
+    get_demo_consumption, format_demo_consumption,
     get_push_stats, format_push_stats,
+    get_retention_stats, format_retention,
     get_referral_summary, format_referral,
 )
 
@@ -1087,6 +1090,14 @@ async def cb_check_payment(callback: CallbackQuery, state: FSMContext):
         await safe_answer(callback, "Платёж не найден", show_alert=True)
         return
 
+    # Клик по «Проверить оплату» — сильный сигнал, что человек ходил на
+    # страницу оплаты. Разделяет «не открыл ссылку» и «бросил на платёжке».
+    await log_event(
+        callback.from_user.id, PAYMENT_CHECK_CLICKED,
+        report_type=payment_record.report_type, plan=payment_record.plan,
+        payment_id=payment_id,
+    )
+
     if payment_record.status == "succeeded":
         await safe_answer(callback, "Оплата подтверждена! ✅", show_alert=False)
         # Обновляем сообщение — убираем кнопки оплаты
@@ -1150,6 +1161,10 @@ async def cb_check_payment(callback: CallbackQuery, state: FSMContext):
             payment_record.status = new_status
             if new_status == "succeeded" and not payment_record.paid_at:
                 payment_record.paid_at = datetime.now(timezone.utc)
+            if new_status == "canceled":
+                details = getattr(yoo_payment, "cancellation_details", None)
+                if details is not None:
+                    payment_record.cancellation_reason = getattr(details, "reason", None)
             await session.commit()
 
     if new_status == "succeeded":
@@ -1925,7 +1940,9 @@ async def cmd_funnelstats(message: Message, command: CommandObject):
         steps = await get_conversion_funnel(days)
         products = await get_product_funnel(days)
         timings = await get_step_timings(days)
+        demo = await get_demo_consumption()
         dist = await get_funnel_distribution()
+        buyers = await get_buyers_summary()
     except Exception:
         log.error("cmd_funnelstats: ошибка получения воронки (admin tg=%s)",
                   message.from_user.id, exc_info=True)
@@ -1935,8 +1952,9 @@ async def cmd_funnelstats(message: Message, command: CommandObject):
     await message.answer(
         format_conversion(steps, days)
         + "\n\n" + format_product_funnel(products)
+        + "\n\n" + format_demo_consumption(demo)
         + "\n\n" + format_step_timings(timings)
-        + "\n\n" + format_distribution(dist),
+        + "\n\n" + format_distribution(dist, buyers),
         parse_mode="HTML",
     )
 
@@ -1983,13 +2001,31 @@ async def cmd_pushstats(message: Message):
 
     try:
         data = await get_push_stats()
+        retention = await get_retention_stats()
     except Exception:
         log.error("cmd_pushstats: ошибка сбора статистики пушей (admin tg=%s)",
                   message.from_user.id, exc_info=True)
         await message.answer("Ошибка при сборе статистики пушей. Попробуйте позже.")
         return
 
-    await message.answer(format_push_stats(data), parse_mode="HTML")
+    await message.answer(format_push_stats(data, retention), parse_mode="HTML")
+
+
+@router.message(Command("retention"))
+async def cmd_retention(message: Message):
+    """Удержание и отток: возвраты, скорость покупки, блокировки (только админы)."""
+    if ADMIN_IDS and message.from_user.id not in ADMIN_IDS:
+        return
+
+    try:
+        data = await get_retention_stats()
+    except Exception:
+        log.error("cmd_retention: ошибка сбора удержания (admin tg=%s)",
+                  message.from_user.id, exc_info=True)
+        await message.answer("Ошибка при сборе данных удержания. Попробуйте позже.")
+        return
+
+    await message.answer(format_retention(data), parse_mode="HTML")
 
 
 @router.message(Command("photo"))
@@ -2130,6 +2166,7 @@ async def cmd_help(message: Message):
         "<code>/revenue</code> — выручка по периодам, продуктам, планам + конверсия оплаты",
         "<code>/funnelstats</code> — воронка конверсии и распределение по стадиям (<code>/funnelstats 7</code> — за 7 дней)",
         "<code>/pushstats</code> — эффективность пушей: получатели → покупки",
+        "<code>/retention</code> — удержание: возвраты, скорость покупки, блокировки",
         "<code>/refstats</code> — реферальная статистика: кто привёл, конверсия, выручка",
         "",
         "<b>По конкретному пользователю</b>",

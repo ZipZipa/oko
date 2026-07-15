@@ -64,6 +64,10 @@ async def poll_pending_payments() -> None:
                     db_payment.status = yoo.status
                     if yoo.status == "succeeded":
                         db_payment.paid_at = datetime.now(timezone.utc)
+                    if yoo.status == "canceled":
+                        details = getattr(yoo, "cancellation_details", None)
+                        if details is not None:
+                            db_payment.cancellation_reason = getattr(details, "reason", None)
                     await session.commit()
 
             if yoo.status == "succeeded":
