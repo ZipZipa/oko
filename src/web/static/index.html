@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Спросить ОКО</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --black: #111110;
+  --g900: #2C2C2A;
+  --g700: #5F5E5A;
+  --g500: #888780;
+  --g300: #D3D1C7;
+  --g100: #F1EFE8;
+  --white: #FAFAF8;
+  --surface: #FFFFFF;
+  --border: rgba(0,0,0,0.09);
+  --accent: #B89968;
+  --accent-deep: #8C6E3F;
+  --accent-faint: rgba(184,153,104,0.10);
+  --accent-line: rgba(184,153,104,0.45);
+  --r-md: 12px;
+  --r-lg: 16px;
+}
+
+body.dark {
+  --black: #F2F0EA;
+  --g900: #E8E5DC;
+  --g700: #A9A69C;
+  --g500: #83807A;
+  --g300: #3A3936;
+  --g100: #232220;
+  --white: #171614;
+  --surface: #1E1D1A;
+  --border: rgba(255,255,255,0.10);
+  --accent: #C8A96F;
+  --accent-deep: #D8BE86;
+  --accent-faint: rgba(200,169,111,0.12);
+  --accent-line: rgba(200,169,111,0.35);
+}
+
+html { font-size: 16px; }
+body {
+  font-family: 'Jost', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 300;
+  background: var(--white);
+  color: var(--g900);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ─── Шапка ─────────────────────────────────────────────── */
+.head {
+  flex-shrink: 0;
+  padding: 0.85rem 1.1rem;
+  border-bottom: 0.5px solid var(--border);
+  background: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.head-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-style: italic;
+  color: var(--accent-deep);
+  letter-spacing: 0.04em;
+}
+.head-sub {
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--g500);
+  margin-top: 1px;
+}
+.counter {
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--g500);
+  white-space: nowrap;
+  text-align: right;
+}
+.counter b { color: var(--accent-deep); font-weight: 400; }
+
+/* ─── Лента ─────────────────────────────────────────────── */
+.feed {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 1.1rem 1.1rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.intro { text-align: center; padding: 1.5rem 0 0.5rem; }
+.intro-eyebrow {
+  font-size: 9.5px; letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--accent-deep); margin-bottom: 0.7rem;
+}
+.intro-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 30px; font-weight: 300; line-height: 1.15; color: var(--black);
+}
+.intro-text {
+  font-size: 13.5px; color: var(--g700); margin-top: 0.7rem;
+  max-width: 30rem; margin-left: auto; margin-right: auto;
+}
+
+.chips { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.4rem; }
+.chip {
+  text-align: left;
+  font-family: inherit; font-size: 13.5px; font-weight: 300;
+  color: var(--g900);
+  background: var(--surface);
+  border: 0.5px solid var(--accent-line);
+  border-radius: var(--r-md);
+  padding: 0.7rem 0.9rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.chip:active { background: var(--accent-faint); }
+
+.msg { display: flex; flex-direction: column; max-width: 100%; }
+.msg-user {
+  align-self: flex-end;
+  max-width: 85%;
+  background: var(--accent-faint);
+  border: 0.5px solid var(--accent-line);
+  border-radius: var(--r-md);
+  padding: 0.6rem 0.85rem;
+  font-size: 14.5px;
+  color: var(--g900);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.msg-oko {
+  align-self: flex-start;
+  max-width: 100%;
+  font-size: 15px;
+  color: var(--g900);
+  word-wrap: break-word;
+}
+.msg-oko .label {
+  display: block;
+  font-size: 9px; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--accent-deep); margin-bottom: 0.45rem;
+}
+.msg-oko p { margin-bottom: 0.75rem; }
+.msg-oko p:last-child { margin-bottom: 0; }
+.msg-oko .li { display: flex; gap: 0.5rem; margin-bottom: 0.4rem; }
+.msg-oko .li::before { content: "—"; color: var(--accent); flex-shrink: 0; }
+
+.dots { display: inline-flex; gap: 4px; align-items: center; height: 1.4rem; }
+.dots i {
+  width: 4px; height: 4px; border-radius: 50%; background: var(--accent);
+  animation: pulse 1.2s infinite ease-in-out;
+}
+.dots i:nth-child(2) { animation-delay: 0.15s; }
+.dots i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes pulse { 0%,100% { opacity: 0.25; } 50% { opacity: 1; } }
+
+.notice {
+  border: 0.5px solid var(--accent-line);
+  background: var(--accent-faint);
+  border-radius: var(--r-md);
+  padding: 1rem;
+  text-align: center;
+}
+.notice-title {
+  font-family: 'Cormorant Garamond', serif; font-size: 20px; color: var(--black);
+  margin-bottom: 0.35rem;
+}
+.notice-text { font-size: 13.5px; color: var(--g700); }
+.notice button {
+  margin-top: 0.9rem;
+  font-family: inherit; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--white); background: var(--accent-deep);
+  border: none; border-radius: var(--r-md);
+  padding: 0.75rem 1.2rem; width: 100%; cursor: pointer;
+}
+.notice button:active { opacity: 0.85; }
+
+.error {
+  align-self: flex-start;
+  font-size: 13px;
+  color: #A6483C;
+  border-left: 2px solid #A6483C;
+  padding-left: 0.6rem;
+}
+body.dark .error { color: #E0897C; border-color: #E0897C; }
+
+/* ─── Ввод ──────────────────────────────────────────────── */
+.composer {
+  flex-shrink: 0;
+  border-top: 0.5px solid var(--border);
+  background: var(--white);
+  padding: 0.7rem 1.1rem calc(0.7rem + env(safe-area-inset-bottom));
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-end;
+}
+.composer textarea {
+  flex: 1;
+  font-family: inherit; font-size: 15px; font-weight: 300; line-height: 1.45;
+  color: var(--g900);
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 0.6rem 0.8rem;
+  resize: none;
+  max-height: 7.5rem;
+  outline: none;
+}
+.composer textarea:focus { border-color: var(--accent-line); }
+.composer textarea::placeholder { color: var(--g500); }
+.send {
+  flex-shrink: 0;
+  width: 40px; height: 40px;
+  border: none; border-radius: 50%;
+  background: var(--accent-deep);
+  color: var(--white);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.15s ease;
+}
+.send:disabled { opacity: 0.35; cursor: default; }
+.send svg { width: 18px; height: 18px; }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header class="head">
+  <div>
+    <div class="head-title">ОКО</div>
+    <div class="head-sub">Спросить</div>
+  </div>
+  <div class="counter" id="counter"></div>
+</header>
+
+<main class="feed" id="feed">
+  <div class="intro" id="intro">
+    <div class="intro-eyebrow">Разбор в диалоге</div>
+    <div class="intro-title">Спроси о себе</div>
+    <div class="intro-text">Отвечаю по твоим числам, чертам лица и уже собранным разборам. Спрашивай прямо.</div>
+    <div class="chips" id="chips"></div>
+  </div>
+</main>
+
+<form class="composer" id="composer">
+  <textarea id="input" rows="1" placeholder="Твой вопрос…" maxlength="1000"></textarea>
+  <button class="send" id="send" type="submit" aria-label="Отправить" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 12h15M13 6l6 6-6 6"/>
+    </svg>
+  </button>
+</form>
+
+<script>
+(function () {
+  "use strict";
+
+  var tg = window.Telegram && window.Telegram.WebApp;
+  if (tg) {
+    tg.ready();
+    tg.expand();
+    if (tg.colorScheme === "dark") document.body.classList.add("dark");
+    tg.onEvent("themeChanged", function () {
+      document.body.classList.toggle("dark", tg.colorScheme === "dark");
+    });
+  } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+    document.body.classList.add("dark");
+  }
+
+  var feed = document.getElementById("feed");
+  var intro = document.getElementById("intro");
+  var chips = document.getElementById("chips");
+  var counter = document.getElementById("counter");
+  var form = document.getElementById("composer");
+  var input = document.getElementById("input");
+  var sendBtn = document.getElementById("send");
+
+  var state = { limit: 0, left: 0, busy: false, ready: false };
+
+  function initData() {
+    return (tg && tg.initData) || "";
+  }
+
+  function api(path, body) {
+    return fetch(path, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": initData()
+      },
+      body: JSON.stringify(body || {})
+    });
+  }
+
+  function scrollDown() {
+    feed.scrollTop = feed.scrollHeight;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  // Модель отвечает обычным текстом: абзацы через пустую строку, списки через "— ".
+  function renderAnswer(text) {
+    var lines = text.split("\n");
+    var html = "";
+    var buffer = [];
+
+    function flush() {
+      if (!buffer.length) return;
+      html += "<p>" + escapeHtml(buffer.join(" ")) + "</p>";
+      buffer = [];
+    }
+
+    lines.forEach(function (raw) {
+      var line = raw.trim();
+      if (!line) { flush(); return; }
+      if (/^[—–-]\s+/.test(line)) {
+        flush();
+        html += '<div class="li"><span>' + escapeHtml(line.replace(/^[—–-]\s+/, "")) + "</span></div>";
+      } else {
+        buffer.push(line);
+      }
+    });
+    flush();
+    return html;
+  }
+
+  function addUserMessage(text) {
+    intro.classList.add("hidden");
+    var el = document.createElement("div");
+    el.className = "msg msg-user";
+    el.textContent = text;
+    feed.appendChild(el);
+    scrollDown();
+  }
+
+  function addOkoMessage(text) {
+    intro.classList.add("hidden");
+    var el = document.createElement("div");
+    el.className = "msg msg-oko";
+    el.innerHTML = '<span class="label">ОКО</span><div class="body"></div>';
+    var body = el.querySelector(".body");
+    if (text === null) {
+      body.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>';
+    } else {
+      body.innerHTML = renderAnswer(text);
+    }
+    feed.appendChild(el);
+    scrollDown();
+    return body;
+  }
+
+  function addError(text) {
+    var el = document.createElement("div");
+    el.className = "error";
+    el.textContent = text;
+    feed.appendChild(el);
+    scrollDown();
+  }
+
+  function updateCounter() {
+    if (!state.ready) { counter.textContent = ""; return; }
+    counter.innerHTML = "Вопросы <b>" + state.left + "</b> / " + state.limit;
+  }
+
+  function showLimitNotice() {
+    if (document.getElementById("limit-notice")) return;
+    var el = document.createElement("div");
+    el.className = "notice";
+    el.id = "limit-notice";
+    el.innerHTML =
+      '<div class="notice-title">Вопросы закончились</div>' +
+      '<div class="notice-text">Полный разбор открывает больше вопросов и даёт чату весь материал по тебе.</div>' +
+      "<button type=\"button\">Открыть разборы</button>";
+    el.querySelector("button").addEventListener("click", function () {
+      api("/api/upsell").then(function () {
+        if (tg) tg.close();
+      });
+    });
+    feed.appendChild(el);
+    scrollDown();
+    setComposerEnabled(false, "Лимит вопросов исчерпан");
+  }
+
+  function setComposerEnabled(on, reason) {
+    input.disabled = !on;
+    sendBtn.disabled = !on || !input.value.trim();
+    input.placeholder = on ? "Твой вопрос…" : (reason || "Загружаю…");
+  }
+
+  function autoGrow() {
+    input.style.height = "auto";
+    input.style.height = Math.min(input.scrollHeight, 120) + "px";
+  }
+
+  // ─── Загрузка состояния ───────────────────────────────────
+  function loadState() {
+    api("/api/state").then(function (res) {
+      if (res.status === 403) {
+        intro.innerHTML =
+          '<div class="intro-eyebrow">Нужен профиль</div>' +
+          '<div class="intro-title">Сначала пройди разбор</div>' +
+          '<div class="intro-text">Вернись в бот, заполни имя, дату рождения и фото — после этого чат сможет отвечать по твоим данным.</div>';
+        setComposerEnabled(false, "Сначала заполни профиль в боте");
+        return;
+      }
+      if (!res.ok) throw new Error("state " + res.status);
+      return res.json().then(function (data) {
+        state.limit = data.limit;
+        state.left = data.left;
+        state.ready = true;
+        updateCounter();
+
+        (data.suggestions || []).forEach(function (text) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "chip";
+          b.textContent = text;
+          b.addEventListener("click", function () { submit(text); });
+          chips.appendChild(b);
+        });
+
+        (data.messages || []).forEach(function (m) {
+          if (m.role === "user") addUserMessage(m.content);
+          else addOkoMessage(m.content);
+        });
+
+        if (!data.profileReady) {
+          addError("Профиль заполнен не полностью — ответы будут общими. Дозаполни данные в боте.");
+        }
+        if (state.left <= 0) showLimitNotice();
+        else setComposerEnabled(true);
+      });
+    }).catch(function (e) {
+      addError("Не удалось загрузить чат. Открой мини-апп заново.");
+      console.error(e);
+    });
+  }
+
+  // ─── Отправка вопроса ─────────────────────────────────────
+  function submit(text) {
+    if (state.busy || !text.trim()) return;
+    var question = text.trim();
+
+    state.busy = true;
+    sendBtn.disabled = true;
+    input.value = "";
+    autoGrow();
+    addUserMessage(question);
+    var body = addOkoMessage(null);
+    var answer = "";
+
+    api("/api/chat", { question: question }).then(function (res) {
+      if (res.status === 402) {
+        body.parentElement.remove();
+        state.left = 0;
+        updateCounter();
+        showLimitNotice();
+        return;
+      }
+      if (!res.ok || !res.body) throw new Error("chat " + res.status);
+      return readStream(res.body, function (event, payload) {
+        if (event === "token") {
+          answer += payload.text;
+          body.innerHTML = renderAnswer(answer);
+          scrollDown();
+        } else if (event === "done") {
+          state.left = payload.left;
+          updateCounter();
+          if (payload.left <= 0) showLimitNotice();
+        } else if (event === "limit") {
+          body.parentElement.remove();
+          state.left = 0;
+          updateCounter();
+          showLimitNotice();
+        } else if (event === "error") {
+          if (!answer) body.parentElement.remove();
+          addError(payload.message);
+        }
+      });
+    }).catch(function (e) {
+      console.error(e);
+      if (!answer) body.parentElement.remove();
+      addError("Связь оборвалась. Попробуй ещё раз.");
+    }).then(function () {
+      state.busy = false;
+      if (state.left > 0) setComposerEnabled(true);
+    });
+  }
+
+  // Разбор потока Server-Sent Events
+  function readStream(stream, onEvent) {
+    var reader = stream.getReader();
+    var decoder = new TextDecoder();
+    var buffer = "";
+
+    function step() {
+      return reader.read().then(function (chunk) {
+        if (chunk.done) return;
+        buffer += decoder.decode(chunk.value, { stream: true });
+        var parts = buffer.split("\n\n");
+        buffer = parts.pop();
+        parts.forEach(function (block) {
+          var event = "message";
+          var data = "";
+          block.split("\n").forEach(function (line) {
+            if (line.indexOf("event: ") === 0) event = line.slice(7);
+            else if (line.indexOf("data: ") === 0) data += line.slice(6);
+          });
+          if (!data) return;
+          try { onEvent(event, JSON.parse(data)); }
+          catch (e) { console.error("bad SSE payload", e); }
+        });
+        return step();
+      });
+    }
+    return step();
+  }
+
+  // ─── События ──────────────────────────────────────────────
+  input.addEventListener("input", function () {
+    autoGrow();
+    sendBtn.disabled = state.busy || !input.value.trim();
+  });
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    submit(input.value);
+  });
+
+  setComposerEnabled(false);
+  loadState();
+})();
+</script>
+</body>
+</html>

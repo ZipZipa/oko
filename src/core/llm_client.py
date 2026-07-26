@@ -7,10 +7,10 @@ import logging
 import os
 import time
 from pathlib import Path
-from typing import Callable
+from typing import AsyncIterator, Callable
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import OpenAI, AsyncOpenAI
 
 # Загружаем .env из корня проекта
 load_dotenv(Path(__file__).resolve().parent.parent.parent / ".env")
@@ -29,6 +29,64 @@ def _get_client() -> OpenAI:
         raise RuntimeError("AI_API_KEY environment variable not set")
     base_url = os.environ.get("AI_BASE_URL", DEFAULT_BASE_URL)
     return OpenAI(base_url=base_url, api_key=api_key)
+
+
+def _get_async_client() -> AsyncOpenAI:
+    api_key = os.environ.get("AI_API_KEY")
+    if not api_key:
+        raise RuntimeError("AI_API_KEY environment variable not set")
+    base_url = os.environ.get("AI_BASE_URL", DEFAULT_BASE_URL)
+    return AsyncOpenAI(base_url=base_url, api_key=api_key)
+
+
+async def astream_chat(system: str, messages: list[dict],
+                       model: str | None = None,
+                       max_tokens: int | None = None,
+                       temperature: float | None = None,
+                       telegram_id: int | None = None) -> AsyncIterator[str]:
+    """Стриминговый вызов LLM: асинхронно отдаёт куски текста по мере генерации.
+
+    Используется чатом «Спросить ОКО» — там ответ идёт пользователю в реальном
+    времени, а не собирается целиком, как в отчётах.
+    """
+    _ctx = f"tg={telegram_id} " if telegram_id else ""
+    client = _get_async_client()
+    model = model or os.environ.get("AI_CHAT_MODEL") or os.environ.get("AI_MODEL", DEFAULT_MODEL)
+    max_tokens = max_tokens or int(os.environ.get("AI_CHAT_MAX_TOKENS", 1500))
+    temperature = temperature if temperature is not None else float(
+        os.environ.get("AI_CHAT_TEMPERATURE", DEFAULT_TEMPERATURE)
+    )
+
+    openai_messages: list[dict] = [{"role": "system", "content": system}]
+    openai_messages.extend(messages)
+
+    log.info("%sLLM stream: model=%s, max_tokens=%s, messages=%d",
+             _ctx, model, max_tokens, len(messages))
+    t0 = time.monotonic()
+    chars = 0
+    try:
+        stream = await client.chat.completions.create(
+            model=model,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            messages=openai_messages,
+            stream=True,
+        )
+        async for chunk in stream:
+            if not chunk.choices:
+                continue
+            piece = chunk.choices[0].delta.content
+            if piece:
+                chars += len(piece)
+                yield piece
+    except Exception as e:
+        log.error("%sLLM stream failed после %d символов: %s", _ctx, chars, e, exc_info=True)
+        raise
+    finally:
+        await client.close()
+
+    log.info("%sLLM stream done: %.2fs, %d символов", _ctx, time.monotonic() - t0, chars)
+
 
 
 def call_claude(system: str, messages: list[dict], model: str | None = None,

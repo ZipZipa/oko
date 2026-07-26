@@ -4,9 +4,12 @@ import os
 
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher
-from aiogram.types import BotCommand, BotCommandScopeChat
+from aiogram.types import (
+    BotCommand, BotCommandScopeChat,
+    MenuButtonWebApp, MenuButtonCommands, WebAppInfo,
+)
 
-from src.bot.config import ADMIN_IDS
+from src.bot.config import ADMIN_IDS, WEBAPP_URL
 from src.bot.db import init_db
 from src.bot.handlers import router
 from src.bot.notifications.scheduler import notification_loop
@@ -50,6 +53,27 @@ async def setup_admin_menu(bot: Bot) -> None:
             logger.warning("Не удалось установить меню админу %s", admin_id, exc_info=True)
 
 
+async def setup_webapp_button(bot: Bot) -> None:
+    """Кнопка «Спросить ОКО» рядом с полем ввода — открывает мини-апп.
+
+    Без WEBAPP_URL возвращает стандартное меню команд: иначе после отключения
+    мини-аппа у пользователей осталась бы кнопка на неработающий адрес.
+    """
+    try:
+        if WEBAPP_URL:
+            await bot.set_chat_menu_button(
+                menu_button=MenuButtonWebApp(
+                    text="Спросить ОКО",
+                    web_app=WebAppInfo(url=WEBAPP_URL),
+                )
+            )
+            logger.info("Кнопка мини-аппа установлена: %s", WEBAPP_URL)
+        else:
+            await bot.set_chat_menu_button(menu_button=MenuButtonCommands())
+    except Exception:
+        logger.warning("Не удалось настроить кнопку мини-аппа", exc_info=True)
+
+
 async def main():
     token = os.getenv("BOT_TOKEN")
     if not token:
@@ -66,6 +90,7 @@ async def main():
     dp.callback_query.outer_middleware(ActivityMiddleware())
 
     await setup_admin_menu(bot)
+    await setup_webapp_button(bot)
 
     asyncio.create_task(notification_loop(bot))
 

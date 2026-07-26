@@ -1,0 +1,18 @@
+[Unit]
+Description=Oko WebApp (Спросить ОКО)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/oko
+EnvironmentFile=/opt/oko/.env
+ExecStart=/opt/oko/venv/bin/python -m src.web.main
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=oko-web
+
+[Install]
+WantedBy=multi-user.target

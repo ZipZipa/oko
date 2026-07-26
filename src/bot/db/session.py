@@ -8,12 +8,20 @@ from src.bot.db.models import Base
 
 log = logging.getLogger(__name__)
 
-engine = create_async_engine(DATABASE_URL, echo=False)
+# С появлением веб-сервиса («Спросить ОКО») в БД пишут два процесса.
+# Для SQLite это значит: WAL (см. init_db) + запас по ожиданию блокировки,
+# иначе параллельная запись падает с "database is locked".
+_connect_args = {"timeout": 15} if DATABASE_URL.startswith("sqlite") else {}
+
+engine = create_async_engine(DATABASE_URL, echo=False, connect_args=_connect_args)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
 async def init_db() -> None:
     async with engine.begin() as conn:
+        if DATABASE_URL.startswith("sqlite"):
+            # journal_mode сохраняется в файле БД — достаточно выставить один раз
+            await conn.exec_driver_sql("PRAGMA journal_mode=WAL")
         await conn.run_sync(Base.metadata.create_all)
         new_cols = [
             "blocks_json TEXT",
@@ -39,6 +47,7 @@ async def init_db() -> None:
             "is_blocked BOOLEAN DEFAULT 0",
             "blocked_at DATETIME",
             "discount_percent INTEGER DEFAULT 0",
+            "chat_questions_used INTEGER DEFAULT 0",
         ]
         for col in new_cols:
             try:

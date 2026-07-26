@@ -55,6 +55,10 @@ class User(Base):
     # sale
     discount_percent = Column(Integer, nullable=False, default=0, server_default="0")
 
+    # чат «Спросить ОКО» — счётчик заданных вопросов.
+    # Отдельно от chat_messages: очистка переписки не должна обнулять лимит.
+    chat_questions_used = Column(Integer, nullable=False, default=0, server_default="0")
+
 
 class Payment(Base):
     __tablename__ = "payments"
@@ -86,6 +90,17 @@ class UserEvent(Base):
     payment_id = Column(String(255), nullable=True)    # для payment-событий
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
     payload_json = Column(Text, nullable=True)
+
+
+class ChatMessage(Base):
+    """Сообщение чата «Спросить ОКО» (WebApp)."""
+    __tablename__ = "chat_messages"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    telegram_id = Column(BigInteger, nullable=False, index=True)
+    role = Column(String(16), nullable=False)   # user | assistant
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
 
 
 class NotificationLog(Base):

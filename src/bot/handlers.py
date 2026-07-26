@@ -14,14 +14,14 @@ from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.types import (
     Message, PhotoSize, CallbackQuery,
     InlineKeyboardMarkup, InlineKeyboardButton, BufferedInputFile,
-    LinkPreviewOptions,
+    LinkPreviewOptions, WebAppInfo,
 )
 from aiogram.exceptions import TelegramAPIError, TelegramBadRequest
 from aiogram.fsm.context import FSMContext
-from sqlalchemy import select
+from sqlalchemy import select, delete
 
-from src.bot.config import BOT_USERNAME, ADMIN_IDS, BASE_PRICES
-from src.bot.db import async_session, User, Payment
+from src.bot.config import BOT_USERNAME, ADMIN_IDS, BASE_PRICES, WEBAPP_URL
+from src.bot.db import async_session, User, Payment, ChatMessage
 from src.bot.states import RegistrationStates, PalmStates, PartnerStates
 from src.bot.messages import send_msg, edit_msg, MESSAGES
 from src.bot.services.payment import create_payment, check_payment
@@ -72,12 +72,24 @@ async def safe_answer(callback: CallbackQuery, *args, **kwargs) -> None:
 # ─── Меню ───────────────────────────────────────────────────────────────────────
 
 def _main_menu() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
+    rows = [
         [InlineKeyboardButton(text="Портрет личности", callback_data="menu_self", icon_custom_emoji_id="5359794223887443699")],
         [InlineKeyboardButton(text="Совместимость пары", callback_data="menu_couple", icon_custom_emoji_id="5359794223887443699")],
         [InlineKeyboardButton(text="Денежная карта",    callback_data="menu_money", icon_custom_emoji_id="5359794223887443699")],
-        [InlineKeyboardButton(text="Начать заново",  callback_data="reset_confirm", icon_custom_emoji_id="5337121636992690373")],
-    ])
+    ]
+    if WEBAPP_URL:
+        rows.append([_ask_oko_button()])
+    rows.append([InlineKeyboardButton(text="Начать заново",  callback_data="reset_confirm", icon_custom_emoji_id="5337121636992690373")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def _ask_oko_button() -> InlineKeyboardButton:
+    """Кнопка открытия мини-аппа «Спросить ОКО» (только если задан WEBAPP_URL)."""
+    return InlineKeyboardButton(
+        text="Спросить ОКО",
+        web_app=WebAppInfo(url=WEBAPP_URL),
+        icon_custom_emoji_id="5359794223887443699",
+    )
 
 
 def _cancel_keyboard() -> InlineKeyboardMarkup:
@@ -1484,15 +1496,23 @@ async def _send_report(message: Message, html: str, caption: str, plan: str,
         log.warning("_send_report: не удалось закрепить отчёт tg=%s", user.telegram_id, exc_info=True)
 
     menu = _packages_menu(above_plan=current_plan, report_prefix=report_prefix)
-    if menu.inline_keyboard[:-1]:
+    has_upgrades = bool(menu.inline_keyboard[:-1])
+    if WEBAPP_URL:
+        # Сразу после отчёта — самый живой момент, чтобы задать вопрос по нему.
+        # Кнопку ставим над «← В меню», которая всегда идёт последней.
+        menu.inline_keyboard.insert(len(menu.inline_keyboard) - 1, [_ask_oko_button()])
+
+    if has_upgrades:
         pkg_msg_key = {"self": "choose_package_self", "money": "choose_package_money", "couple": "choose_package_couple"}[report_prefix]
         if current_plan != "demo":
             pkg_msg_key += "_paid"  # после платного отчёта — апгрейд, а не тизер демо
         await send_msg(message, pkg_msg_key, reply_markup=menu)
     else:
-        await send_msg(message, "max_package", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="← В меню", callback_data="back_to_main")],
-        ]))
+        rows = []
+        if WEBAPP_URL:
+            rows.append([_ask_oko_button()])
+        rows.append([InlineKeyboardButton(text="← В меню", callback_data="back_to_main")])
+        await send_msg(message, "max_package", reply_markup=InlineKeyboardMarkup(inline_keyboard=rows))
 
 
 # ─── Генерация self отчёта ───────────────────────────────────────────────────────
@@ -2252,6 +2272,12 @@ async def cb_reset_execute(callback: CallbackQuery, state: FSMContext):
                 user.couple_plan = None
                 user.couple_html = None
                 user.discount_percent = 0
+                # Чат «Спросить ОКО»: переписка ссылается на стёртые данные,
+                # а лимит считается от пакетов, которые тоже сброшены
+                user.chat_questions_used = 0
+                await session.execute(
+                    delete(ChatMessage).where(ChatMessage.telegram_id == callback.from_user.id)
+                )
                 # Сбрасываем базовые данные профиля для полной перерегистрации
                 user.name = None
                 user.photo_file_id = None

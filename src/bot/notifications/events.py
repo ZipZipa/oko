@@ -90,6 +90,9 @@ PAYMENT_INITIATED = "payment_initiated"                # E5: нажал опла
 PAYMENT_CHECK_CLICKED = "payment_check_clicked"        # нажал «Проверить оплату» — был на странице оплаты
 PURCHASE_COMPLETED = "purchase_completed"              # E4 отмена / E6 / E7
 PROFILE_RESET = "profile_reset"                        # сброс данных
+CHAT_OPENED = "chat_opened"                            # открыл мини-апп «Спросить ОКО»
+CHAT_MESSAGE_SENT = "chat_message_sent"                # задал вопрос в чате
+CHAT_LIMIT_REACHED = "chat_limit_reached"              # упёрся в лимит вопросов
 
 
 async def log_event(
