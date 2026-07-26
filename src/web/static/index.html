@@ -301,8 +301,15 @@ body.dark .error { color: #E0897C; border-color: #E0897C; }
     return (tg && tg.initData) || "";
   }
 
+  // Отладка вне Telegram: ?tg_id=… из адреса страницы пробрасываем в API.
+  // Сервер принимает его, только если выключена проверка подписи.
+  var devUser = (function () {
+    var m = window.location.search.match(/[?&]tg_id=(\d+)/);
+    return m ? m[1] : "";
+  })();
+
   function api(path, body) {
-    return fetch(path, {
+    return fetch(devUser ? path + "?tg_id=" + devUser : path, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -37,6 +37,20 @@ def _int_env(name: str, default: int) -> int:
     return int(raw) if raw.lstrip("-").isdigit() else default
 
 
+def _bool_env(name: str) -> bool:
+    return (os.getenv(name) or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+# ОТКЛЮЧЕНИЕ ПРОВЕРКИ ПОДПИСИ initData — только для локальной разработки.
+# Со включённым флагом любой запрос к /api/* принимается без подписи Telegram,
+# то есть кто угодно может открыть чужой разбор, зная telegram_id.
+# На сервере, доступном из интернета, включать нельзя.
+WEBAPP_AUTH_DISABLED = _bool_env("WEBAPP_AUTH_DISABLED")
+# Чей профиль отдавать, когда проверка выключена (можно переопределить
+# в запросе: ?tg_id=… или заголовок X-Debug-Telegram-Id)
+WEBAPP_DEV_TELEGRAM_ID = _int_env("WEBAPP_DEV_TELEGRAM_ID", 0)
+
+
 # Сколько вопросов пользователь может задать — по максимальному купленному
 # пакету среди всех отчётов. demo = ещё ничего не купил.
 CHAT_LIMITS = {

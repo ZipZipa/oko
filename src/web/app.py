@@ -19,7 +19,10 @@ from pathlib import Path
 from aiohttp import web
 from sqlalchemy import select
 
-from src.bot.config import BOT_TOKEN, WEB_HOST, WEB_PORT
+from src.bot.config import (
+    BOT_TOKEN, WEB_HOST, WEB_PORT,
+    WEBAPP_AUTH_DISABLED, WEBAPP_DEV_TELEGRAM_ID,
+)
 from src.bot.db import async_session, User
 from src.bot.notifications.events import (
     log_event, log_event_once,
@@ -40,23 +43,48 @@ BOT_KEY = web.AppKey("bot", object)
 
 # ─── Авторизация ────────────────────────────────────────────────────────────────
 
+def _dev_telegram_id(request: web.Request) -> int:
+    """Кого подставить, когда проверка подписи выключена.
+
+    Порядок: ?tg_id= в запросе → заголовок X-Debug-Telegram-Id → WEBAPP_DEV_TELEGRAM_ID.
+    """
+    for raw in (request.query.get("tg_id"),
+                request.headers.get("X-Debug-Telegram-Id")):
+        if raw and raw.strip().isdigit():
+            return int(raw.strip())
+    return WEBAPP_DEV_TELEGRAM_ID
+
+
 @web.middleware
 async def auth_middleware(request: web.Request, handler):
     """Для /api/* проверяет initData и кладёт пользователя в request."""
     if not request.path.startswith("/api/"):
         return await handler(request)
 
-    init_data = request.headers.get("X-Telegram-Init-Data", "")
-    try:
-        parsed = parse_init_data(init_data, BOT_TOKEN)
-    except InitDataError as e:
-        log.warning("auth: отклонён запрос на %s — %s", request.path, e)
-        raise web.HTTPUnauthorized(
-            text=json.dumps({"error": "unauthorized"}),
-            content_type="application/json",
-        )
+    if WEBAPP_AUTH_DISABLED:
+        telegram_id = _dev_telegram_id(request)
+        if not telegram_id:
+            raise web.HTTPUnauthorized(
+                text=json.dumps({
+                    "error": "no_dev_user",
+                    "detail": "проверка initData выключена, но не задан "
+                              "WEBAPP_DEV_TELEGRAM_ID и не передан ?tg_id=",
+                }, ensure_ascii=False),
+                content_type="application/json",
+            )
+        log.warning("auth: ПРОВЕРКА ПОДПИСИ ВЫКЛЮЧЕНА, запрос принят как tg=%s", telegram_id)
+    else:
+        init_data = request.headers.get("X-Telegram-Init-Data", "")
+        try:
+            parsed = parse_init_data(init_data, BOT_TOKEN)
+        except InitDataError as e:
+            log.warning("auth: отклонён запрос на %s — %s", request.path, e)
+            raise web.HTTPUnauthorized(
+                text=json.dumps({"error": "unauthorized"}),
+                content_type="application/json",
+            )
+        telegram_id = parsed["user"]["id"]
 
-    telegram_id = parsed["user"]["id"]
     async with async_session() as session:
         result = await session.execute(
             select(User).where(User.telegram_id == telegram_id)
@@ -211,6 +239,8 @@ async def api_upsell(request: web.Request) -> web.Response:
     """Присылает в чат бота сообщение с разделами — мини-апп после этого закрывается."""
     user: User = request[USER_KEY]
     bot = request.app[BOT_KEY]
+    if bot is None:
+        return web.json_response({"ok": False, "error": "no_bot_token"}, status=503)
 
     from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
@@ -244,7 +274,9 @@ async def _init_db(app: web.Application) -> None:
 
 
 async def _close_bot(app: web.Application) -> None:
-    await app[BOT_KEY].session.close()
+    bot = app[BOT_KEY]
+    if bot is not None:
+        await bot.session.close()
 
 
 async def _dispose_engine(app: web.Application) -> None:
@@ -256,14 +288,27 @@ def create_app() -> web.Application:
     from aiogram import Bot
     from src.bot.retry import RetryRequestMiddleware
 
-    if not BOT_TOKEN:
+    if WEBAPP_AUTH_DISABLED:
+        log.warning("=" * 70)
+        log.warning("WEBAPP_AUTH_DISABLED=1 — подпись Telegram НЕ проверяется.")
+        log.warning("Любой запрос к /api/* принимается; чужой разбор открывается")
+        log.warning("по одному telegram_id. Только для локальной разработки.")
+        log.warning("Пользователь по умолчанию: %s",
+                    WEBAPP_DEV_TELEGRAM_ID or "не задан (нужен ?tg_id=)")
+        log.warning("=" * 70)
+    elif not BOT_TOKEN:
         raise RuntimeError("BOT_TOKEN не задан — мини-апп не сможет проверить initData")
 
     app = web.Application(middlewares=[auth_middleware])
 
-    bot = Bot(token=BOT_TOKEN)
-    bot.session.middleware(RetryRequestMiddleware())
-    app[BOT_KEY] = bot
+    if BOT_TOKEN:
+        bot = Bot(token=BOT_TOKEN)
+        bot.session.middleware(RetryRequestMiddleware())
+        app[BOT_KEY] = bot
+    else:
+        # Дев-режим без токена: всё работает, кроме отправки сообщений в бот
+        log.warning("BOT_TOKEN не задан — /api/upsell будет отвечать 503")
+        app[BOT_KEY] = None
 
     app.on_startup.append(_init_db)
     app.on_cleanup.append(_close_bot)
